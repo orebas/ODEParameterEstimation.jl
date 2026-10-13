@@ -12,10 +12,17 @@ environment:
 julia --startup-file=no test/current.jl unit        # quick tests of the parts
 julia --startup-file=no test/current.jl             # everything
 julia --startup-file=no test/current.jl benchmark   # recovery from noisy data on full-size models
+julia --startup-file=no test/current.jl examples    # estimates the example models
 ```
 
 Run the full suite for any change that touches estimation. `unit` is for quick
 iteration and does not replace it.
+
+`examples` estimates each model in `ODEParameterEstimation.Examples` with
+default options and checks the answer against `test/example_expectations.jl`.
+A few models take many minutes each; those are in a group of their own,
+`examples_slow`, which runs weekly. A new example model needs an entry in that
+file.
 
 To check that the package installs and passes with dependencies taken from the
 registry only, with none of your local development versions:
@@ -37,6 +44,10 @@ develop in:
 [ODEParameterEstimation]
 precompile_workload = false
 ```
+
+Julia also reads that file from your default environment when another
+environment is active, so a setting left there reaches every environment that
+does not set its own.
 
 Take it out again before you time anything or run the tests for the last
 time. While it is there, they run on a package precompiled without that step.

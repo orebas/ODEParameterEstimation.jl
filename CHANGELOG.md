@@ -2,6 +2,65 @@
 
 ## Unreleased
 
+### The example models move to a submodule — 2026-10-13
+
+- The ready-made models are now in `ODEParameterEstimation.Examples`, and the
+  package no longer exports them. Write `using ODEParameterEstimation.Examples`
+  to get them. This takes 31 names out of the package's exports.
+- There are 40 models in six groups: first steps, models where something
+  cannot be determined, models with several answers, larger models from the
+  literature, control systems, and a model that has to be rewritten.
+  `example_groups()`, `example_models()` and `example_problem(name)` list and
+  build them. Every model has a docstring, true values and a time interval,
+  and the manual's example models page shows them all.
+- `sample_problem_data(problem; ...)` uses an example model's own time
+  interval when you give none. A problem you build yourself carries no
+  interval, so it behaves as before.
+- Renamed models:
+
+  | Before | Now |
+  |---|---|
+  | `simple` | `harmonic_oscillator` |
+  | `simple_linear_combination` | `oscillator_mixed_outputs` |
+  | `onevar_exp` | `exponential_decay` |
+  | `onesp_cubed` | `decay_cubed_output` |
+  | `trivial_unident` | `sum_of_rates` |
+  | `global_unident_test` | `partly_observed_chain` |
+  | `sum_test` | `hidden_scale` |
+  | `latent_subpopulation_branch` | `hidden_subpopulations` |
+  | `latent_subpopulation_observed_control` | `hidden_subpopulations_measured` |
+  | `receptor_subtype_binding_branch` | `receptor_subtypes` |
+  | `receptor_subtype_binding_observed_control` | `receptor_subtypes_measured` |
+  | `crauste_corrected` | `crauste` |
+  | `tank_level_poly` | `tank_level_rewritten` |
+
+- Each control system keeps one model, the one with a sinusoidal input, under
+  the plain name: `dc_motor` is what `dc_motor_sinusoidal` was, and likewise
+  `quadrotor_altitude`, `forced_lotka_volterra`, `magnetic_levitation`,
+  `aircraft_pitch`, `bicycle_model`, `boost_converter` and `bilinear_system`.
+  The constant-input models that had those names are gone, and so are the
+  `_identifiable` ones.
+- Changed models: `dc_motor` treats the torque constant as known, so its two
+  remaining parameters can be found. `tank_level` and `tank_level_rewritten`
+  are now the same tank written two ways. `sum_of_rates` has the true values
+  its source meant, 0.4 and 0.6. `fitzhugh_nagumo` is watched over [0, 10].
+- Removed: earlier versions of models (`crauste_revised`, `hiv_old_wrong`,
+  `biohydrogenation_debug`, the old `crauste`), the `_m1` benchmark variants,
+  near-copies (`harmonic`, `lv_periodic`), `thermal_system`, `flexible_arm`,
+  and the cart-pole, ball-and-beam, swing-equation, CSTR and two-tank models,
+  which were either refused or stand-ins for the real system.
+- Removed `available_models`, `available_model_categories`,
+  `run_parameter_estimation_examples` and the model lists such as
+  `ALL_MODELS`.
+- The scripts move from `src/examples` to a top-level `examples` folder, and a
+  test runs each one. The control-system walkthroughs that relied on
+  unsupported cases, the adiabatic reactor experiment and the biohydrogenation
+  data script are removed.
+- Tests build and simulate every model on each run. A new `examples` test
+  group estimates the quick ones with default options on every push, and
+  `examples_slow` estimates the rest weekly.
+- Everything removed here is in the history at commit `fadccc6`.
+
 ### One polynomial system for a model, whatever the data — 2026-10-06
 
 - Column scales now reach HomotopyContinuation as parameters of the polynomial

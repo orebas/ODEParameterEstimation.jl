@@ -89,6 +89,9 @@ and continues with:
 - [models with more than one answer](https://orebas.github.io/ODEParameterEstimation.jl/dev/tutorials/identifiability/)
 - [which models work](https://orebas.github.io/ODEParameterEstimation.jl/dev/guides/models/)
 - [how the method works](https://orebas.github.io/ODEParameterEstimation.jl/dev/guides/how_it_works/)
+- [forty ready-made example models](https://orebas.github.io/ODEParameterEstimation.jl/dev/guides/example_models/)
+
+The [`examples`](examples) folder has scripts to run and read.
 
 ## Citing
 

@@ -75,12 +75,14 @@ elseif ARGS == ["benchmark"]
     ["benchmark_smoke.jl"]
 elseif ARGS == ["examples"]
     ["example_estimation.jl"]
+elseif ARGS == ["examples_ci"]
+    ["example_estimation_ci.jl"]
 elseif ARGS == ["examples_slow"]
     ["example_estimation_slow.jl"]
 elseif length(ARGS) == 1 && only(ARGS) in TEST_FILES
     copy(ARGS)
 else
-    throw(ArgumentError("test arguments must be all, unit, benchmark, examples, examples_slow, or a file in TEST_FILES"))
+    throw(ArgumentError("test arguments must be all, unit, benchmark, examples, examples_ci, examples_slow, or a file in TEST_FILES"))
 end
 
 @testset "ODEParameterEstimation suite" begin

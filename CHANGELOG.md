@@ -75,9 +75,10 @@
   test runs each one. The control-system walkthroughs that relied on
   unsupported cases, the adiabatic reactor experiment and the biohydrogenation
   data script are removed.
-- Tests build and simulate every model on each run. A new `examples` test
-  group estimates the quick ones with default options on every push, and
-  `examples_slow` estimates the slow ones weekly. Three models are not
+- Tests build and simulate every model on each run. Three new test groups
+  estimate them with default options: `examples_ci` does five models on
+  every push, and `examples` (the quick ones) and `examples_slow` (the ones
+  that take minutes each) run weekly. Three models are not
   estimated, because the package does not solve them in reasonable time:
   `crauste`, `sirsforced` and `receptor_subtypes`. Their docstrings say so.
 - Everything removed here is in the history at commit `fadccc6`.

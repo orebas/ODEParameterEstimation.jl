@@ -1,15 +1,22 @@
-name: Slow examples
-# Estimates the example models that take minutes each. The quick ones are
-# estimated on every push by the `examples` job in CI.yml.
+name: All examples
+# Estimates every example model the package can solve, in two jobs: the quick
+# ones together, and the ones that take minutes each. A handful are estimated
+# on every push by the `examples_ci` job in CI.yml.
 on:
   schedule:
     - cron: '17 4 * * 1'
   workflow_dispatch:
 jobs:
   test:
-    name: Julia 1.13 - registered - examples_slow
+    name: Julia 1.13 - registered - ${{ matrix.group }}
     runs-on: ubuntu-latest
     timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - examples
+          - examples_slow
     env:
       JULIA_NUM_PRECOMPILE_TASKS: '4'
     permissions: # needed to allow julia-actions/cache to proactively delete old caches that it has created
@@ -22,7 +29,7 @@ jobs:
           version: '1.13'
           arch: x64
       - uses: julia-actions/cache@v2
-      - name: Estimate the slow example models
+      - name: Estimate the example models
         env:
           ODEPE_VALIDATION_DIR: ${{ runner.temp }}/odepe-validation
-        run: julia --startup-file=no test/registered.jl examples_slow default
+        run: julia --startup-file=no test/registered.jl ${{ matrix.group }} default

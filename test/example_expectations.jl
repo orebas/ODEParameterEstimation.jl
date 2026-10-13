@@ -24,9 +24,9 @@ const EXAMPLE_EXPECTATIONS = Dict{Symbol, NamedTuple}(
 	:forced_decay => _expectation(:quick),
 	:lotka_volterra => _expectation(:quick),
 	:vanderpol => _expectation(:quick),
-	# 1e-5 with the package precompiled as shipped, 1e-15 with the precompile
-	# workload switched off. Do not tighten this from a run without it.
-	:brusselator => _expectation(:quick; tolerance = 1e-3),
+	# Good to 1e-5 before the final refinement and 1e-14 after it, so this
+	# tolerance fails if the refinement stops being applied.
+	:brusselator => _expectation(:quick; tolerance = 1e-9),
 	:daisy_mamil3 => _expectation(:quick),
 	:repressilator => _expectation(:slow),
 	# Something cannot be determined
@@ -37,16 +37,16 @@ const EXAMPLE_EXPECTATIONS = Dict{Symbol, NamedTuple}(
 	:two_compartment_pk => _expectation(:quick; undetermined = ["C2(t)", "V1", "V2", "k12", "k21", "ke"], answers = 2),
 	:mass_spring_damper => _expectation(:quick; undetermined = ["F", "c", "k", "m"]),
 	# More than one answer
-	:hidden_subpopulations => _expectation(:slow; answers = 6, tolerance = 1e-5),
+	:hidden_subpopulations => _expectation(:slow; answers = 6),
 	:hidden_subpopulations_measured => _expectation(:quick),
 	:receptor_subtypes => _expectation(:none),
 	:receptor_subtypes_measured => _expectation(:quick),
 	# Larger models
 	:crauste => _expectation(:none),
-	:daisy_ex3 => _expectation(:slow; answers = 2, tolerance = 1e-4),
+	:daisy_ex3 => _expectation(:slow; answers = 2),
 	:daisy_mamil4 => _expectation(:slow; answers = 2),
 	:fitzhugh_nagumo => _expectation(:quick),
-	:hiv => _expectation(:slow; tolerance = 1e-3),
+	:hiv => _expectation(:slow),
 	:biohydrogenation => _expectation(:slow; undetermined = ["x7(t)"], answers = 2),
 	:seir => _expectation(:slow; answers = 2),
 	:sirsforced => _expectation(:none; unident_count = 3),
@@ -59,9 +59,15 @@ const EXAMPLE_EXPECTATIONS = Dict{Symbol, NamedTuple}(
 	:magnetic_levitation => _expectation(:quick),
 	:aircraft_pitch => _expectation(:quick; undetermined = ["theta(t)"]),
 	:bicycle_model => _expectation(:quick; undetermined = ["Cf", "Cr", "Iz", "m_veh"]),
-	:boost_converter => _expectation(:quick; tolerance = 1e-4),
+	:boost_converter => _expectation(:quick; tolerance = 1e-5),
 	:bilinear_system => _expectation(:quick),
 	# A model that has to be rewritten
 	:tank_level => _expectation(:refused),
 	:tank_level_rewritten => _expectation(:quick; answers = 2),
 )
+
+# The few models that every push estimates on CI. Together they cover a plain
+# recovery, a model whose answer before the final refinement is good to five
+# digits only, an undetermined set with two answers, a time-dependent input and
+# a refusal. The whole quick tier takes about an hour there, so it runs weekly.
+const EXAMPLE_CI_MODELS = [:lotka_volterra, :brusselator, :hidden_scale, :dc_motor, :tank_level]

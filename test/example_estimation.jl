@@ -1,5 +1,5 @@
 # The example models that are estimated in about a minute each, and the one
-# that must be refused. Run on every push:
+# that must be refused. Run weekly and before a release:
 #
 #   julia --startup-file=no test/current.jl examples
 #

@@ -20,10 +20,10 @@ iteration and does not replace it.
 
 `examples` estimates each model in `ODEParameterEstimation.Examples` with
 default options and checks the answer against `test/example_expectations.jl`.
-A few models take many minutes each; those are in a group of their own,
-`examples_slow`, which runs weekly and estimates each model in a Julia process
-of its own. A new example model needs an entry in that
-file.
+It takes about twenty minutes. A few models take many minutes each; those are
+in a group of their own, `examples_slow`, which estimates each model in a
+Julia process of its own. Both run weekly. Every push runs `examples_ci`, five
+models chosen in that file. A new example model needs an entry there.
 
 To check that the package installs and passes with dependencies taken from the
 registry only, with none of your local development versions:

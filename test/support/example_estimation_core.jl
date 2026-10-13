@@ -46,7 +46,9 @@ function test_example_estimation(name::Symbol)
 	@test length(results) == expected.answers
 	isempty(results) && return seconds
 	@test Set(string.(first(results).all_unidentifiable)) == expected.undetermined
-	@test minimum(example_result_error(result, problem) for result in results) <= expected.tolerance
+	best_error = minimum(example_result_error(result, problem) for result in results)
+	@info "Example model estimated" name seconds = round(seconds; digits = 1) answers = length(results) best_error
+	@test best_error <= expected.tolerance
 	return seconds
 end
 
@@ -86,7 +88,8 @@ function test_example_estimation_isolated(name::Symbol; time_limit::Float64 = SL
 		return seconds
 	end
 	passed = success(process)
-	passed || println(String(take!(output)))
+	println(String(take!(output)))
+	flush(stdout)
 	@test passed
 	return seconds
 end
@@ -103,8 +106,10 @@ function test_example_tier_isolated(tiers...)
 	return timings
 end
 
-function test_example_tier(tiers...)
-	selected = [name for name in example_models() if EXAMPLE_EXPECTATIONS[name].tier in tiers]
+test_example_tier(tiers::Symbol...) =
+	test_example_models([name for name in example_models() if EXAMPLE_EXPECTATIONS[name].tier in tiers])
+
+function test_example_models(selected::Vector{Symbol})
 	timings = Pair{Symbol, Float64}[]
 	@testset "$name" for name in selected
 		@info "Estimating example model" name

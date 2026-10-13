@@ -93,7 +93,7 @@ drift, prefer `CLAUDE.md`.
   `julia --startup-file=no -e 'using Pkg; Pkg.test("ODEParameterEstimation"; allow_reresolve=false, test_args=["unit"])'`
 - **Benchmark smoke** (seeded, noisy, full-scale recovery guard; run before handing a build to the cluster):
   `julia --startup-file=no -e 'using Pkg; Pkg.test("ODEParameterEstimation"; allow_reresolve=false, test_args=["benchmark"])'`
-- **Example models** (estimates every quick model in `ODEParameterEstimation.Examples` with default options; `examples_slow` does the slow ones and runs weekly on CI):
+- **Example models** (estimates every quick model in `ODEParameterEstimation.Examples` with default options, about twenty minutes; `examples_slow` does the slow ones; both run weekly on CI, and every push runs the five models of `examples_ci`):
   `julia --startup-file=no test/current.jl examples`
 - `test/current.jl` wraps these commands, records the active environment, and verifies that it points at this checkout. `allow_reresolve=false` preserves dependency versions and local development paths; a test dependency conflict must fail visibly.
 - The full gate includes feature regressions, a build-and-simulate test of every example model, and a run of each script in `examples/`. Expected answers for the example models are in `test/example_expectations.jl`. Direct `include("test/...")` commands require their imports to be direct dependencies of the active environment; they are not a substitute for checking `Pkg.test`.

@@ -1,6 +1,6 @@
 # A first example: fit a predator-prey model to data.
 #
-#     julia --startup-file=no src/examples/first_example.jl
+#     julia --startup-file=no examples/first_example.jl
 #
 # The manual walks through the same example:
 # https://orebas.github.io/ODEParameterEstimation.jl/dev/getting_started/

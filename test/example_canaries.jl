@@ -6,6 +6,7 @@ using OrderedCollections
 using Random
 
 include("estimation_helpers.jl")
+include("support/model_fixtures.jl")
 
 @testset "Example canaries" begin
     @testset "simple recovers parameters" begin
@@ -148,7 +149,7 @@ include("estimation_helpers.jl")
     end
 
     @testset "multiple nonlinear observables stay estimable" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.threesp_cubed, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(threesp_cubed, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])

@@ -2,6 +2,7 @@ using ODEParameterEstimation
 using Test
 
 include("estimation_helpers.jl")
+include("support/model_fixtures.jl")
 
 function result_value_by_name(dict_like, name::AbstractString)
     for (k, v) in dict_like
@@ -17,7 +18,7 @@ end
 @testset "Identifiability regressions ($strategy)" for strategy in (:local_basis, :identifiable_functions)
     identifiability_options = merge_options(FAST_STANDARD_OPTS; si_fix_strategy=strategy)
     @testset "substring-heavy parameter names still recover accurately" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.substr_test, identifiability_options)
+        pep, raw_results, analysis, _ = run_canary(substr_test, identifiability_options)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])

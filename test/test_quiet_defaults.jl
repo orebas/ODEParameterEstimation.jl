@@ -66,7 +66,7 @@ end
 	@test isempty(progress.files)
 
 	verbose = estimate_with(nooutput = false)
-	@test occursin("Starting model: simple", verbose.printed)
+	@test occursin("Starting model: harmonic_oscillator", verbose.printed)
 	@test isempty(verbose.files)
 
 	diagnostics = estimate_with(diagnostics = true)

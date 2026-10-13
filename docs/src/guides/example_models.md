@@ -82,7 +82,7 @@ Private = false
 Filter = f -> nameof(f) in ODEParameterEstimation.Examples.example_models(:cannot_be_determined)
 ```
 
-## More than one answer
+## Several answers
 
 Two models in which several sets of values fit the data equally well, each
 beside a version that is measured fully enough to have one answer.
@@ -151,7 +151,7 @@ Filter = f -> nameof(f) in ODEParameterEstimation.Examples.example_models(:rewri
 
 ```@docs
 ODEParameterEstimation.Examples
-example_models
-example_groups
-example_problem
+ODEParameterEstimation.Examples.example_models
+ODEParameterEstimation.Examples.example_groups
+ODEParameterEstimation.Examples.example_problem
 ```

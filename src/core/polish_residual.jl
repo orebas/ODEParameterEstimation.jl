@@ -164,7 +164,11 @@ function _polish_single_residual(
 				maxiters = ctx.polish_ode_maxiters,
 				unstable_check = (dt, u, p, ti) -> time() > deadline_ref[],
 			)
-		catch
+		catch err
+			_rethrow_if_interrupt(err)
+			# A solve that throws is treated as a failed trial point. Say so once:
+			# when every solve throws, the polish silently returns its seed.
+			@warn "ODE solve inside the residual polish threw; treating the point as failed" exception = (err, catch_backtrace()) maxlog = 1
 			residual_ode_solve_seconds[] += time() - ode_t0
 			residual_sentinel_count[] += 1
 			fill!(res, _residual_sentinel(res))
@@ -236,7 +240,7 @@ function _polish_single_residual(
 	function jacobian!(J, p_internal, _ = nothing)
 		jacobian_call_count[] += 1
 		jac_t0 = time()
-		ForwardDiff.jacobian!(J, residual_vec, p_internal)
+		_outer_jacobian!(J, residual_vec, p_internal)
 		jacobian_seconds[] += time() - jac_t0
 		return nothing
 	end

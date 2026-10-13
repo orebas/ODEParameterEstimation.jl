@@ -1048,7 +1048,7 @@ function _uq_polish_report(
     end
 
     J_prediction = try
-        Matrix{Float64}(ForwardDiff.jacobian(
+        Matrix{Float64}(_outer_jacobian(
             u -> _uq_polish_predictions(ctx, u), internal,
         ))
     catch err

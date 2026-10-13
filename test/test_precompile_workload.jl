@@ -53,3 +53,25 @@ end
 	# `skipped` is what a developer who turned the workload off sees.
 	@test read(command, String) in ("ok true true 0", "skipped true true 0")
 end
+
+@testset "The final polish works in a freshly loaded package" begin
+	# The polish differentiates an ODE solve whose solver differentiates too.
+	# ForwardDiff orders the two layers by a number fixed when each is first
+	# compiled, and the workload fixed ours at precompile time, ahead of the
+	# solver's. Every polish then failed quietly and returned its seed
+	# (2026-10-13). Only a new process starts from the precompiled state, and
+	# this model is one whose answer before the polish is good to 1e-5 only.
+	script = """
+		using ODEParameterEstimation, ODEParameterEstimation.Examples, Random
+		problem = brusselator()
+		Random.seed!(20261013)
+		best = first(estimate(sample_problem_data(problem; datasize = 201)))
+		truth = merge(Dict(string(k) => v for (k, v) in problem.p_true), Dict(string(k) => v for (k, v) in problem.ic))
+		found = merge(Dict(string(k) => v for (k, v) in best.parameters), Dict(string(k) => v for (k, v) in best.states))
+		print(best.provenance.polish_applied, " ", maximum(abs(found[k] - truth[k]) / abs(truth[k]) for k in keys(truth)))
+		"""
+	command = `$(Base.julia_cmd()) --startup-file=no --project=$(Base.active_project()) -e $script`
+	polish_applied, worst_error = split(read(command, String))
+	@test polish_applied == "true"
+	@test parse(Float64, worst_error) < 1e-9
+end

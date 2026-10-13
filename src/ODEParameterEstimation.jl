@@ -89,6 +89,7 @@ include("core/pointpicker.jl")
 
 include("core/parameter_estimation_helpers.jl")
 include("core/parameter_estimation.jl")
+include("core/nested_ad.jl")  # the outer tag for derivatives of an ODE solve
 include("core/polish_residual.jl")
 include("core/branch_completion.jl")
 include("core/optimized_multishot_estimation.jl")  # New optimized workflow

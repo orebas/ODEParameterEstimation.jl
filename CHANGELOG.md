@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### The final refinement works again — 2026-10-13
+
+- Since the precompile step was added on 2026-10-06, the final refinement of
+  a default `estimate` did nothing: it ran, failed inside, and returned the
+  answer it was given. Results were the unrefined ones, typically good to
+  five or six digits where the refined ones are good to twelve or more. It is
+  fixed. On the built-in `brusselator` the largest error goes from 1e-5 to
+  2e-15, and on `hiv` from 3e-5 to 1e-13.
+- The cause: the refinement differentiates an ODE solve with ForwardDiff, and
+  a stiff solver differentiates inside it with ForwardDiff too. ForwardDiff
+  tells the two layers apart by a number each gets when it is first compiled.
+  Precompiling saved ours, and the solver's was assigned afresh in each
+  session, so their order was reversed. These derivatives now carry a tag
+  whose place in the order is fixed (`src/core/nested_ad.jl`).
+- An ODE solve that throws inside the refinement is now logged once, at
+  warning level, instead of being discarded without a trace.
+- A test estimates a model in a newly started Julia process and checks that
+  the refinement was applied.
+
 ### The example models move to a submodule — 2026-10-13
 
 - The ready-made models are now in `ODEParameterEstimation.Examples`, and the

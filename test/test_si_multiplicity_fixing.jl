@@ -60,7 +60,7 @@ end
     for (compute, supplied, expected) in ((false, nothing, nothing), (true, 7, 7), (true, nothing, 1))
         opts = EstimationOptions(; merge(base, (compute_algebraic_multiplicity=compute,
             algebraic_multiplicity=supplied, compute_uncertainty=false))...)
-        sampled = ODEPE.sample_problem_data(ODEPE.Examples.simple(), opts)
+        sampled = ODEPE.sample_problem_data(ODEPE.Examples.harmonic_oscillator(), opts)
         context = ODEPE.RunContext(; capture_timing=true)
         Random.seed!(20260915)
         _, analysis, _ = quiet_call() do

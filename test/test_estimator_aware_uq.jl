@@ -7,7 +7,7 @@ using ModelingToolkit
 using JSON
 
 @testset "estimator-aware UQ target contract" begin
-    pep = ODEParameterEstimation.Examples.simple()
+    pep = ODEParameterEstimation.Examples.harmonic_oscillator()
     params = collect(keys(pep.p_true))
     states = collect(keys(pep.ic))
 

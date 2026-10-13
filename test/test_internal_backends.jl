@@ -1,5 +1,5 @@
 using ODEParameterEstimation, Test, TOML, Random, LinearAlgebra, Statistics, ForwardDiff, TaylorDiff
-using ODEParameterEstimation.Examples: simple
+using ODEParameterEstimation.Examples: harmonic_oscillator
 using ODEParameterEstimation: Nemo, StructuralIdentifiability
 include("support/backend_fixtures.jl")
 const SB = ODEParameterEstimation.SIANBackend
@@ -162,7 +162,7 @@ include("estimation_helpers.jl")
     opts = merge_options(FAST_STANDARD_OPTS; datasize=31,
         interpolators=[InterpolatorAAADGPR], compute_uncertainty=false)
     Random.seed!(20261004)
-    sampled = sample_problem_data(simple(),opts)
+    sampled = sample_problem_data(harmonic_oscillator(),opts)
     raw,analysis,_ = quiet_call() do
         analyze_parameter_estimation_problem(sampled,opts)
     end

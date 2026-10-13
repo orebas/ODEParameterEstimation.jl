@@ -63,7 +63,7 @@ end
 
 	@testset "simple @ 1e-8 noise, polish on" begin
 		bob, nclusters, besterror = _smoke_best_of_branch(
-			ODEParameterEstimation.Examples.simple; datasize = 201, noise = 1e-8, polish = true)
+			ODEParameterEstimation.Examples.harmonic_oscillator; datasize = 201, noise = 1e-8, polish = true)
 		@test isfinite(besterror)
 		@test nclusters >= 1
 		@test bob < 1e-2

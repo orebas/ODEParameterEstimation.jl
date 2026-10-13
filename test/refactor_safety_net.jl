@@ -52,12 +52,12 @@ import ModelingToolkit
 	# --- process_raw_solution fit error = canonical SSE ------------------------
 	# `err` is the trajectory sum-of-squared residuals (Σ over every observable and
 	# time point), matching `_trajectory_sse` so algebraic candidates rank in the same
-	# unit the optimizer minimizes. simple() has TWO observables; offset both by a known
+	# unit the optimizer minimizes. harmonic_oscillator() has TWO observables; offset both by a known
 	# δ so the residual is large and clean, then recompute SSE from the SAME ode_solution
 	# the function returned (robust to solver tolerance).
 	@testset "process_raw_solution fit error (SSE)" begin
 		opts = EstimationOptions()
-		sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), opts)
+		sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), opts)
 		current_states = ModelingToolkit.unknowns(sampled.model.system)
 		current_params = ModelingToolkit.parameters(sampled.model.system)
 		raw_sol = vcat(
@@ -68,7 +68,7 @@ import ModelingToolkit
 		δ = 0.1
 		offset_data = deepcopy(sampled.data_sample)
 		obs_keys = [k for k in keys(offset_data) if !isequal(k, "t")]
-		n_obs = length(obs_keys)                     # == 2 for simple()
+		n_obs = length(obs_keys)                     # == 2 for harmonic_oscillator()
 		@test n_obs == 2
 		for k in obs_keys
 			offset_data[k] = offset_data[k] .+ δ

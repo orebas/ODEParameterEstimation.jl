@@ -21,7 +21,7 @@ end
 		datasize = 41, time_interval = [0.0, 1.0], noise_level = 1e-4,
 		nooutput = true,
 	)
-	problem = sample_problem_data(simple(), sample_options)
+	problem = sample_problem_data(harmonic_oscillator(), sample_options)
 	options = EstimationOptions(
 		datasize = 41,
 		time_interval = [0.0, 1.0],

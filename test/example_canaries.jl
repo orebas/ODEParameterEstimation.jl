@@ -10,7 +10,7 @@ include("support/model_fixtures.jl")
 
 @testset "Example canaries" begin
     @testset "simple recovers parameters" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.simple, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.harmonic_oscillator, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -84,7 +84,7 @@ include("support/model_fixtures.jl")
             polish_solver_solutions = false,
             polish_solutions = false,
         )
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.simple, noisy_opts)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.harmonic_oscillator, noisy_opts)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -110,7 +110,7 @@ include("support/model_fixtures.jl")
     end
 
     @testset "trivial unidentifiability is surfaced" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.trivial_unident, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.sum_of_rates, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -123,7 +123,7 @@ include("support/model_fixtures.jl")
     end
 
     @testset "measured-quantity linear combinations stay identifiable" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.simple_linear_combination, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.oscillator_mixed_outputs, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -136,7 +136,7 @@ include("support/model_fixtures.jl")
     end
 
     @testset "nonlinear observable stays estimable" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.onesp_cubed, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.decay_cubed_output, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -162,7 +162,7 @@ include("support/model_fixtures.jl")
     end
 
     @testset "transcendental input path stays alive" begin
-        pep, raw_results, analysis, _ = run_canary(getfield(ODEParameterEstimation.Examples, :dc_motor_sinusoidal), FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(dc_motor_sinusoidal, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test pep.name == "dc_motor_sinusoidal"
@@ -180,8 +180,8 @@ include("support/model_fixtures.jl")
 
     @testset "unsupported raw model classes fail explicitly" begin
         for (ctor, expected_category) in (
-            (getfield(ODEParameterEstimation.Examples, :cart_pole), :state_trigonometric),
-            (getfield(ODEParameterEstimation.Examples, :tank_level), :sqrt_nonlinearity),
+            (cart_pole, :state_trigonometric),
+            (ODEParameterEstimation.Examples.tank_level, :sqrt_nonlinearity),
         )
             pep = ctor()
             sampled = ODEParameterEstimation.sample_problem_data(pep, FAST_STANDARD_OPTS)
@@ -203,7 +203,7 @@ include("support/model_fixtures.jl")
         # trials in one session; Phase C4's honest Inf made the failing face
         # visible). Seed 20260610 verified converging; 42 verified NOT.
         Random.seed!(20260610)
-        _, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.simple_linear_combination, FAST_DIRECT_OPTS)
+        _, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.oscillator_mixed_outputs, FAST_DIRECT_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])

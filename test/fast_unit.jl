@@ -1,9 +1,10 @@
 # test/fast_unit.jl
 #
 # Fast, quiet unit gate. Pure/near-pure CONTRACT tests only — no
-# `analyze_parameter_estimation_problem`, no SIAN / HomotopyContinuation / ODE
-# solves, no consensus or benchmark rendering. Runs in a few seconds after the
-# package loads. Use this for rapid iteration while refactoring.
+# `analyze_parameter_estimation_problem`, no SIAN / HomotopyContinuation, no
+# consensus or benchmark rendering. The one exception to "no ODE solves" is
+# test_example_models.jl, which simulates every example model once. Use this
+# for rapid iteration while refactoring.
 #
 # This is NOT a substitute for the full FAST gate. Per CLAUDE.md, any
 # estimation-touching change must still be verified with:
@@ -19,6 +20,7 @@ using Test
 
 @testset "fast_unit (quiet contract gate)" begin
     include("package_contracts.jl")
+	include("test_example_models.jl")     # every example model builds, is documented and simulates
 	include("test_core_types.jl")        # Result/PEP/DerivativeData type contracts + constants
 	include("test_solution_distance.jl") # clustering compares symbolic keys, not dictionary positions
 	include("test_math_utils.jl")        # symbolic arithmetic and time-series summaries

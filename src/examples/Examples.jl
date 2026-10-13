@@ -8,180 +8,106 @@ returns a [`ParameterEstimationProblem`](@ref) with true values and no data:
 using ODEParameterEstimation
 using ODEParameterEstimation.Examples
 
-problem = sample_problem_data(lotka_volterra(); datasize = 101, time_interval = [0.0, 20.0])
+problem = sample_problem_data(lotka_volterra(); datasize = 101)
 results = estimate(problem)
 ```
+
+[`example_models`](@ref) lists them and [`example_groups`](@ref) lists the
+groups they are sorted into.
 """
 module Examples
 
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using OrderedCollections: OrderedDict
-import ..ODEParameterEstimation
 using ..ODEParameterEstimation: ParameterEstimationProblem, create_ordered_ode_system,
 	sample_problem_data, estimate, UnsupportedModelClassError
 
-include("models/advanced_systems.jl")
-include("models/biological_systems.jl")
-include("models/branch_stress_systems.jl")
-include("models/classical_systems.jl")
-include("models/simple_models.jl")
-include("models/test_models.jl")
-include("models/debug_models.jl")
-include("models/control_systems.jl")
-
-#=============================================================================
-                    SINGLE SOURCE OF TRUTH: MODEL REGISTRIES
-
-All available models are registered here.
-=============================================================================#
-
-"""Models that currently run cleanly and are reasonable to present as straightforward examples."""
-const GREEN_MODELS = Dict(
-	# Simple models
-	:simple => simple,
-	:simple_linear_combination => simple_linear_combination,
-	:onesp_cubed => onesp_cubed,
-	:threesp_cubed => threesp_cubed,
-	:onevar_exp => onevar_exp,
-
-	# Classical systems
-	:lotka_volterra => lotka_volterra,
-	:vanderpol => vanderpol,
-	:harmonic => harmonic,
-	:forced_decay => forced_decay,
-
-	:sum_test => sum_test,
-
-	# DAISY models
-	:daisy_mamil3 => daisy_mamil3,
-
-	# Specialized models
-	:slowfast => slowfast,
-	:repressilator => repressilator,
-
-	# Control systems and transformed variants that currently estimate well
-	:dc_motor => dc_motor,
-	:quadrotor_altitude => quadrotor_altitude,
-	:thermal_system => thermal_system,
-	:bicycle_model => bicycle_model,
-	:flexible_arm => flexible_arm,
-	:bilinear_system => bilinear_system,
-	:maglev_linear => maglev_linear,
-
-	:quadrotor_altitude_identifiable => quadrotor_altitude_identifiable,
-	:aircraft_pitch_identifiable => aircraft_pitch_identifiable,
-	:tank_level_poly => tank_level_poly,
-	:two_tank_poly => two_tank_poly,
-	:bicycle_model_identifiable => bicycle_model_identifiable,
-
-	# Natural sinusoidal input models (auto-polynomialized via transcendental handling)
-	:quadrotor_sinusoidal => quadrotor_sinusoidal,
-	:forced_lv_sinusoidal => forced_lv_sinusoidal,
-	:aircraft_pitch_sinusoidal => aircraft_pitch_sinusoidal,
-)
-
-"""Models that are intentionally useful as structural-unidentifiability demonstrations."""
-const STRUCTURAL_UNIDENTIFIABILITY_MODELS = Dict(
-	:substr_test => substr_test,
-	:global_unident_test => global_unident_test,
-	:trivial_unident => trivial_unident,
-	:aircraft_pitch => aircraft_pitch,
-	:dc_motor_identifiable => dc_motor_identifiable,
-	:mass_spring_damper => mass_spring_damper,
-	:two_compartment_pk => two_compartment_pk,
-	:treatment => treatment,
-)
-
-"""Models that run, but are harder, less accurate, or more experimental than the green set."""
-const HARD_MODELS = Dict(
-	:hiv => hiv,
-	:hiv_old_wrong => hiv_old_wrong,
-	:crauste_corrected => crauste_corrected,
-	:allee_competition => allee_competition,
-	:biohydrogenation => biohydrogenation,
-	:fitzhugh_nagumo => fitzhugh_nagumo,
-	:boost_converter_identifiable => boost_converter_identifiable,
-	:boost_converter_sinusoidal => boost_converter_sinusoidal,
-	:daisy_ex3 => daisy_ex3,
-	:daisy_mamil4 => daisy_mamil4,
-	:brusselator => brusselator,
-	:lv_periodic => lv_periodic,
-	:forced_lotka_volterra => forced_lotka_volterra,
-	:forced_lotka_volterra_identifiable => forced_lotka_volterra_identifiable,
-	:bilinear_system_identifiable => bilinear_system_identifiable,
-	:bilinear_system_sinusoidal => bilinear_system_sinusoidal,
-	:cart_pole_linear => cart_pole_linear,
-	:magnetic_levitation => magnetic_levitation,
-	:magnetic_levitation_identifiable => magnetic_levitation_identifiable,
-	:magnetic_levitation_sinusoidal => magnetic_levitation_sinusoidal,
-	:bicycle_model_sinusoidal => bicycle_model_sinusoidal,
-	:dc_motor_sinusoidal => dc_motor_sinusoidal,
-	:cstr_fixed_activation => cstr_fixed_activation,
-	:cstr_reparametrized => cstr_reparametrized,
-	:sirsforced => sirsforced,
-)
-
-"""Constructed models for validating branch-aware output behavior."""
-const BRANCH_STRESS_MODELS = Dict(
-	:latent_subpopulation_branch => latent_subpopulation_branch,
-	:latent_subpopulation_observed_control => latent_subpopulation_observed_control,
-	:receptor_subtype_binding_branch => receptor_subtype_binding_branch,
-	:receptor_subtype_binding_observed_control => receptor_subtype_binding_observed_control,
-)
-
-"""Minimally modified variants for bounded-physical M=1 benchmark runs."""
-const M1_BENCHMARK_MODELS = Dict(
-	:biohydrogenation_m1 => biohydrogenation_m1,
-	:daisy_mamil4_m1 => daisy_mamil4_m1,
-	:seir_m1 => seir_m1,
-	:slow_fast_m1 => slow_fast_m1,
-)
-
-"""Models retained in-package but currently best treated as limitations or active failure cases."""
-const LIMITATION_MODELS = Dict(
-	:seir => seir,
-	:cart_pole => cart_pole,
-	:tank_level => tank_level,
-	:cstr => cstr,
-	:ball_beam => ball_beam,
-	:swing_equation => swing_equation,
-	:two_tank => two_tank,
-	:boost_converter => boost_converter,
-	:crauste => crauste,
-	:crauste_revised => crauste_revised,
-)
-
-"""Default runnable set: green examples plus the explicit structural-unidentifiability demos."""
-const STANDARD_MODELS = merge(GREEN_MODELS, STRUCTURAL_UNIDENTIFIABILITY_MODELS)
-
-"""All available models (standard + hard)."""
-const ALL_MODELS = merge(STANDARD_MODELS, HARD_MODELS, BRANCH_STRESS_MODELS, M1_BENCHMARK_MODELS, LIMITATION_MODELS)
-
-"""Get list of all available model names."""
-available_models() = sort(collect(keys(ALL_MODELS)))
-
-"""Get a dictionary of model registries by category name."""
-function available_model_categories()
-	return Dict(
-		:green => GREEN_MODELS,
-		:structural_unidentifiability => STRUCTURAL_UNIDENTIFIABILITY_MODELS,
-		:standard => STANDARD_MODELS,
-		:hard => HARD_MODELS,
-		:branch_stress => BRANCH_STRESS_MODELS,
-		:m1_benchmark => M1_BENCHMARK_MODELS,
-		:limitations => LIMITATION_MODELS,
-		:all => ALL_MODELS,
+# Every model is built here, so that its name, its true values and its time
+# interval cannot land in the wrong argument.
+function _example_problem(name::Symbol, states, parameters, equations, measured;
+	p_true::Vector{Float64}, ic_true::Vector{Float64}, time_interval::Vector{Float64}, unident_count::Int = 0)
+	length(p_true) == length(parameters) || throw(ArgumentError("$name: $(length(parameters)) parameters, $(length(p_true)) true values"))
+	length(ic_true) == length(states) || throw(ArgumentError("$name: $(length(states)) states, $(length(ic_true)) true values"))
+	model, mq = create_ordered_ode_system(String(name), states, parameters, equations, measured)
+	return ParameterEstimationProblem(
+		String(name),
+		model,
+		mq,
+		nothing,
+		time_interval,
+		nothing,
+		OrderedDict(parameters .=> p_true),
+		OrderedDict(states .=> ic_true),
+		unident_count,
 	)
 end
 
-export simple, simple_linear_combination, onesp_cubed, threesp_cubed
-export lotka_volterra, vanderpol, brusselator, harmonic, fitzhugh_nagumo, forced_decay
-export seir, seir_m1, treatment, biohydrogenation, biohydrogenation_m1, repressilator
-export crauste, daisy_mamil3, daisy_mamil4, daisy_mamil4_m1, hiv
-export latent_subpopulation_branch, latent_subpopulation_observed_control
-export receptor_subtype_binding_branch, receptor_subtype_binding_observed_control
-export slow_fast_m1, slowfast_m1
-export substr_test, global_unident_test, sum_test, trivial_unident
+# The one list of models. The exports, `example_models` and the tests all
+# read it. A group says what a model is for, not how well it is estimated.
+const _CATALOGUE = OrderedDict{Symbol, Vector{Symbol}}(
+	:first_steps => [:harmonic_oscillator, :oscillator_mixed_outputs, :exponential_decay, :decay_cubed_output,
+		:forced_decay, :lotka_volterra, :vanderpol, :brusselator, :daisy_mamil3, :repressilator],
+	:cannot_be_determined => [:sum_of_rates, :partly_observed_chain, :hidden_scale, :treatment,
+		:two_compartment_pk, :mass_spring_damper],
+	:several_answers => [:hidden_subpopulations, :hidden_subpopulations_measured,
+		:receptor_subtypes, :receptor_subtypes_measured],
+	:larger_models => [:crauste, :daisy_ex3, :daisy_mamil4, :fitzhugh_nagumo, :hiv, :biohydrogenation,
+		:seir, :sirsforced, :slowfast, :allee_competition],
+	:control_systems => [:dc_motor, :quadrotor_altitude, :forced_lotka_volterra, :magnetic_levitation,
+		:aircraft_pitch, :bicycle_model, :boost_converter, :bilinear_system],
+	:rewriting => [:tank_level, :tank_level_rewritten],
+)
+
+include("models/first_steps.jl")
+include("models/cannot_be_determined.jl")
+include("models/several_answers.jl")
+include("models/larger_models.jl")
+include("models/control_systems.jl")
+include("models/rewriting.jl")
+
+"""
+	example_groups() -> Vector{Symbol}
+
+The groups the example models are sorted into: `:first_steps`,
+`:cannot_be_determined`, `:several_answers`, `:larger_models`,
+`:control_systems` and `:rewriting`.
+"""
+example_groups() = collect(keys(_CATALOGUE))
+
+"""
+	example_models() -> Vector{Symbol}
+	example_models(group::Symbol) -> Vector{Symbol}
+
+The names of the example models, all of them or those of one group.
+
+# Example
+```julia
+example_models(:first_steps)
+```
+"""
+example_models() = reduce(vcat, values(_CATALOGUE))
+function example_models(group::Symbol)
+	haskey(_CATALOGUE, group) || throw(ArgumentError(
+		"`$group` is not a group of example models. The groups are $(join(("`:$g`" for g in keys(_CATALOGUE)), ", "))."))
+	return copy(_CATALOGUE[group])
+end
+
+"""
+	example_problem(name::Symbol) -> ParameterEstimationProblem
+
+The example model called `name`: `example_problem(:lotka_volterra)` is
+`lotka_volterra()`.
+"""
+function example_problem(name::Symbol)
+	name in example_models() || throw(ArgumentError(
+		"`$name` is not an example model. `example_models()` lists them."))
+	return getfield(Examples, name)()
+end
+
+export example_groups, example_models, example_problem
+for name in example_models()
+	@eval export $name
+end
 
 end # module Examples

@@ -25,7 +25,7 @@ end
 Random.seed!(2468)
 
 @testset "estimate-conditioned UQ (Stream B phase 1)" begin
-	pep_ec = ODEParameterEstimation.Examples.simple()   # ẋ1 = -a·x2, ẋ2 = b·x1; y = (x1, x2)
+	pep_ec = ODEParameterEstimation.Examples.harmonic_oscillator()   # ẋ1 = -a·x2, ẋ2 = b·x1; y = (x1, x2)
 	sample_opts = EstimationOptions(
 		datasize = 121, time_interval = [0.0, 1.0], noise_level = 0.0, nooutput = true)
 	pep_data = ODEParameterEstimation.sample_problem_data(pep_ec, sample_opts)

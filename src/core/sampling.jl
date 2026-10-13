@@ -185,7 +185,9 @@ problem = sample_problem_data(problem; datasize = 51, time_interval = [0.0, 10.0
 
 The options that matter here are:
 - `datasize`: the number of time points.
-- `time_interval`: `[start, stop]`; the points are evenly spaced over it.
+- `time_interval`: `[start, stop]`; the points are evenly spaced over it. An
+  example model from `ODEParameterEstimation.Examples` has an interval of its
+  own, which the keyword form uses when you give none.
 - `uneven_sampling` and `uneven_sampling_times`: use these time points instead.
 - `noise_level` and `noise_model`: add Gaussian noise. `:additive` uses a
   standard deviation of `noise_level` times the mean absolute value of each
@@ -195,8 +197,14 @@ The options that matter here are:
   default RNG is left untouched. With `nothing` (the default), noise is drawn
   from the caller's default RNG, so `Random.seed!` controls it.
 """
-sample_problem_data(problem::ParameterEstimationProblem; options...) =
-	sample_problem_data(problem, _options_from_keywords(options))
+function sample_problem_data(problem::ParameterEstimationProblem; options...)
+	# An example model carries the interval it is meant to be watched over.
+	interval = problem.recommended_time_interval
+	if !haskey(options, :time_interval) && interval isa AbstractVector{<:Real} && length(interval) == 2
+		return sample_problem_data(problem, _options_from_keywords((; options..., time_interval = collect(Float64, interval))))
+	end
+	return sample_problem_data(problem, _options_from_keywords(options))
+end
 
 function sample_problem_data(problem::ParameterEstimationProblem, opts::EstimationOptions)
 	validate_options(opts) || throw(ArgumentError("Invalid EstimationOptions; fix the reported configuration errors before sampling data."))

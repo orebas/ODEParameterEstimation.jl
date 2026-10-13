@@ -14,7 +14,7 @@ using OrderedCollections
 using LinearAlgebra
 
 @testset "taylor propagation cores (estimate-conditioned UQ)" begin
-	pep_tp = ODEParameterEstimation.Examples.simple()   # ẋ1 = -a·x2, ẋ2 = b·x1 → jets are Aᵏ·x
+	pep_tp = ODEParameterEstimation.Examples.harmonic_oscillator()   # ẋ1 = -a·x2, ẋ2 = b·x1 → jets are Aᵏ·x
 	sys_tp = pep_tp.model.system
 	params_tp = ModelingToolkit.parameters(sys_tp)
 	states_tp = ModelingToolkit.unknowns(sys_tp)
@@ -47,7 +47,7 @@ using LinearAlgebra
 	end
 
 	@testset "interpolant_taylor_coefficients round-trips known jets" begin
-		# simple() observes y1 ~ x1, y2 ~ x2; interpolants are keyed by the
+		# harmonic_oscillator() observes y1 ~ x1, y2 ~ x2; interpolants are keyed by the
 		# diff2term'd observable RHS (same convention as precomputed_interpolants).
 		k1 = Symbolics.diff2term(pep_tp.measured_quantities[1].rhs)
 		k2 = Symbolics.diff2term(pep_tp.measured_quantities[2].rhs)

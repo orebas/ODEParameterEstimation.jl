@@ -20,7 +20,7 @@ const _QUICK_OPTS = (;
 	@test !defaults.save_system
 	@test !defaults.progress
 
-	sampling = _observe_run(() -> sample_problem_data(simple(), defaults))
+	sampling = _observe_run(() -> sample_problem_data(harmonic_oscillator(), defaults))
 	@test isempty(sampling.printed)
 	@test isempty(sampling.logs)
 	@test isempty(sampling.files)
@@ -53,7 +53,7 @@ end
 end
 
 @testset "Output on request" begin
-	problem = sample_problem_data(simple(), EstimationOptions(; _QUICK_OPTS...))
+	problem = sample_problem_data(harmonic_oscillator(), EstimationOptions(; _QUICK_OPTS...))
 	estimate_with(; options...) =
 		_observe_run(() -> analyze_parameter_estimation_problem(problem, EstimationOptions(; _QUICK_OPTS..., options...)))
 
@@ -79,7 +79,7 @@ end
 end
 
 @testset "Configuration problems are still reported" begin
-	problem = sample_problem_data(simple(), EstimationOptions(; _QUICK_OPTS...))
+	problem = sample_problem_data(harmonic_oscillator(), EstimationOptions(; _QUICK_OPTS...))
 	conflicting = EstimationOptions(; _QUICK_OPTS..., seed = 1, gamma_seed = -1)
 	@test conflicting.nooutput
 	@test_logs (:warn, r"gamma_seed") match_mode = :any analyze_parameter_estimation_problem(problem, conflicting)

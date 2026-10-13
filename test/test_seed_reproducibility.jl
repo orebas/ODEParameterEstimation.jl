@@ -21,7 +21,7 @@ _observations(pep) = [v for (k, v) in pep.data_sample if k != "t"]
 
 @testset "Seeded synthetic noise" begin
 	rng = Random.default_rng()
-	model = simple()   # built first: constructing a model forks tasks in the caller
+	model = harmonic_oscillator()   # built first: constructing a model forks tasks in the caller
 	seeded = EstimationOptions(; _SEED_OPTS..., noise_level = 1e-3, seed = 7)
 	Random.seed!(rng, 31)
 	before = copy(rng)
@@ -45,7 +45,7 @@ end
 @testset "Seeded estimation" begin
 	rng = Random.default_rng()
 	seeded = EstimationOptions(; _SEED_OPTS..., seed = 7)
-	pep = sample_problem_data(simple(), seeded)
+	pep = sample_problem_data(harmonic_oscillator(), seeded)
 
 	Random.seed!(rng, 41)
 	before = copy(rng)

@@ -34,7 +34,7 @@ using Test
 		custom_interpolators = Function[(args...) -> throw(InterruptException())],
 		polish_solver_solutions = false, polish_solutions = false,
 	)
-	pep = ODEParameterEstimation.Examples.sum_test()
+	pep = ODEParameterEstimation.Examples.hidden_scale()
 	sampled = ODEParameterEstimation.sample_problem_data(pep, opts)
 	@test_throws InterruptException ODEParameterEstimation.analyze_parameter_estimation_problem(sampled, opts)
 end

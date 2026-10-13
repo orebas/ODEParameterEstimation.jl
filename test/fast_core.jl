@@ -322,7 +322,7 @@ using Random
             polish_solver_solutions = false,
             polish_solutions = false,
         )
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), opts)
         ident = ODEParameterEstimation.setup_identifiability(pep; max_num_points = 1, nooutput = true)
         ordered_model = pep.model
         si_template, _ = ODEParameterEstimation.prepare_si_template_with_structural_fix(
@@ -519,7 +519,7 @@ using Random
             synthesize_aggregate_candidates = false,
             branch_completion = false,
         )
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), opts)
         (_, timing) = ODEParameterEstimation.with_estimation_timing() do
             ODEParameterEstimation.analyze_parameter_estimation_problem(pep, opts)
         end
@@ -789,7 +789,7 @@ using Random
         used_vars = ODEParameterEstimation.collect_used_nemo_variables([gens_used[1] + gens_used[2]])
         @test Set(string.(used_vars)) == Set(["x", "y1_0"])
 
-        pep_dd = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), EstimationOptions(datasize = 11, noise_level = 0.0, nooutput = true))
+        pep_dd = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), EstimationOptions(datasize = 11, noise_level = 0.0, nooutput = true))
         shallow_dd = ODEParameterEstimation.populate_derivatives(pep_dd.model.system, pep_dd.measured_quantities, 1, OrderedCollections.OrderedDict())
         extended_dd = ODEParameterEstimation.ensure_si_template_dd_support(
             pep_dd.model,
@@ -825,7 +825,7 @@ using Random
     end
 
     @testset "SEIR algebraic rescue resolves states at t0 and shooting time" begin
-        base_pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), EstimationOptions(datasize = 11, noise_level = 0.0, nooutput = true))
+        base_pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), EstimationOptions(datasize = 11, noise_level = 0.0, nooutput = true))
         failing_runner(args...) = error("synthetic advisory failure")
 
         fallback_ident = ODEParameterEstimation.setup_identifiability(

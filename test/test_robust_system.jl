@@ -50,7 +50,7 @@ end
 			compute_uncertainty=false,branch_completion=false,terminal_fallback=:none,
 			construction_compute_mixed_volume=false,construction_candidate_limit=8,
 			construction_beam_width=4,nooutput=true,diagnostics=false,save_system=false)
-		pep = RobustODEPE.sample_problem_data(RobustODEPE.Examples.simple(),opts)
+		pep = RobustODEPE.sample_problem_data(RobustODEPE.Examples.harmonic_oscillator(),opts)
 		(answer,timing) = RobustODEPE.with_estimation_timing() do
 			RobustODEPE.analyze_parameter_estimation_problem(pep,opts)
 		end

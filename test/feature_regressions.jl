@@ -9,6 +9,8 @@ using OrdinaryDiffEq
 using Random
 using Statistics
 
+include("support/model_fixtures.jl")
+
 function quiet_feature_call(f)
     redirect_stdout(devnull) do
         redirect_stderr(devnull) do
@@ -177,11 +179,11 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
     end
 
     @testset "multi-interpolator benchmark template path" begin
-        sampled, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, MULTI_INTERP_FAST_OPTS)
+        sampled, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, MULTI_INTERP_FAST_OPTS)
         expected_sources = Set(ODEParameterEstimation.interpolator_method_to_symbol(method) for method in MULTI_INTERP_TEMPLATE_LIST)
         actual_sources = Set(filter(!isnothing, [result.interpolator_source for result in raw_results[1]]))
 
-        @test sampled.name == "simple"
+        @test sampled.name == "harmonic_oscillator"
         @test length(ODEParameterEstimation.resolve_interpolator_list(MULTI_INTERP_FAST_OPTS)) == length(MULTI_INTERP_TEMPLATE_LIST)
         @test !isempty(raw_results[1])
         @test !isempty(analysis[1])
@@ -196,7 +198,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
 
     @testset "transcendental transform augments the problem directly" begin
         sampled = ODEParameterEstimation.sample_problem_data(
-            getfield(ODEParameterEstimation.Examples, :dc_motor_sinusoidal)(),
+            dc_motor_sinusoidal(),
             EstimationOptions(
                 datasize = 11,
                 noise_level = 0.0,
@@ -272,7 +274,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
     @testset "save_system=false does not create saved_systems output" begin
         mktempdir() do tmpdir
             cd(tmpdir) do
-                _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, SAVE_SYSTEM_OFF_OPTS)
+                _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, SAVE_SYSTEM_OFF_OPTS)
 
                 @test !isempty(raw_results[1])
                 @test !isempty(analysis[1])
@@ -282,7 +284,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
     end
 
     @testset "single interpolator run stays on the requested interpolator" begin
-        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, SAVE_SYSTEM_OFF_OPTS)
+        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, SAVE_SYSTEM_OFF_OPTS)
         actual_sources = Set(filter(!isnothing, [result.interpolator_source for result in raw_results[1]]))
 
         @test !isempty(raw_results[1])
@@ -306,7 +308,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             polish_solver_solutions = false,
             polish_solutions = false,
         )
-        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, homotopy_opts)
+        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, homotopy_opts)
 
         @test !isempty(raw_results[1])
         @test !isempty(analysis[1])
@@ -330,7 +332,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             terminal_fallback = :direct_opt,
             polish_solutions = true,
         )
-        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, fallback_opts)
+        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, fallback_opts)
 
         @test !isempty(raw_results[1])
         @test !isempty(analysis[1])
@@ -355,7 +357,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             polish_solver_solutions = false,
             polish_solutions = true,
         )
-        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, polish_opts)
+        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, polish_opts)
 
         @test !isempty(raw_results[1])
         @test !isempty(analysis[1])
@@ -380,7 +382,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             polish_solver_solutions = false,
             polish_solutions = true,
         )
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), base_opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), base_opts)
         p_size = length(pep.ic) + length(pep.p_true)
         positive_opts = ODEParameterEstimation.merge_options(
             base_opts;
@@ -414,7 +416,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
     end
 
     @testset "Bounded LSO log-space residual polish" begin
-        # Direct end-to-end smoke test of the new residual polish path on `simple()`.
+        # Direct end-to-end smoke test of the new residual polish path on `harmonic_oscillator()`.
         # Seeds the polisher near (but not at) the true parameters and confirms it
         # converges back. Uses `:auto` per-variable transforms (all positive bounds → :log).
         base_opts = EstimationOptions(
@@ -431,7 +433,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             polish_solver_solutions = false,
             polish_solutions = false,
         )
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), base_opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), base_opts)
         p_size = length(pep.ic) + length(pep.p_true)
         lso_opts = ODEParameterEstimation.merge_options(
             base_opts;
@@ -515,7 +517,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         )
 
         # Off-by-default path
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), base_opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), base_opts)
         baseline = ODEParameterEstimation.analyze_parameter_estimation_problem(pep, base_opts)
         @test !isempty(baseline[2][1])
         @test isfinite(baseline[2][1][1].err)
@@ -527,7 +529,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             sensitivity_seed_probe_scale = 1.0,
             sensitivity_seed_eigenvalue_threshold = 0.05,
         )
-        pep_seeded = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), seeded_opts)
+        pep_seeded = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), seeded_opts)
         seeded = ODEParameterEstimation.analyze_parameter_estimation_problem(pep_seeded, seeded_opts)
         @test !isempty(seeded[2][1])
         @test isfinite(seeded[2][1][1].err)
@@ -1070,7 +1072,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
     @testset "compute_uncertainty=true returns physical-coordinate UQ with local audit" begin
         # Phase E2 (review P0#5): the experimental UQ sidecar is rewired from the
         # broken FD-Jacobian path (archived in deprecated/uq_fd_path.jl) to the
-        # IFT-based diagnose_uncertainty. End-to-end smoke on simple().
+        # IFT-based diagnose_uncertainty. End-to-end smoke on harmonic_oscillator().
         uq_opts = EstimationOptions(
             datasize = 21, noise_level = 0.0, shooting_points = 1,
             nooutput = true, diagnostics = false, flow = FlowStandard,
@@ -1082,7 +1084,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             polish_solver_solutions = false, polish_solutions = false,
             compute_uncertainty = true,
         )
-        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), uq_opts)
+        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), uq_opts)
         _, _, uq = quiet_feature_call() do
             ODEParameterEstimation.analyze_parameter_estimation_problem(sampled, uq_opts)
         end
@@ -1110,14 +1112,14 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         # the rest of CI only runs diagnose with html_report=false. Reports go to
         # artifacts/diagnostics/<name>/ relative to pwd, so run inside a tempdir.
         sampled = ODEParameterEstimation.sample_problem_data(
-            ODEParameterEstimation.Examples.simple(),
+            ODEParameterEstimation.Examples.harmonic_oscillator(),
             EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true))
         mktempdir() do dir
             cd(dir) do
                 quiet_feature_call() do
                     diagnose(sampled; save_to_disk = true, html_report = true)
                 end
-                report_path = joinpath("artifacts", "diagnostics", "simple", "report.html")
+                report_path = joinpath("artifacts", "diagnostics", "harmonic_oscillator", "report.html")
                 @test isfile(report_path)
                 @test filesize(report_path) > 1000
             end
@@ -1126,7 +1128,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
 
     @testset "Auto-filter interpolators by noise" begin
         # Build a clean PEP and synthetic data with known noise levels.
-        pep = ODEParameterEstimation.Examples.simple()
+        pep = ODEParameterEstimation.Examples.harmonic_oscillator()
         opts_low = EstimationOptions(datasize = 51, time_interval = [-0.5, 0.5], noise_level = 0.0,
                                      nooutput = true, diagnostics = false, save_system = false)
         opts_high = EstimationOptions(datasize = 51, time_interval = [-0.5, 0.5], noise_level = 1e-2,
@@ -1172,7 +1174,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
 
     @testset "Synthesize aggregate candidates (Phase 1: B/C)" begin
         # Run a small estimation with synthesis on; verify synthesized candidates
-        # appear with correct provenance. Use simple() at noise=0 which produces
+        # appear with correct provenance. Use harmonic_oscillator() at noise=0 which produces
         # a clean pool that aggregates predictably.
         opts_on = EstimationOptions(
             datasize = 11, noise_level = 0.0,
@@ -1186,13 +1188,13 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         opts_off = ODEParameterEstimation.merge_options(opts_on;
             synthesize_aggregate_candidates = false)
 
-        _, raw_on, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, opts_on)
-        _, raw_off, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, opts_off)
+        _, raw_on, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, opts_on)
+        _, raw_off, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, opts_off)
 
         n_synth = count(c -> c.provenance.source_type == :synthesized_aggregate, raw_on[1])
         @test length(raw_on[1]) >= length(raw_off[1])             # synth never reduces pool size
         # Categories B/C only fire when ≥ 2 candidates per SP/anchor, which
-        # `simple()` may or may not produce at shooting_points=0. Just verify
+        # `harmonic_oscillator()` may or may not produce at shooting_points=0. Just verify
         # provenance shape on any synthesized candidate that DID get added.
         if n_synth > 0
             synth = first(c for c in raw_on[1]

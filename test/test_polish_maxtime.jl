@@ -26,7 +26,7 @@ function build_context_for_simple(; polish_method, maxiters, datasize)
         polish_solver_solutions = false,
         polish_solutions = false,
     )
-    pep = sample_problem_data(simple(), base_opts)
+    pep = sample_problem_data(harmonic_oscillator(), base_opts)
     p_size = length(pep.ic) + length(pep.p_true)
     polish_opts = merge_options(
         base_opts;
@@ -148,7 +148,7 @@ end
 
     @testset "LSO: maxtime=Inf (disabled) still works" begin
         # Confirm the change is transparent when maxtime is effectively disabled —
-        # the polish should still converge on this clean simple() problem.
+        # the polish should still converge on this clean harmonic_oscillator() problem.
         pep, ctx = build_context_for_simple(
             polish_method = PolishLSOBoundedLog,
             maxiters = 200,

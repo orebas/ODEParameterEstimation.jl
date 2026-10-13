@@ -31,7 +31,7 @@ end
     end
 
     @testset "global unidentifiable states and parameters are surfaced together" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.global_unident_test, identifiability_options)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.partly_observed_chain, identifiability_options)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -43,7 +43,7 @@ end
     end
 
     @testset "summed-observation unidentifiability stays explicit" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.sum_test, identifiability_options)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.hidden_scale, identifiability_options)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])

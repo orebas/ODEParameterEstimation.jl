@@ -21,6 +21,7 @@ const TEST_FILES = [
     "fast_core.jl",
     "refactor_safety_net.jl",
     "test_label_parsers.jl",
+    "test_example_models.jl", # every example model builds, is documented and simulates
     "example_canaries.jl",
     "examples_smoke.jl",
     "identifiability_regressions.jl",

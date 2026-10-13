@@ -52,7 +52,7 @@ end
 	opts_mps = EstimationOptions(
 		datasize = 61, time_interval = [-0.5, 0.5], noise_level = 0.0,
 		nooutput = true, diagnostics = false, interpolators = [InterpolatorAAAD])
-	pep_mps = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), opts_mps)
+	pep_mps = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), opts_mps)
 
 	mpt, setup_mps = _mps_quiet() do
 		ident = ODEParameterEstimation.setup_identifiability(pep_mps; max_num_points = 1, nooutput = true)

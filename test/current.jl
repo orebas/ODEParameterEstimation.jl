@@ -1,12 +1,12 @@
 # Test the versions and development checkouts in the active environment.
 # Run from the global Julia environment, after developing this checkout:
-#   julia --startup-file=no test/current.jl [all|unit|benchmark]
+#   julia --startup-file=no test/current.jl [all|unit|benchmark|examples|examples_slow]
 using Pkg
 
 group = isempty(ARGS) ? "all" : only(ARGS)
-(group in ("all", "unit", "benchmark") ||
+(group in ("all", "unit", "benchmark", "examples", "examples_slow") ||
  (basename(group) == group && isfile(joinpath(@__DIR__, group)))) ||
-    throw(ArgumentError("test group must be all, unit, benchmark, or an active test filename"))
+    throw(ArgumentError("test group must be all, unit, benchmark, examples, examples_slow, or an active test filename"))
 
 dependencies = collect(values(Pkg.dependencies()))
 package_index = findfirst(dependency -> dependency.name == "ODEParameterEstimation", dependencies)

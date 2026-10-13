@@ -1,0 +1,28 @@
+name: Slow examples
+# Estimates the example models that take minutes each. The quick ones are
+# estimated on every push by the `examples` job in CI.yml.
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+jobs:
+  test:
+    name: Julia 1.13 - registered - examples_slow
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      JULIA_NUM_PRECOMPILE_TASKS: '4'
+    permissions: # needed to allow julia-actions/cache to proactively delete old caches that it has created
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.13'
+          arch: x64
+      - uses: julia-actions/cache@v2
+      - name: Estimate the slow example models
+        env:
+          ODEPE_VALIDATION_DIR: ${{ runner.temp }}/odepe-validation
+        run: julia --startup-file=no test/registered.jl examples_slow default

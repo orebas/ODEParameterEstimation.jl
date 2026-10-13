@@ -1,13 +1,14 @@
 # Resolve this checkout in a fresh environment, without inheriting development
 # overrides from the caller's environment. Run from the repo root with:
 #   julia --startup-file=no test/registered.jl
-# Arguments: all|unit|benchmark, followed optionally by default|modern.
+# Arguments: all|unit|benchmark|examples|examples_slow, followed optionally by
+# default|modern.
 using Pkg
 using TOML
 
-length(ARGS) <= 2 || error("Usage: test/registered.jl [all|unit|benchmark] [default|modern]")
+length(ARGS) <= 2 || error("Usage: test/registered.jl [all|unit|benchmark|examples|examples_slow] [default|modern]")
 group = isempty(ARGS) ? "all" : first(ARGS)
-group in ("all", "unit", "benchmark") || error("Unknown test group: $group")
+group in ("all", "unit", "benchmark", "examples", "examples_slow") || error("Unknown test group: $group")
 profile = length(ARGS) == 2 ? ARGS[2] : "default"
 profile in ("default", "modern") || error("Unknown dependency profile: $profile")
 

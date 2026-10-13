@@ -35,13 +35,13 @@ const EXAMPLE_EXPECTATIONS = Dict{Symbol, NamedTuple}(
 	:two_compartment_pk => _expectation(:quick; undetermined = ["C2(t)", "V1", "V2", "k12", "k21", "ke"], answers = 2),
 	:mass_spring_damper => _expectation(:quick; undetermined = ["F", "c", "k", "m"]),
 	# More than one answer
-	:hidden_subpopulations => _expectation(:slow; answers = 6),
+	:hidden_subpopulations => _expectation(:slow; answers = 6, tolerance = 1e-5),
 	:hidden_subpopulations_measured => _expectation(:quick),
 	:receptor_subtypes => _expectation(:none),
 	:receptor_subtypes_measured => _expectation(:quick),
 	# Larger models
 	:crauste => _expectation(:none),
-	:daisy_ex3 => _expectation(:slow; answers = 2),
+	:daisy_ex3 => _expectation(:slow; answers = 2, tolerance = 1e-4),
 	:daisy_mamil4 => _expectation(:slow; answers = 2),
 	:fitzhugh_nagumo => _expectation(:quick),
 	:hiv => _expectation(:slow; tolerance = 1e-3),

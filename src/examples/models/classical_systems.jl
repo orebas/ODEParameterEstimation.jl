@@ -1,7 +1,3 @@
-using ODEParameterEstimation
-using ModelingToolkit
-using ModelingToolkit: t_nounits as t, D_nounits as D
-using OrderedCollections
 
 function lotka_volterra()
 	parameters = @parameters k1 k2 k3

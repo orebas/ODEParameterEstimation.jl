@@ -1,4 +1,5 @@
 using ODEParameterEstimation, Test, TOML, Random, LinearAlgebra, Statistics, ForwardDiff, TaylorDiff
+using ODEParameterEstimation.Examples: simple
 using ODEParameterEstimation: Nemo, StructuralIdentifiability
 include("support/backend_fixtures.jl")
 const SB = ODEParameterEstimation.SIANBackend

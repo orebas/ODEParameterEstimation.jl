@@ -1,7 +1,3 @@
-using ODEParameterEstimation
-using ModelingToolkit
-using ModelingToolkit: t_nounits as t, D_nounits as D
-using OrderedCollections
 
 function latent_subpopulation_branch()
 	parameters = @parameters a1 a2 a3 b1 b2 b3

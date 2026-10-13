@@ -177,7 +177,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
     end
 
     @testset "multi-interpolator benchmark template path" begin
-        sampled, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.simple, MULTI_INTERP_FAST_OPTS)
+        sampled, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, MULTI_INTERP_FAST_OPTS)
         expected_sources = Set(ODEParameterEstimation.interpolator_method_to_symbol(method) for method in MULTI_INTERP_TEMPLATE_LIST)
         actual_sources = Set(filter(!isnothing, [result.interpolator_source for result in raw_results[1]]))
 
@@ -272,7 +272,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
     @testset "save_system=false does not create saved_systems output" begin
         mktempdir() do tmpdir
             cd(tmpdir) do
-                _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.simple, SAVE_SYSTEM_OFF_OPTS)
+                _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, SAVE_SYSTEM_OFF_OPTS)
 
                 @test !isempty(raw_results[1])
                 @test !isempty(analysis[1])
@@ -282,7 +282,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
     end
 
     @testset "single interpolator run stays on the requested interpolator" begin
-        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.simple, SAVE_SYSTEM_OFF_OPTS)
+        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, SAVE_SYSTEM_OFF_OPTS)
         actual_sources = Set(filter(!isnothing, [result.interpolator_source for result in raw_results[1]]))
 
         @test !isempty(raw_results[1])
@@ -306,7 +306,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             polish_solver_solutions = false,
             polish_solutions = false,
         )
-        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.simple, homotopy_opts)
+        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, homotopy_opts)
 
         @test !isempty(raw_results[1])
         @test !isempty(analysis[1])
@@ -330,7 +330,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             terminal_fallback = :direct_opt,
             polish_solutions = true,
         )
-        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.simple, fallback_opts)
+        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, fallback_opts)
 
         @test !isempty(raw_results[1])
         @test !isempty(analysis[1])
@@ -355,7 +355,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             polish_solver_solutions = false,
             polish_solutions = true,
         )
-        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.simple, polish_opts)
+        _, raw_results, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, polish_opts)
 
         @test !isempty(raw_results[1])
         @test !isempty(analysis[1])
@@ -380,7 +380,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             polish_solver_solutions = false,
             polish_solutions = true,
         )
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), base_opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), base_opts)
         p_size = length(pep.ic) + length(pep.p_true)
         positive_opts = ODEParameterEstimation.merge_options(
             base_opts;
@@ -431,7 +431,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             polish_solver_solutions = false,
             polish_solutions = false,
         )
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), base_opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), base_opts)
         p_size = length(pep.ic) + length(pep.p_true)
         lso_opts = ODEParameterEstimation.merge_options(
             base_opts;
@@ -515,7 +515,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         )
 
         # Off-by-default path
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), base_opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), base_opts)
         baseline = ODEParameterEstimation.analyze_parameter_estimation_problem(pep, base_opts)
         @test !isempty(baseline[2][1])
         @test isfinite(baseline[2][1][1].err)
@@ -527,7 +527,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             sensitivity_seed_probe_scale = 1.0,
             sensitivity_seed_eigenvalue_threshold = 0.05,
         )
-        pep_seeded = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), seeded_opts)
+        pep_seeded = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), seeded_opts)
         seeded = ODEParameterEstimation.analyze_parameter_estimation_problem(pep_seeded, seeded_opts)
         @test !isempty(seeded[2][1])
         @test isfinite(seeded[2][1][1].err)
@@ -935,7 +935,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
 
     @testset "Transcendental UQ: _obs_trfn_ not in unknowns" begin
         # forced_decay: 1 state, 2 params, sin(0.5t) forcing → triggers _obs_trfn_ machinery
-        pep = ODEParameterEstimation.forced_decay()
+        pep = ODEParameterEstimation.Examples.forced_decay()
         pep_data = ODEParameterEstimation.sample_problem_data(
             pep, EstimationOptions(datasize = 31, time_interval = [0.0, 10.0]))
         t_var = ModelingToolkit.get_iv(pep_data.model.system)
@@ -964,7 +964,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
 
     @testset "_obs_trfn_ vars not in diagnostic pipeline" begin
         # forced_decay triggers _obs_trfn_ machinery; verify it doesn't leak into diagnostics
-        pep = ODEParameterEstimation.forced_decay()
+        pep = ODEParameterEstimation.Examples.forced_decay()
         pep_data = ODEParameterEstimation.sample_problem_data(
             pep, EstimationOptions(datasize = 31, time_interval = [0.0, 10.0]))
         t_var = ModelingToolkit.get_iv(pep_data.model.system)
@@ -998,7 +998,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
     @testset "diagnose() auto-applies trfn transform" begin
         # forced_decay has sin(0.5t) forcing — without auto-trfn diagnose would fail
         # with "system does not seem to have rational right-hand side".
-        pep = ODEParameterEstimation.forced_decay()
+        pep = ODEParameterEstimation.Examples.forced_decay()
         pep_data = ODEParameterEstimation.sample_problem_data(
             pep, EstimationOptions(datasize = 31, time_interval = [0.0, 10.0]))
 
@@ -1082,7 +1082,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             polish_solver_solutions = false, polish_solutions = false,
             compute_uncertainty = true,
         )
-        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), uq_opts)
+        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), uq_opts)
         _, _, uq = quiet_feature_call() do
             ODEParameterEstimation.analyze_parameter_estimation_problem(sampled, uq_opts)
         end
@@ -1110,7 +1110,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         # the rest of CI only runs diagnose with html_report=false. Reports go to
         # artifacts/diagnostics/<name>/ relative to pwd, so run inside a tempdir.
         sampled = ODEParameterEstimation.sample_problem_data(
-            ODEParameterEstimation.simple(),
+            ODEParameterEstimation.Examples.simple(),
             EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true))
         mktempdir() do dir
             cd(dir) do
@@ -1126,7 +1126,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
 
     @testset "Auto-filter interpolators by noise" begin
         # Build a clean PEP and synthetic data with known noise levels.
-        pep = ODEParameterEstimation.simple()
+        pep = ODEParameterEstimation.Examples.simple()
         opts_low = EstimationOptions(datasize = 51, time_interval = [-0.5, 0.5], noise_level = 0.0,
                                      nooutput = true, diagnostics = false, save_system = false)
         opts_high = EstimationOptions(datasize = 51, time_interval = [-0.5, 0.5], noise_level = 1e-2,
@@ -1186,8 +1186,8 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         opts_off = ODEParameterEstimation.merge_options(opts_on;
             synthesize_aggregate_candidates = false)
 
-        _, raw_on, _ = run_feature_canary(ODEParameterEstimation.simple, opts_on)
-        _, raw_off, _ = run_feature_canary(ODEParameterEstimation.simple, opts_off)
+        _, raw_on, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, opts_on)
+        _, raw_off, _ = run_feature_canary(ODEParameterEstimation.Examples.simple, opts_off)
 
         n_synth = count(c -> c.provenance.source_type == :synthesized_aggregate, raw_on[1])
         @test length(raw_on[1]) >= length(raw_off[1])             # synth never reduces pool size

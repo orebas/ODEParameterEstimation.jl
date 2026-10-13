@@ -14,7 +14,7 @@ using OrderedCollections
 using LinearAlgebra
 
 @testset "taylor propagation cores (estimate-conditioned UQ)" begin
-	pep_tp = ODEParameterEstimation.simple()   # ẋ1 = -a·x2, ẋ2 = b·x1 → jets are Aᵏ·x
+	pep_tp = ODEParameterEstimation.Examples.simple()   # ẋ1 = -a·x2, ẋ2 = b·x1 → jets are Aᵏ·x
 	sys_tp = pep_tp.model.system
 	params_tp = ModelingToolkit.parameters(sys_tp)
 	states_tp = ModelingToolkit.unknowns(sys_tp)

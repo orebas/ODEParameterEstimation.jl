@@ -9,7 +9,7 @@ include("estimation_helpers.jl")
 
 @testset "Example canaries" begin
     @testset "simple recovers parameters" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.simple, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.simple, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -83,7 +83,7 @@ include("estimation_helpers.jl")
             polish_solver_solutions = false,
             polish_solutions = false,
         )
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.simple, noisy_opts)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.simple, noisy_opts)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -96,7 +96,7 @@ include("estimation_helpers.jl")
     end
 
     @testset "lotka-volterra has an accurate solution cluster" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.lotka_volterra, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.lotka_volterra, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -109,7 +109,7 @@ include("estimation_helpers.jl")
     end
 
     @testset "trivial unidentifiability is surfaced" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.trivial_unident, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.trivial_unident, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -122,7 +122,7 @@ include("estimation_helpers.jl")
     end
 
     @testset "measured-quantity linear combinations stay identifiable" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.simple_linear_combination, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.simple_linear_combination, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -135,7 +135,7 @@ include("estimation_helpers.jl")
     end
 
     @testset "nonlinear observable stays estimable" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.onesp_cubed, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.onesp_cubed, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -148,7 +148,7 @@ include("estimation_helpers.jl")
     end
 
     @testset "multiple nonlinear observables stay estimable" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.threesp_cubed, FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.threesp_cubed, FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -202,7 +202,7 @@ include("estimation_helpers.jl")
         # trials in one session; Phase C4's honest Inf made the failing face
         # visible). Seed 20260610 verified converging; 42 verified NOT.
         Random.seed!(20260610)
-        _, raw_results, analysis, _ = run_canary(ODEParameterEstimation.simple_linear_combination, FAST_DIRECT_OPTS)
+        _, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.simple_linear_combination, FAST_DIRECT_OPTS)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])

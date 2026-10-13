@@ -3,6 +3,7 @@
 # `nooutput = false` and `diagnostics = true` bring the development output back.
 
 using ODEParameterEstimation
+using ODEParameterEstimation.Examples
 using Logging
 using Test
 

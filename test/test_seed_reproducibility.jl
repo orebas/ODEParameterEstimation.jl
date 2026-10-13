@@ -3,6 +3,7 @@
 # package draws from the caller's RNG, as it always has.
 
 using ODEParameterEstimation
+using ODEParameterEstimation.Examples
 using Logging
 using Random
 using Test

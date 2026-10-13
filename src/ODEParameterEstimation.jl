@@ -112,7 +112,7 @@ include("core/diagnostics/html_report.jl")
 include("core/diagnostics/uq_and_reports.jl")
 include("core/diagnostics/estimator_aware_uq.jl")
 include("core/estimate.jl")  # keyword problem constructor, `estimate`, result display
-include("examples/load_examples.jl")
+include("examples/Examples.jl")  # the example models, a submodule
 
 # Export types
 export OrderedODESystem, ParameterEstimationProblem, ParameterEstimationResult, ResultProvenance, EstimatorIdentity, NumericalIdentifiabilityAdvisory, DerivativeData, UnsupportedModelClassError, SamplingFailureError, UnsupportedDerivativeOrderError, TAYLORDIFF_MAX_DERIVATIVE_ORDER
@@ -177,16 +177,8 @@ export joint_derivative_covariance, joint_derivative_covariance_cross_time, buil
 export gp_derivative_influence_matrix, joint_derivative_estimator_covariance, stacked_jet_index, learned_observation_noise_variance, compute_practical_identifiability_index, physicalize_uncertainty_report, unrescale_uncertainty_report
 export print_uncertainty_results
 
-# Export example models
-# Simple models
-export simple, simple_linear_combination, onesp_cubed, threesp_cubed
-export lotka_volterra, vanderpol, brusselator, harmonic, fitzhugh_nagumo, forced_decay
-export seir, seir_m1, treatment, biohydrogenation, biohydrogenation_m1, repressilator
-export crauste, daisy_mamil3, daisy_mamil4, daisy_mamil4_m1, hiv
-export latent_subpopulation_branch, latent_subpopulation_observed_control
-export receptor_subtype_binding_branch, receptor_subtype_binding_observed_control
-export slow_fast_m1, slowfast_m1
-export substr_test, global_unident_test, sum_test, trivial_unident
+# The example models are reached as `ODEParameterEstimation.Examples`.
+public Examples
 
 
 # Export the main types and functions

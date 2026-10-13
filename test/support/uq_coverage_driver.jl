@@ -56,7 +56,7 @@ function two_exp_pep(; x01_true = 2.0, x02_true = 1.5, k1_true = 0.6, k2_true = 
 end
 
 # Well-conditioned companion: both states observed directly (simple rotation).
-two_state_observed_pep() = ODEParameterEstimation.simple()
+two_state_observed_pep() = ODEParameterEstimation.Examples.simple()
 
 # ─── Quiet wrapper ────────────────────────────────────────────────────
 

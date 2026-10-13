@@ -1,6 +1,8 @@
 # Run once with the frozen baseline environment, then with the internalized
 # checkout, supplying the same input TOML. Does not require upstream packages.
 using ODEParameterEstimation, Random, TOML, Statistics, Logging
+# The frozen baseline exports the models from the package itself.
+isdefined(ODEParameterEstimation, :Examples) && @eval using ODEParameterEstimation.Examples
 
 input_path, output_path = ARGS
 constructors = (lotka_volterra, vanderpol, fitzhugh_nagumo, biohydrogenation)

@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation.Examples
 # Fast unit/contract tests for the opt-in power-of-2 problem rescaling
 # (src/core/problem_rescaling.jl). The slow end-to-end PAYOFF test (hiv recovery
 # with auto_rescale=true) lives in test/benchmark_smoke.jl — NOT here.
@@ -47,7 +48,7 @@ const OPE = ODEParameterEstimation
 	end
 
 	@testset "choose_scales: powers of 2, constants shrink (hiv)" begin
-		pep = OPE.hiv()
+		pep = OPE.Examples.hiv()
 		opts = EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true)
 		Random.seed!(1)
 		sampled = OPE.sample_problem_data(pep, opts)
@@ -73,7 +74,7 @@ const OPE = ODEParameterEstimation
 	end
 
 	@testset "well-scaled model: mild scaling + round-trip (lotka_volterra)" begin
-		pep = OPE.lotka_volterra()
+		pep = OPE.Examples.lotka_volterra()
 		opts = EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true)
 		Random.seed!(2)
 		sampled = OPE.sample_problem_data(pep, opts)
@@ -92,7 +93,7 @@ const OPE = ODEParameterEstimation
 	end
 
 	@testset "round-trip identity: rescale truth, un-rescale, recover exactly" begin
-		pep = OPE.hiv()
+		pep = OPE.Examples.hiv()
 		opts = EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true)
 		Random.seed!(3)
 		sampled = OPE.sample_problem_data(pep, opts)
@@ -128,7 +129,7 @@ const OPE = ODEParameterEstimation
 	end
 
 	@testset "sum-observable data scaling (hiv y4 ~ y+v)" begin
-		pep = OPE.hiv()
+		pep = OPE.Examples.hiv()
 		opts = EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true)
 		Random.seed!(4)
 		sampled = OPE.sample_problem_data(pep, opts)
@@ -148,7 +149,7 @@ const OPE = ODEParameterEstimation
 	end
 
 	@testset "user-bound rescaling preserves physical meaning" begin
-		pep = OPE.hiv()
+		pep = OPE.Examples.hiv()
 		opts0 = EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true)
 		Random.seed!(7)
 		sampled = OPE.sample_problem_data(pep, opts0)
@@ -182,7 +183,7 @@ const OPE = ODEParameterEstimation
 		# solve; fallback to the ±1e6 box; skipped backsolve clamp) — CSTR
 		# final_v2 shipped out-of-box polished results this way
 		# (docs/internal/2026-06-19_transform_bounds_mismatch.md).
-		pep = OPE.hiv()
+		pep = OPE.Examples.hiv()
 		opts0 = EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true)
 		Random.seed!(7)
 		sampled = OPE.sample_problem_data(pep, opts0)

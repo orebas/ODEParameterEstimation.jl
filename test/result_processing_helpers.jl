@@ -134,7 +134,7 @@ end
     end
 
     @testset "process_raw_solution preserves model ordering" begin
-        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), HELPER_STANDARD_OPTS)
+        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), HELPER_STANDARD_OPTS)
         current_states = ModelingToolkit.unknowns(sampled.model.system)
         current_params = ModelingToolkit.parameters(sampled.model.system)
         raw_sol = vcat(
@@ -162,7 +162,7 @@ end
     end
 
     @testset "process_raw_solution supports symbolic observable keys" begin
-        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple_linear_combination(), HELPER_STANDARD_OPTS)
+        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple_linear_combination(), HELPER_STANDARD_OPTS)
         current_states = ModelingToolkit.unknowns(sampled.model.system)
         current_params = ModelingToolkit.parameters(sampled.model.system)
         raw_sol = vcat(
@@ -189,7 +189,7 @@ end
     end
 
     @testset "process_estimation_results reconstructs standard solutions" begin
-        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), HELPER_STANDARD_OPTS)
+        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), HELPER_STANDARD_OPTS)
         solution_data, setup_data = build_solution_fixture(sampled; shoot_idx = 2, empty_forward_subst = false)
 
         results = quiet_result_call() do
@@ -213,7 +213,7 @@ end
     end
 
     @testset "process_estimation_results tolerates empty forward_subst_dict when variables line up" begin
-        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), HELPER_STANDARD_OPTS)
+        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), HELPER_STANDARD_OPTS)
         solution_data, setup_data = build_solution_fixture(sampled; shoot_idx = 2, empty_forward_subst = true)
 
         results = quiet_result_call() do
@@ -272,7 +272,7 @@ end
         # lookup_value's name heuristics can NEVER find them (zz_* bears no
         # relation to the model names). Exact recovery therefore PROVES the
         # explicit map was consumed end-to-end through process_estimation_results.
-        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), HELPER_STANDARD_OPTS)
+        sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), HELPER_STANDARD_OPTS)
         current_states = ModelingToolkit.unknowns(sampled.model.system)
         current_params = ModelingToolkit.parameters(sampled.model.system)
         zz = ModelingToolkit.@variables zz_alpha zz_beta zz_gamma zz_delta

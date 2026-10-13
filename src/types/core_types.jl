@@ -53,9 +53,9 @@ end
 A model, the quantities measured on it, and the measurements.
 
 Build one from a ModelingToolkit `System` with
-`ParameterEstimationProblem(system, measured_quantities; data)`. The built-in
-example models, such as `lotka_volterra()`, return ready-made problems without
-data.
+`ParameterEstimationProblem(system, measured_quantities; data)`. The example
+models in `ODEParameterEstimation.Examples`, such as `lotka_volterra()`, return
+ready-made problems without data.
 
 # Fields
 - `name`: a label for the problem.

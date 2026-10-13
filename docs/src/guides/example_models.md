@@ -5,12 +5,16 @@ that returns a [`ParameterEstimationProblem`](@ref) with true values and no
 data, so the usual pattern is:
 
 ```julia
+using ODEParameterEstimation
+using ODEParameterEstimation.Examples
+
 problem = sample_problem_data(lotka_volterra(); datasize = 51, time_interval = [0.0, 10.0])
 results = estimate(problem)
 ```
 
 ```@example models
 using ODEParameterEstimation
+using ODEParameterEstimation.Examples
 
 function describe(models...)
     println(rpad("model", 22), "states  parameters  measured")
@@ -70,5 +74,17 @@ problem.p_true
 ```
 
 More models are defined than are exported, among them a set of control-systems
-examples. `ODEParameterEstimation.available_models()` lists every name, and
-each is called as `ODEParameterEstimation.dc_motor()`.
+examples. `ODEParameterEstimation.Examples.available_models()` lists every
+name, and each is called as `ODEParameterEstimation.Examples.dc_motor()`.
+
+## Reference
+
+```@docs
+ODEParameterEstimation.Examples
+```
+
+```@autodocs
+Modules = [ODEParameterEstimation.Examples]
+Order = [:function]
+Private = false
+```

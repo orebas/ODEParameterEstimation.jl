@@ -20,7 +20,6 @@ end
 @testset "Example script smoke tests" begin
     include_example("control_investigations", "01_hello_world_constant_input.jl")
     include_example("control_investigations", "02_rc_circuit_voltage_step.jl")
-    include_example("run_examples.jl")
 
     @testset "hello world smoke" begin
         result = quiet_call() do
@@ -38,23 +37,5 @@ end
         best_nonident = assert_example_result(results[2])
         @test best_identifiable.err <= 1e-6
         @test !isempty(best_nonident.all_unidentifiable)
-    end
-
-    @testset "run_examples driver smoke" begin
-        mktempdir() do tmpdir
-            quiet_call() do
-                run_example_driver(
-                    models = [:simple, :trivial_unident],
-                    smoke = true,
-                    shuffle_models = false,
-                    log_dir = tmpdir,
-                    doskip = false,
-                )
-            end
-            simple_log = read(joinpath(tmpdir, "simple.log"), String)
-            unident_log = read(joinpath(tmpdir, "trivial_unident.log"), String)
-            @test occursin("SUCCESS", simple_log)
-            @test occursin("SUCCESS", unident_log)
-        end
     end
 end

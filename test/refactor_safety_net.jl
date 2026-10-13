@@ -57,7 +57,7 @@ import ModelingToolkit
 	# the function returned (robust to solver tolerance).
 	@testset "process_raw_solution fit error (SSE)" begin
 		opts = EstimationOptions()
-		sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), opts)
+		sampled = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), opts)
 		current_states = ModelingToolkit.unknowns(sampled.model.system)
 		current_params = ModelingToolkit.parameters(sampled.model.system)
 		raw_sol = vcat(

@@ -7,7 +7,7 @@ using ModelingToolkit
 using JSON
 
 @testset "estimator-aware UQ target contract" begin
-    pep = ODEParameterEstimation.simple()
+    pep = ODEParameterEstimation.Examples.simple()
     params = collect(keys(pep.p_true))
     states = collect(keys(pep.ic))
 

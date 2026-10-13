@@ -17,7 +17,7 @@ end
 @testset "Identifiability regressions ($strategy)" for strategy in (:local_basis, :identifiable_functions)
     identifiability_options = merge_options(FAST_STANDARD_OPTS; si_fix_strategy=strategy)
     @testset "substring-heavy parameter names still recover accurately" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.substr_test, identifiability_options)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.substr_test, identifiability_options)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -30,7 +30,7 @@ end
     end
 
     @testset "global unidentifiable states and parameters are surfaced together" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.global_unident_test, identifiability_options)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.global_unident_test, identifiability_options)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])
@@ -42,7 +42,7 @@ end
     end
 
     @testset "summed-observation unidentifiability stays explicit" begin
-        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.sum_test, identifiability_options)
+        pep, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.sum_test, identifiability_options)
         best = best_cluster_solution(analysis)
 
         @test !isempty(raw_results[1])

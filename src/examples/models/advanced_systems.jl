@@ -1,7 +1,3 @@
-using ODEParameterEstimation
-using ModelingToolkit
-using ModelingToolkit: t_nounits as t, D_nounits as D
-using OrderedCollections
 
 # Historical Crauste example adapted from ParameterEstimation.jl (GPL-3.0),
 # examples/all-global/crauste.jl; a preserved source is revision

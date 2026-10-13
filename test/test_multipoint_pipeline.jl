@@ -14,7 +14,7 @@ function flatten_r(x)
 end
 
 @testset "Multipoint Pipeline" begin
-    pep = ODEParameterEstimation.lotka_volterra()
+    pep = ODEParameterEstimation.Examples.lotka_volterra()
     pep_data = ODEParameterEstimation.sample_problem_data(pep,
         EstimationOptions(datasize = 201, noise_level = 0.0, nooutput = true))
 

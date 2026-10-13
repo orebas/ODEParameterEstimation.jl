@@ -1,7 +1,26 @@
-using ODEParameterEstimation
-using Logging
+"""
+	ODEParameterEstimation.Examples
 
-# Include all model files
+Ready-made problems to try the package on. Each model is a function that
+returns a [`ParameterEstimationProblem`](@ref) with true values and no data:
+
+```julia
+using ODEParameterEstimation
+using ODEParameterEstimation.Examples
+
+problem = sample_problem_data(lotka_volterra(); datasize = 101, time_interval = [0.0, 20.0])
+results = estimate(problem)
+```
+"""
+module Examples
+
+using ModelingToolkit
+using ModelingToolkit: t_nounits as t, D_nounits as D
+using OrderedCollections: OrderedDict
+import ..ODEParameterEstimation
+using ..ODEParameterEstimation: ParameterEstimationProblem, create_ordered_ode_system,
+	sample_problem_data, estimate, UnsupportedModelClassError
+
 include("models/advanced_systems.jl")
 include("models/biological_systems.jl")
 include("models/branch_stress_systems.jl")
@@ -9,18 +28,12 @@ include("models/classical_systems.jl")
 include("models/simple_models.jl")
 include("models/test_models.jl")
 include("models/debug_models.jl")
-include("models/control_systems.jl")  # Control theory examples for IEEE TAC
-
-using KernelFunctions
-using LineSearches
-using Optim
-using Statistics
+include("models/control_systems.jl")
 
 #=============================================================================
                     SINGLE SOURCE OF TRUTH: MODEL REGISTRIES
 
-All available models are registered here. run_examples.jl and the
-run_parameter_estimation_examples() function reference these dicts.
+All available models are registered here.
 =============================================================================#
 
 """Models that currently run cleanly and are reasonable to present as straightforward examples."""
@@ -162,137 +175,13 @@ function available_model_categories()
 	)
 end
 
+export simple, simple_linear_combination, onesp_cubed, threesp_cubed
+export lotka_volterra, vanderpol, brusselator, harmonic, fitzhugh_nagumo, forced_decay
+export seir, seir_m1, treatment, biohydrogenation, biohydrogenation_m1, repressilator
+export crauste, daisy_mamil3, daisy_mamil4, daisy_mamil4_m1, hiv
+export latent_subpopulation_branch, latent_subpopulation_observed_control
+export receptor_subtype_binding_branch, receptor_subtype_binding_observed_control
+export slow_fast_m1, slowfast_m1
+export substr_test, global_unident_test, sum_test, trivial_unident
 
-
-
-
-
-
-
-
-
-
-
-
-"""
-	run_parameter_estimation_examples(; models=:all, opts=EstimationOptions(), ...)
-
-Run parameter estimation examples on the specified models.
-
-# Arguments
-- `models`: Symbol or Vector{Symbol} specifying which models to run.
-		   Use :all for all models, :hard for challenging models only,
-		   or specify individual models like [:simple, :hiv]
-- `opts`: EstimationOptions struct containing all estimation parameters
-- `log_dir`: Directory where per-model logs should be written
-- `doskip`: Skip models whose existing log already contains `SUCCESS`
-
-# Available models
-Use `available_models()` to get the full list. Models are organized into:
-- `GREEN_MODELS`: straightforward, maintained examples
-- `STRUCTURAL_UNIDENTIFIABILITY_MODELS`: explicit identifiability demos
-- `HARD_MODELS`: running but harder / less reliable examples
-- `LIMITATION_MODELS`: retained in-package but currently limitation / failure cases
-"""
-function run_parameter_estimation_examples(;
-	models = :all,
-	opts::EstimationOptions = EstimationOptions(),
-	log_dir = "logs",
-	doskip = true,
-)
-	# Create log directory if it doesn't exist
-	!isdir(log_dir) && mkpath(log_dir)
-
-	model_categories = available_model_categories()
-
-	# Determine which models to run from the named registries above
-	models_to_run = if models == :all
-		collect(keys(model_categories[:all]))
-	elseif models == :hard
-		collect(keys(model_categories[:hard]))
-	elseif models == :branch_stress
-		collect(keys(model_categories[:branch_stress]))
-	elseif models == :m1_benchmark
-		collect(keys(model_categories[:m1_benchmark]))
-	elseif models == :green
-		collect(keys(model_categories[:green]))
-	elseif models == :structural_unidentifiability
-		collect(keys(model_categories[:structural_unidentifiability]))
-	elseif models == :limitations
-		collect(keys(model_categories[:limitations]))
-	elseif models == :standard
-		collect(keys(model_categories[:standard]))
-	elseif models isa Symbol
-		[models]
-	else
-		models
-	end
-
-	# Run each selected model
-	original_stdout = stdout
-	original_stderr = stderr
-	for model_name in models_to_run
-		log_file_path = joinpath(log_dir, "$(model_name).log")
-		if isfile(log_file_path) && doskip
-			log_content = read(log_file_path, String)
-			if occursin("SUCCESS", log_content)
-				println(original_stdout, "Skipping completed model: $model_name")
-				continue
-			end
-		end
-
-		println(original_stdout, "Running model: $model_name")
-		open(log_file_path, "w") do log_stream
-			with_logger(ConsoleLogger(log_stream)) do
-				redirect_stdout(log_stream) do
-					redirect_stderr(log_stream) do
-						try
-							model_fn = ALL_MODELS[model_name]
-							pep = model_fn()
-
-							# Use the model's recommended timescale if available, otherwise default to [0.0, 5.0]
-							time_interval =
-								isnothing(pep.recommended_time_interval) ? [0.0, 5.0] :
-								pep.recommended_time_interval
-
-							if opts.flow == FlowStandard
-								println("Using NEW optimized workflow")
-							elseif opts.flow == FlowDirectOpt
-								println("Using direct optimization workflow")
-							end
-
-							# Create options for this specific model with the correct time interval
-							model_opts = merge_options(opts, time_interval = time_interval)
-
-							@time analyze_parameter_estimation_problem(
-								sample_problem_data(pep, model_opts),
-								model_opts,
-							)
-							println("SUCCESS")
-							println(original_stdout, "Model $model_name ran successfully.")
-						catch e
-							println("FAILURE")
-							println(
-								original_stderr,
-								"Model $model_name failed. See $(log_file_path) for details.",
-							)
-							showerror(log_stream, e, catch_backtrace())
-						end
-					end
-				end
-			end
-		end
-	end
-end
-
-# Example usage:
-# Run all models:
-#run_parameter_estimation_examples(opts = EstimationOptions(datasize = 1501, noise_level = 0.0))
-#run_parameter_estimation_examples(models = :hard, opts = EstimationOptions(datasize = 1501, noise_level = 0.0))
-#run_parameter_estimation_examples(opts = EstimationOptions(datasize = 201, noise_level = 0.01, interpolators = [InterpolatorCustom], custom_interpolators = [test_gpr_function]))
-
-# Run specific models:
-# run_parameter_estimation_examples(models=[:simple, :hiv])
-
-# Run with different parameters:
-# run_parameter_estimation_examples(opts = EstimationOptions(datasize = 1001, noise_level = 0.05))
+end # module Examples

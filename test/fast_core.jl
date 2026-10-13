@@ -104,14 +104,6 @@ using Random
 
         @test_throws MethodError EstimationOptions(try_more_methods = true)
         @test_throws ErrorException ODEParameterEstimation.merge_options(base; try_more_methods = true)
-        @test_throws MethodError ODEParameterEstimation.run_parameter_estimation_examples(models = Symbol[]; datasize = 10)
-        @test isnothing(ODEParameterEstimation.run_parameter_estimation_examples(
-            models = Symbol[],
-            opts = EstimationOptions(save_system = false, nooutput = true),
-            log_dir = mktempdir(),
-            doskip = false,
-        ))
-
         # terminal_fallback + FlowDirectOpt is redundant but not invalid (just warns)
         redundant_terminal_fallback = EstimationOptions(
             flow = FlowDirectOpt,
@@ -151,7 +143,7 @@ using Random
         @test :estimate in public_names
         @test ODEParameterEstimation.estimate isa Function
 
-        categories = ODEParameterEstimation.available_model_categories()
+        categories = ODEParameterEstimation.Examples.available_model_categories()
         @test haskey(categories, :m1_benchmark)
         @test Set(keys(categories[:m1_benchmark])) == Set([
             :biohydrogenation_m1,
@@ -159,7 +151,7 @@ using Random
             :seir_m1,
             :slow_fast_m1,
         ])
-        @test ODEParameterEstimation.ALL_MODELS[:slow_fast_m1] === ODEParameterEstimation.slow_fast_m1
+        @test ODEParameterEstimation.Examples.ALL_MODELS[:slow_fast_m1] === ODEParameterEstimation.Examples.slow_fast_m1
     end
 
     @testset "Transcendental data variable evaluation" begin
@@ -340,7 +332,7 @@ using Random
             polish_solver_solutions = false,
             polish_solutions = false,
         )
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), opts)
         ident = ODEParameterEstimation.setup_identifiability(pep; max_num_points = 1, nooutput = true)
         ordered_model = pep.model
         si_template, _ = ODEParameterEstimation.prepare_si_template_with_structural_fix(
@@ -537,7 +529,7 @@ using Random
             synthesize_aggregate_candidates = false,
             branch_completion = false,
         )
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), opts)
         (_, timing) = ODEParameterEstimation.with_estimation_timing() do
             ODEParameterEstimation.analyze_parameter_estimation_problem(pep, opts)
         end
@@ -564,7 +556,7 @@ using Random
     end
 
     @testset "Branch-stress example registry" begin
-        categories = ODEParameterEstimation.available_model_categories()
+        categories = ODEParameterEstimation.Examples.available_model_categories()
         branch_stress = categories[:branch_stress]
 
         expected = Set([
@@ -575,7 +567,7 @@ using Random
         ])
 
         @test Set(keys(branch_stress)) == expected
-        @test expected ⊆ Set(ODEParameterEstimation.available_models())
+        @test expected ⊆ Set(ODEParameterEstimation.Examples.available_models())
 
         for model_name in expected
             pep = branch_stress[model_name]()
@@ -585,7 +577,7 @@ using Random
             @test all(value -> 0.0 < value < 10.0, values(pep.ic))
         end
 
-        latent = ODEParameterEstimation.latent_subpopulation_branch()
+        latent = ODEParameterEstimation.Examples.latent_subpopulation_branch()
         latent_params = collect(values(latent.p_true))
         latent_ics = collect(values(latent.ic))
         latent_branch_reps = Set{Tuple{NTuple{6, Float64}, NTuple{5, Float64}}}()
@@ -612,7 +604,7 @@ using Random
         end
         @test length(latent_branch_reps) == 6
 
-        receptor = ODEParameterEstimation.receptor_subtype_binding_branch()
+        receptor = ODEParameterEstimation.Examples.receptor_subtype_binding_branch()
         receptor_params = collect(values(receptor.p_true))
         receptor_ics = collect(values(receptor.ic))
         swapped_receptor_params = (
@@ -807,7 +799,7 @@ using Random
         end
         @test unstable_err isa ODEParameterEstimation.SamplingFailureError
 
-        maglev = ODEParameterEstimation.magnetic_levitation()
+        maglev = ODEParameterEstimation.Examples.magnetic_levitation()
         maglev_opts = EstimationOptions(
             datasize = 41,
             noise_level = 0.0,
@@ -875,7 +867,7 @@ using Random
         used_vars = ODEParameterEstimation.collect_used_nemo_variables([gens_used[1] + gens_used[2]])
         @test Set(string.(used_vars)) == Set(["x", "y1_0"])
 
-        pep_dd = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), EstimationOptions(datasize = 11, noise_level = 0.0, nooutput = true))
+        pep_dd = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), EstimationOptions(datasize = 11, noise_level = 0.0, nooutput = true))
         shallow_dd = ODEParameterEstimation.populate_derivatives(pep_dd.model.system, pep_dd.measured_quantities, 1, OrderedCollections.OrderedDict())
         extended_dd = ODEParameterEstimation.ensure_si_template_dd_support(
             pep_dd.model,
@@ -911,7 +903,7 @@ using Random
     end
 
     @testset "SEIR algebraic rescue resolves states at t0 and shooting time" begin
-        base_pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.simple(), EstimationOptions(datasize = 11, noise_level = 0.0, nooutput = true))
+        base_pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.simple(), EstimationOptions(datasize = 11, noise_level = 0.0, nooutput = true))
         failing_runner(args...) = error("synthetic advisory failure")
 
         fallback_ident = ODEParameterEstimation.setup_identifiability(
@@ -944,7 +936,7 @@ using Random
             polish_solver_solutions = true,
             polish_solutions = false,
         )
-        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.seir(), opts)
+        pep = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.seir(), opts)
         ident = ODEParameterEstimation.setup_identifiability(pep; max_num_points = 1, nooutput = true)
         ordered_model = isa(pep.model.system, ODEParameterEstimation.OrderedODESystem) ?
             pep.model.system :

@@ -35,7 +35,7 @@ using Symbolics
 
 	@testset "_build_data_var_meta classifies (obs, order, point, kind)" begin
 		v(s) = Symbolics.variable(Symbol(s))
-		pep_meta = ODEParameterEstimation.simple()   # observes y1 ~ x1, y2 ~ x2
+		pep_meta = ODEParameterEstimation.Examples.simple()   # observes y1 ~ x1, y2 ~ x2
 		mq = pep_meta.measured_quantities
 
 		data_vars = Any[

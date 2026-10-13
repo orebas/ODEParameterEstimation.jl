@@ -55,7 +55,7 @@ end
 @testset "Benchmark smoke (seeded, noisy, full-scale)" begin
 	@testset "lotka_volterra @ 1e-8 noise, polish on" begin
 		bob, nclusters, besterror = _smoke_best_of_branch(
-			ODEParameterEstimation.lotka_volterra; datasize = 201, noise = 1e-8, polish = true)
+			ODEParameterEstimation.Examples.lotka_volterra; datasize = 201, noise = 1e-8, polish = true)
 		@test isfinite(besterror)
 		@test nclusters >= 1
 		@test bob < 1e-2
@@ -63,7 +63,7 @@ end
 
 	@testset "simple @ 1e-8 noise, polish on" begin
 		bob, nclusters, besterror = _smoke_best_of_branch(
-			ODEParameterEstimation.simple; datasize = 201, noise = 1e-8, polish = true)
+			ODEParameterEstimation.Examples.simple; datasize = 201, noise = 1e-8, polish = true)
 		@test isfinite(besterror)
 		@test nclusters >= 1
 		@test bob < 1e-2
@@ -71,7 +71,7 @@ end
 
 	@testset "lotka_volterra clean is machine precision (sanity anchor)" begin
 		bob, _, _ = _smoke_best_of_branch(
-			ODEParameterEstimation.lotka_volterra; datasize = 201, noise = 0.0, polish = false)
+			ODEParameterEstimation.Examples.lotka_volterra; datasize = 201, noise = 0.0, polish = false)
 		@test bob < 1e-6
 	end
 
@@ -81,7 +81,7 @@ end
 	# power-of-2 rescaling fixes the conditioning failure documented in P0 #0.
 	@testset "hiv (raw scales) recovers with auto_rescale" begin
 		bob, nclusters, besterror = _smoke_best_of_branch(
-			ODEParameterEstimation.hiv; datasize = 201, noise = 0.0, polish = true, auto_rescale = true)
+			ODEParameterEstimation.Examples.hiv; datasize = 201, noise = 0.0, polish = true, auto_rescale = true)
 		@test isfinite(besterror)
 		@test nclusters >= 1
 		@test bob < 1e-2

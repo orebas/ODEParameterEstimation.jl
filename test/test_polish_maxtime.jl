@@ -5,7 +5,8 @@
 # Run: julia --startup-file=no /home/orebas/.julia/dev/ODEParameterEstimation/repro/test_polish_maxtime.jl
 
 using ODEParameterEstimation
-using ODEParameterEstimation: simple, _build_polish_context, _polish_single_from_context,
+using ODEParameterEstimation.Examples
+using ODEParameterEstimation: _build_polish_context, _polish_single_from_context,
     sample_problem_data, merge_options
 using Test
 using Printf

@@ -196,7 +196,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
 
     @testset "transcendental transform augments the problem directly" begin
         sampled = ODEParameterEstimation.sample_problem_data(
-            getfield(ODEParameterEstimation, :dc_motor_sinusoidal)(),
+            getfield(ODEParameterEstimation.Examples, :dc_motor_sinusoidal)(),
             EstimationOptions(
                 datasize = 11,
                 noise_level = 0.0,

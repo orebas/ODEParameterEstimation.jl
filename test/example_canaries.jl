@@ -162,7 +162,7 @@ include("support/model_fixtures.jl")
     end
 
     @testset "transcendental input path stays alive" begin
-        pep, raw_results, analysis, _ = run_canary(getfield(ODEParameterEstimation, :dc_motor_sinusoidal), FAST_STANDARD_OPTS)
+        pep, raw_results, analysis, _ = run_canary(getfield(ODEParameterEstimation.Examples, :dc_motor_sinusoidal), FAST_STANDARD_OPTS)
         best = best_cluster_solution(analysis)
 
         @test pep.name == "dc_motor_sinusoidal"
@@ -180,8 +180,8 @@ include("support/model_fixtures.jl")
 
     @testset "unsupported raw model classes fail explicitly" begin
         for (ctor, expected_category) in (
-            (getfield(ODEParameterEstimation, :cart_pole), :state_trigonometric),
-            (getfield(ODEParameterEstimation, :tank_level), :sqrt_nonlinearity),
+            (getfield(ODEParameterEstimation.Examples, :cart_pole), :state_trigonometric),
+            (getfield(ODEParameterEstimation.Examples, :tank_level), :sqrt_nonlinearity),
         )
             pep = ctor()
             sampled = ODEParameterEstimation.sample_problem_data(pep, FAST_STANDARD_OPTS)

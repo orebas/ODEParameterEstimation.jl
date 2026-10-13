@@ -50,6 +50,59 @@ function test_example_estimation(name::Symbol)
 	return seconds
 end
 
+function _print_example_timings(timings)
+	println("\nSeconds per example model")
+	for (name, seconds) in sort(timings; by = last, rev = true)
+		@printf("  %-32s %8.1f\n", name, seconds)
+	end
+	@printf("  %-32s %8.1f\n", "total", sum(last, timings; init = 0.0))
+	flush(stdout)
+	return nothing
+end
+
+# Seconds a slow model may take in a process of its own before it is stopped
+# and counted as failed. The slowest takes about half an hour on a desktop.
+const SLOW_EXAMPLE_TIME_LIMIT = parse(Float64, get(ENV, "ODEPE_SLOW_EXAMPLE_TIME_LIMIT", "9000"))
+
+# Estimate one model in a new Julia process. Each slow model gets its own:
+# estimated one after another in one process, a later model can take many
+# times longer than it does alone.
+function test_example_estimation_isolated(name::Symbol; time_limit::Float64 = SLOW_EXAMPLE_TIME_LIMIT)
+	script = """
+		include($(repr(@__FILE__)))
+		@testset "$name" begin
+			test_example_estimation($(repr(name)))
+		end
+		"""
+	command = `$(Base.julia_cmd()) --startup-file=no --threads=$(Threads.nthreads()) --project=$(Base.active_project()) -e $script`
+	output = IOBuffer()
+	process = run(pipeline(ignorestatus(command); stdout = output, stderr = output); wait = false)
+	seconds = @elapsed finished = timedwait(() -> process_exited(process), time_limit; pollint = 1.0)
+	if finished != :ok
+		kill(process, Base.SIGKILL)
+		wait(process)
+		@error "Example model was stopped at its time limit" name time_limit
+		@test false
+		return seconds
+	end
+	passed = success(process)
+	passed || println(String(take!(output)))
+	@test passed
+	return seconds
+end
+
+function test_example_tier_isolated(tiers...)
+	selected = [name for name in example_models() if EXAMPLE_EXPECTATIONS[name].tier in tiers]
+	timings = Pair{Symbol, Float64}[]
+	@testset "$name" for name in selected
+		@info "Estimating example model in its own process" name
+		flush(stderr)
+		push!(timings, name => test_example_estimation_isolated(name))
+	end
+	_print_example_timings(timings)
+	return timings
+end
+
 function test_example_tier(tiers...)
 	selected = [name for name in example_models() if EXAMPLE_EXPECTATIONS[name].tier in tiers]
 	timings = Pair{Symbol, Float64}[]
@@ -58,11 +111,6 @@ function test_example_tier(tiers...)
 		flush(stderr)
 		push!(timings, name => test_example_estimation(name))
 	end
-	println("\nSeconds per example model")
-	for (name, seconds) in sort(timings; by = last, rev = true)
-		@printf("  %-32s %8.1f\n", name, seconds)
-	end
-	@printf("  %-32s %8.1f\n", "total", sum(last, timings; init = 0.0))
-	flush(stdout)
+	_print_example_timings(timings)
 	return timings
 end

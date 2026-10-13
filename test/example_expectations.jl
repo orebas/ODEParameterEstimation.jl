@@ -24,6 +24,8 @@ const EXAMPLE_EXPECTATIONS = Dict{Symbol, NamedTuple}(
 	:forced_decay => _expectation(:quick),
 	:lotka_volterra => _expectation(:quick),
 	:vanderpol => _expectation(:quick),
+	# 1e-5 with the package precompiled as shipped, 1e-15 with the precompile
+	# workload switched off. Do not tighten this from a run without it.
 	:brusselator => _expectation(:quick; tolerance = 1e-3),
 	:daisy_mamil3 => _expectation(:quick),
 	:repressilator => _expectation(:slow),

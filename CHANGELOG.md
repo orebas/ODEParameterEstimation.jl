@@ -58,7 +58,9 @@
   data script are removed.
 - Tests build and simulate every model on each run. A new `examples` test
   group estimates the quick ones with default options on every push, and
-  `examples_slow` estimates the rest weekly.
+  `examples_slow` estimates the slow ones weekly. Three models are not
+  estimated, because the package does not solve them in reasonable time:
+  `crauste`, `sirsforced` and `receptor_subtypes`. Their docstrings say so.
 - Everything removed here is in the history at commit `fadccc6`.
 
 ### One polynomial system for a model, whatever the data — 2026-10-06

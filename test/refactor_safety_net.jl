@@ -138,8 +138,9 @@ import ModelingToolkit
 		@test length(sols) == 1
 		@test sols[1][1] ≈ 2.0 atol = 1e-5
 		@test sols[1][2] ≈ 2.0 atol = 1e-5
-		# x² + 1 = 0 has no real solution: nothing is returned
+		# x² + 1 = 0 has no real solution; a least-squares solver converges to the
+		# minimum of the residual, x = 0, and returns it.
 		inconsistent, _, _, _ = ODEParameterEstimation.solve_with_fast_nlopt([vars[1]^2 + 1.0], [vars[1]]; start_point = [0.5])
-		@test isempty(inconsistent)
+		@test only(only(inconsistent)) ≈ 0.0 atol = 1e-6
 	end
 end

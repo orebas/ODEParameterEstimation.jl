@@ -78,7 +78,8 @@ unless `start_point` is given), with a ForwardDiff Jacobian. The system is
 compiled with Symbolics.build_function, falling back to substitution if that
 fails. If the iteration limit is reached it retries once with NonlinearSolve's
 `FastShortcutNLLSPolyalg`. A point is returned only when the solver reports
-success; otherwise the solution list is empty.
+success; otherwise the solution list is empty. It minimizes the sum of squared
+residuals, so for a system with no solution it can return that minimum.
 """
 function solve_with_fast_nlopt(poly_system, varlist;
 	start_point = nothing,

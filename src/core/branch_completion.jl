@@ -296,7 +296,6 @@ function complete_branches_from_anchor_report(
 			si_template.template_DD;
 			interpolants = perfect_interpolants,
 			time_index = 1,
-			diagnostics = false,
 			prune_overdetermined = true,
 		)
 	catch err
@@ -388,7 +387,6 @@ function complete_branches_from_anchor_report(
 				si_template.template_DD;
 				interpolants = perfect_interpolants,
 				time_index = 1,
-				diagnostics = false,
 				prune_overdetermined = false,
 			)
 		catch err

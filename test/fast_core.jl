@@ -228,7 +228,6 @@ using Random
                 template_DD;
                 interpolants = interpolants,
                 time_index = 2,
-                diagnostics = false,
                 prune_overdetermined = false,
                 substitute_trfn = true,
             )
@@ -258,6 +257,75 @@ using Random
         @test string.(combined_symb) == string.([template_equations[1], template_equations[3]])
         @test source_indices == [1, 3]
         @test points == [2, 2]
+    end
+
+    @testset "Surplus template equations are dropped from the end" begin
+        @independent_variables t
+        @variables x(t) y(t) y0 y1 x0
+
+        # y = x = 2t + 1, so at t = 1: y0 = 3, y1 = 2, and every equation says x0 = 3.
+        template_equations = Num[x0 - y0, 2 * x0 - 3 * y1, x0^2 - 3 * y0]
+        inst = with_logger(NullLogger()) do
+            ODEParameterEstimation.instantiate_si_template_equations(
+                template_equations,
+                [y ~ x],
+                OrderedDict{Any, Any}("t" => [0.0, 1.0, 2.0]),
+                Dict{Any, Int}(y0 => 0, y1 => 1),
+                (obs_lhs = [[y0], [y1]],);
+                interpolants = Dict{Any, Any}(Symbolics.diff2term(x) => (τ -> 2.0 * τ + 1.0)),
+                time_index = 2,
+                prune_overdetermined = true,
+            )
+        end
+
+        @test inst.source_indices == [1]
+        @test isequal(only(inst.equations), x0 - 3.0)
+        @test Set(Num.(inst.vars)) == Set([x0])
+    end
+
+    @testset "Re-solve fallback: substitute single-unknown equations, then solve the rest" begin
+        @variables x1 x2 x3
+        cascade(equations, vars) = with_logger(NullLogger()) do
+            ODEParameterEstimation._cascade_resolve(equations, vars, OrderedDict{Symbol, Float64}())
+        end
+        values_of(result, k) = Dict(zip(string.(result.state_vars), result.solutions[k]))
+
+        # x1 alone; then x1 and x2 in turn.
+        full = cascade(Num[x1 - 2, x1 * x2 - 6], Any[x1, x2])
+        @test full.cascading_status == :full
+        @test full.status == :cascade_full_solution
+        @test values_of(full, 1)["x1"] ≈ 2.0
+        @test values_of(full, 1)["x2"] ≈ 3.0
+
+        # x1 = 2, and homotopy continuation solves the two left: x3 = -1 ± √5, x2 = x3 + 1.
+        system = Num[x1 - 2, x1 * x2 + x3^2 - 6, x2 - x3 - 1]
+        merged = cascade(system, Any[x1, x2, x3])
+        @test merged.cascading_status == :merged
+        @test merged.status == :cascade_hc_merged
+        @test length(merged.solutions) == 2
+        @test all(isempty, merged.missing_vars_per_solution)
+        for k in 1:2
+            v = values_of(merged, k)
+            @test v["x1"] ≈ 2.0
+            @test v["x2"] ≈ v["x3"] + 1
+            @test v["x1"] * v["x2"] + v["x3"]^2 ≈ 6
+        end
+        @test sort([values_of(merged, k)["x3"] for k in 1:2]) ≈ [-1 - sqrt(5), -1 + sqrt(5)]
+
+        # x1 = 2 leaves one equation in two unknowns: a partial answer naming the rest.
+        partial = cascade(Num[x1 - 2, x1 * x2 + x3 - 5], Any[x1, x2, x3])
+        @test partial.cascading_status == :partial
+        @test partial.status == :cascade_partial_solution
+        @test string.(partial.state_vars) == ["x1"]
+        @test only(only(partial.solutions)) ≈ 2.0
+        @test Set(string.(only(partial.missing_vars_per_solution))) == Set(["x2", "x3"])
+        @test :remaining_system_underdetermined in partial.notes
+
+        # No equation has a single unknown.
+        none = cascade(Num[x1 * x2 - 1], Any[x1, x2])
+        @test none.cascading_status == :failed
+        @test isempty(none.solutions)
+        @test :cascade_found_no_substitutions in none.notes
     end
 
     @testset "HC conversion accepts empty parameter lists" begin

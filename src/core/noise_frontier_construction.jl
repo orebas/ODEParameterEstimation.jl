@@ -367,7 +367,6 @@ function _noise_build_generic_pool(
 		template_DD;
 		interpolants = generic_interpolants,
 		time_index = probes[1],
-		diagnostics = false,
 		prune_overdetermined = false,
 		substitute_trfn = false,
 	)
@@ -383,7 +382,6 @@ function _noise_build_generic_pool(
 			template_DD;
 			interpolants = generic_interpolants,
 			time_index = probes[pt],
-			diagnostics = false,
 			prune_overdetermined = false,
 			substitute_trfn = false,
 		)
@@ -476,7 +474,6 @@ function _noise_build_pool(
 		template_DD;
 		interpolants = interpolants,
 		time_index = probes[1],
-		diagnostics = false,
 		prune_overdetermined = false,
 	)
 	roles = _classify_polynomial_variables(string.(first_inst.vars), pep)
@@ -492,7 +489,6 @@ function _noise_build_pool(
 			template_DD;
 			interpolants = interpolants,
 			time_index = probes[pt],
-			diagnostics = false,
 			prune_overdetermined = false,
 		)
 		inst_renamed, _ = _rename_per_point_variables(inst.equations, inst.vars, param_set, pt)

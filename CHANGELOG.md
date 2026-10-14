@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Equation building trimmed — 2026-10-14
+
+- `construct_equation_system_from_si_template` now requires `si_template`,
+  `precomputed_interpolants` and `time_index_set`, and no longer takes
+  `interpolator` or `diagnostics`. Every caller already passed a template and
+  interpolants, so the code that built them was never used.
+  `instantiate_si_template_equations` no longer takes `diagnostics`; nothing
+  passed it through from the options, so its output never appeared.
+- Removed the debugging output switched on by the environment variable
+  `BIOH_MWE_CAPTURE`.
+
 ### `diagnose` moved to the `research` branch — 2026-10-14
 
 - Removed `diagnose` and everything only it used: `diagnose_derivative_accuracy`,

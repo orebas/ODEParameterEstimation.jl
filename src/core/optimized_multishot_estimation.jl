@@ -1322,10 +1322,8 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 								good_udict,
 								good_varlist,
 								good_DD;
-								interpolator = interp_func,
 								time_index_set = [point_idx],
 								precomputed_interpolants = interpolants,
-								diagnostics = false,
 								si_template = si_template,
 							)
 						end
@@ -1434,10 +1432,8 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 							good_udict,
 							good_varlist,
 							good_DD;
-							interpolator = interp_func,
 							time_index_set = [point_idx],
 							precomputed_interpolants = interpolants,
-							diagnostics = opts.diagnostics,
 							si_template = si_template,
 						)
 					end

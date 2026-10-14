@@ -392,7 +392,7 @@ function build_multipoint_template(
         inst_eqs, inst_vars = construct_equation_system_from_si_template(
             model, mq, data_sample, setup.good_deriv_level,
             setup.good_udict, setup.good_varlist, setup.good_DD;
-            interpolator = aaad_gpr_pivot, time_index_set = [t_idx],
+            time_index_set = [t_idx],
             precomputed_interpolants = setup.interpolants,
             si_template = si_template)
         push!(all_inst_eqs, inst_eqs)

@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Small corrections found by new tests — 2026-10-14
+
+- `polish_maxtime` of zero or less is now rejected. It used to draw a warning
+  that promised the default of 3600 s, which was never applied, and the two
+  refinement paths then read it differently. Use `Inf` for no limit.
+- `validate_options` returns `false` when `opt_lb` and `opt_ub` have
+  different lengths. It used to throw a `DimensionMismatch`.
+- With `uneven_sampling = true`, `uneven_sampling_times` must have `datasize`
+  entries in increasing order, and `validate_options` says so before any
+  sampling starts.
+- When two shooting points are needed and `point_hint` is near the end of the
+  interval, the second point no longer lands on the first.
+- Files written by `save_system` are named without colons, so they can be
+  stored on Windows, and a second file in the same millisecond no longer
+  overwrites the first.
+
 ### Unused code removed — 2026-10-14
 
 - Removed functions that nothing in the package calls. Some were research
@@ -15,6 +31,12 @@
   `agp_gpr_uq` remain).
 - Removed the Fourier interpolator (`InterpolatorFourierAdaptive`,
   `fourier_adaptive`, `FourierApprox`).
+- Removed the Matérn-5/2 kernel and its four interpolators
+  (`InterpolatorAGPRobustMatern52`, `InterpolatorS3Matern52`,
+  `InterpolatorS3AdaptMatern52`, `InterpolatorS3BICMatern52`). A Matérn-5/2
+  fit is only four times differentiable at the data points, where the
+  estimator takes higher derivatives; the plain GP one returned NaN for the
+  first derivative there.
 - Removed exported helpers that nothing used: `calculate_observable_derivatives`,
   `joint_derivative_covariance_cross_time`, `print_stats_table`,
   `sigma_d_diagonal`, `s3_symbol`, `is_gp_interpolator`,

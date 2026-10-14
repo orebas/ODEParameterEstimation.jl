@@ -28,23 +28,19 @@ Enum for selecting the data interpolation method.
 	InterpolatorAGPRobustRQ    # agp_gpr_robust with Rational Quadratic kernel
 	InterpolatorAGPRobustSEpRQ # agp_gpr_robust with SE + RQ sum kernel
 	InterpolatorAGPRobustSExRQ # agp_gpr_robust with SE * RQ product kernel
-	InterpolatorAGPRobustMatern52 # agp_gpr_robust with Matérn-5/2 kernel
 	InterpolatorS2AAAMLE           # S2 composite: AAA(raw data) → MLE (no GP)
 	InterpolatorS3SE               # S3 composite: GP(SE) → AAA → MLE (deprecated — forwards to AdaptSE)
 	InterpolatorS3RQ               # S3 composite: GP(RQ) → AAA → MLE (deprecated — forwards to AdaptRQ)
 	InterpolatorS3SEpRQ            # S3 composite: GP(SE+RQ) → AAA → MLE (deprecated — forwards to AdaptSEpRQ)
 	InterpolatorS3SExRQ            # S3 composite: GP(SE×RQ) → AAA → MLE (deprecated — forwards to AdaptSExRQ)
-	InterpolatorS3Matern52         # S3 composite: GP(Matérn-5/2) → AAA → MLE (deprecated — forwards to AdaptMatern52)
 	InterpolatorS3AdaptSE          # S3 adaptive-tol: GP(SE) → AAA(adaptive) → MLE
 	InterpolatorS3AdaptRQ          # S3 adaptive-tol: GP(RQ) → AAA(adaptive) → MLE
 	InterpolatorS3AdaptSEpRQ       # S3 adaptive-tol: GP(SE+RQ) → AAA(adaptive) → MLE
 	InterpolatorS3AdaptSExRQ       # S3 adaptive-tol: GP(SE×RQ) → AAA(adaptive) → MLE
-	InterpolatorS3AdaptMatern52    # S3 adaptive-tol: GP(Matérn-5/2) → AAA(adaptive) → MLE
 	InterpolatorS3BICSE            # S3 BIC: GP(SE) → AAA(BIC-selected) → MLE
 	InterpolatorS3BICRQ            # S3 BIC: GP(RQ) → AAA(BIC-selected) → MLE
 	InterpolatorS3BICSEpRQ         # S3 BIC: GP(SE+RQ) → AAA(BIC-selected) → MLE
 	InterpolatorS3BICSExRQ         # S3 BIC: GP(SE×RQ) → AAA(BIC-selected) → MLE
-	InterpolatorS3BICMatern52      # S3 BIC: GP(Matérn-5/2) → AAA(BIC-selected) → MLE
 	InterpolatorAGPUQ          # agp_gpr_uq - GP with full UQ (for calibrated uncertainty)
 	InterpolatorChebyshevAICc  # Chebyshev polynomial with AICc degree selection (spectral)
 	InterpolatorChebyshevBIC   # Chebyshev polynomial with BIC degree selection (spectral)
@@ -751,8 +747,6 @@ function get_interpolator_function(method::InterpolatorMethod, custom::Union{Not
 		return (xs, ys) -> agp_gpr_robust(xs, ys; kernel_type=:se_plus_rq)
 	elseif method == InterpolatorAGPRobustSExRQ
 		return (xs, ys) -> agp_gpr_robust(xs, ys; kernel_type=:se_times_rq)
-	elseif method == InterpolatorAGPRobustMatern52
-		return (xs, ys) -> agp_gpr_robust(xs, ys; kernel_type=:matern52)
 	elseif method == InterpolatorS2AAAMLE
 		return s2_aaa_mle_interpolator
 	# --- S3 Adaptive tolerance ---
@@ -768,9 +762,6 @@ function get_interpolator_function(method::InterpolatorMethod, custom::Union{Not
 	elseif method == InterpolatorS3AdaptSExRQ
 		k = s3_adapt_k
 		return (xs, ys) -> s3_adapt_se_times_rq_interpolator(xs, ys; k = k)
-	elseif method == InterpolatorS3AdaptMatern52
-		k = s3_adapt_k
-		return (xs, ys) -> s3_adapt_matern52_interpolator(xs, ys; k = k)
 	# --- S3 BIC model selection ---
 	elseif method == InterpolatorS3BICSE
 		return s3_bic_se_interpolator
@@ -780,8 +771,6 @@ function get_interpolator_function(method::InterpolatorMethod, custom::Union{Not
 		return s3_bic_se_plus_rq_interpolator
 	elseif method == InterpolatorS3BICSExRQ
 		return s3_bic_se_times_rq_interpolator
-	elseif method == InterpolatorS3BICMatern52
-		return s3_bic_matern52_interpolator
 	# --- Old S3 names (deprecated, forward to adaptive) ---
 	elseif method == InterpolatorS3SE
 		k = s3_adapt_k
@@ -795,9 +784,6 @@ function get_interpolator_function(method::InterpolatorMethod, custom::Union{Not
 	elseif method == InterpolatorS3SExRQ
 		k = s3_adapt_k
 		return (xs, ys) -> s3_adapt_se_times_rq_interpolator(xs, ys; k = k)
-	elseif method == InterpolatorS3Matern52
-		k = s3_adapt_k
-		return (xs, ys) -> s3_adapt_matern52_interpolator(xs, ys; k = k)
 	elseif method == InterpolatorChebyshevAICc
 		return chebyshev_aicc
 	elseif method == InterpolatorChebyshevBIC
@@ -822,23 +808,19 @@ function interpolator_method_to_symbol(method::InterpolatorMethod)
 	method == InterpolatorAGPRobustRQ && return :agp_robust_rq
 	method == InterpolatorAGPRobustSEpRQ && return :agp_robust_se_plus_rq
 	method == InterpolatorAGPRobustSExRQ && return :agp_robust_se_times_rq
-	method == InterpolatorAGPRobustMatern52 && return :agp_robust_matern52
 	method == InterpolatorS2AAAMLE && return :s2_aaa_mle
 	method == InterpolatorS3SE && return :s3_se
 	method == InterpolatorS3RQ && return :s3_rq
 	method == InterpolatorS3SEpRQ && return :s3_se_plus_rq
 	method == InterpolatorS3SExRQ && return :s3_se_times_rq
-	method == InterpolatorS3Matern52 && return :s3_matern52
 	method == InterpolatorS3AdaptSE && return :s3_adapt_se
 	method == InterpolatorS3AdaptRQ && return :s3_adapt_rq
 	method == InterpolatorS3AdaptSEpRQ && return :s3_adapt_se_plus_rq
 	method == InterpolatorS3AdaptSExRQ && return :s3_adapt_se_times_rq
-	method == InterpolatorS3AdaptMatern52 && return :s3_adapt_matern52
 	method == InterpolatorS3BICSE && return :s3_bic_se
 	method == InterpolatorS3BICRQ && return :s3_bic_rq
 	method == InterpolatorS3BICSEpRQ && return :s3_bic_se_plus_rq
 	method == InterpolatorS3BICSExRQ && return :s3_bic_se_times_rq
-	method == InterpolatorS3BICMatern52 && return :s3_bic_matern52
 	method == InterpolatorChebyshevAICc && return :chebyshev_aicc
 	method == InterpolatorChebyshevBIC && return :chebyshev_bic
 	method == InterpolatorCustom && return :custom
@@ -874,7 +856,6 @@ function resolve_interpolator_list(opts::EstimationOptions)
 			InterpolatorAGPRobustRQ => InterpolatorS3AdaptRQ,
 			InterpolatorAGPRobustSEpRQ => InterpolatorS3AdaptSEpRQ,
 			InterpolatorAGPRobustSExRQ => InterpolatorS3AdaptSExRQ,
-			InterpolatorAGPRobustMatern52 => InterpolatorS3AdaptMatern52,
 		)
 		for (m, _) in copy(result)
 			haskey(gp_to_s3, m) && push!(result, (gp_to_s3[m], nothing))
@@ -946,25 +927,21 @@ function _gp_kernel_of(method::InterpolatorMethod)::Union{Nothing, Symbol}
 	method == InterpolatorAGPRobustRQ && return :rq
 	method == InterpolatorAGPRobustSEpRQ && return :se_plus_rq
 	method == InterpolatorAGPRobustSExRQ && return :se_times_rq
-	method == InterpolatorAGPRobustMatern52 && return :matern52
 	# Old S3 names
 	method == InterpolatorS3SE && return :se
 	method == InterpolatorS3RQ && return :rq
 	method == InterpolatorS3SEpRQ && return :se_plus_rq
 	method == InterpolatorS3SExRQ && return :se_times_rq
-	method == InterpolatorS3Matern52 && return :matern52
 	# S3 Adaptive
 	method == InterpolatorS3AdaptSE && return :se
 	method == InterpolatorS3AdaptRQ && return :rq
 	method == InterpolatorS3AdaptSEpRQ && return :se_plus_rq
 	method == InterpolatorS3AdaptSExRQ && return :se_times_rq
-	method == InterpolatorS3AdaptMatern52 && return :matern52
 	# S3 BIC
 	method == InterpolatorS3BICSE && return :se
 	method == InterpolatorS3BICRQ && return :rq
 	method == InterpolatorS3BICSEpRQ && return :se_plus_rq
 	method == InterpolatorS3BICSExRQ && return :se_times_rq
-	method == InterpolatorS3BICMatern52 && return :matern52
 	return nothing
 end
 
@@ -975,11 +952,11 @@ Returns true if the interpolator method is an S3 composite (GP→AAA→MLE).
 """
 function _is_s3_method(method::InterpolatorMethod)::Bool
 	return method in (InterpolatorS3SE, InterpolatorS3RQ, InterpolatorS3SEpRQ,
-	                  InterpolatorS3SExRQ, InterpolatorS3Matern52,
+	                  InterpolatorS3SExRQ,
 	                  InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ, InterpolatorS3AdaptSEpRQ,
-	                  InterpolatorS3AdaptSExRQ, InterpolatorS3AdaptMatern52,
+	                  InterpolatorS3AdaptSExRQ,
 	                  InterpolatorS3BICSE, InterpolatorS3BICRQ, InterpolatorS3BICSEpRQ,
-	                  InterpolatorS3BICSExRQ, InterpolatorS3BICMatern52)
+	                  InterpolatorS3BICSExRQ)
 end
 
 
@@ -990,7 +967,7 @@ Returns true for S3 BIC model-selection methods.
 """
 function _is_s3_bic_method(method::InterpolatorMethod)::Bool
 	return method in (InterpolatorS3BICSE, InterpolatorS3BICRQ, InterpolatorS3BICSEpRQ,
-	                  InterpolatorS3BICSExRQ, InterpolatorS3BICMatern52)
+	                  InterpolatorS3BICSExRQ)
 end
 
 """
@@ -1278,16 +1255,16 @@ function validate_options(opts::EstimationOptions)
 		if length(opts.opt_lb) != length(opts.opt_ub)
 			@error "Optimization bounds must have the same length"
 			valid = false
-		end
-		if any(opts.opt_lb .> opts.opt_ub)
+		elseif any(opts.opt_lb .> opts.opt_ub)
 			@error "Lower bounds must not exceed upper bounds"
 			valid = false
 		end
 	end
 
 	# Check polish safeguard parameters
-	if opts.polish_maxtime <= 0
-		@warn "polish_maxtime must be positive; using default (3600s)"
+	if !(opts.polish_maxtime > 0)
+		@error "polish_maxtime must be positive (got $(opts.polish_maxtime)); use Inf for no limit"
+		valid = false
 	end
 	if opts.polish_stagnation_window < 5
 		@warn "polish_stagnation_window < 5 is too aggressive; may stop prematurely"
@@ -1402,6 +1379,17 @@ function validate_options(opts::EstimationOptions)
 	if opts.noise_level < 0
 		@error "noise_level must be non-negative"
 		valid = false
+	end
+
+	if opts.uneven_sampling
+		times = opts.uneven_sampling_times
+		if length(times) != opts.datasize
+			@error "uneven_sampling_times must have datasize = $(opts.datasize) entries (got $(length(times)))"
+			valid = false
+		elseif !issorted(times; lt = <=)
+			@error "uneven_sampling_times must be increasing"
+			valid = false
+		end
 	end
 	if !(opts.noise_model in (:relative, :multiplicative, :additive, :homoskedastic, :additive_homoskedastic, :none))
 		@error "noise_model must be :relative, :multiplicative, :additive, :homoskedastic, :additive_homoskedastic, or :none"

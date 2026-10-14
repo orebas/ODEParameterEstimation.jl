@@ -136,9 +136,9 @@ export clear_denoms, hmcs, analyze_parameter_estimation_problem, estimate
 export aaad, aaad_old_reliable, AAADapprox, GPRapprox, FHDapprox, nth_deriv, nth_deriv_at, aaad_gpr_pivot, fhdn
 export ChebyshevApprox, chebyshev_aicc, chebyshev_bic
 export InterpolatorMethod, InterpolatorAAAD, InterpolatorAAADGPR, InterpolatorAAADOld, InterpolatorFHD
-export InterpolatorAGPRobust, InterpolatorAGPRobustRQ, InterpolatorAGPRobustSEpRQ, InterpolatorAGPRobustSExRQ, InterpolatorAGPRobustMatern52
-export InterpolatorS2AAAMLE, InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ, InterpolatorS3AdaptSEpRQ, InterpolatorS3AdaptSExRQ, InterpolatorS3AdaptMatern52
-export InterpolatorS3BICSE, InterpolatorS3BICRQ, InterpolatorS3BICSEpRQ, InterpolatorS3BICSExRQ, InterpolatorS3BICMatern52
+export InterpolatorAGPRobust, InterpolatorAGPRobustRQ, InterpolatorAGPRobustSEpRQ, InterpolatorAGPRobustSExRQ
+export InterpolatorS2AAAMLE, InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ, InterpolatorS3AdaptSEpRQ, InterpolatorS3AdaptSExRQ
+export InterpolatorS3BICSE, InterpolatorS3BICRQ, InterpolatorS3BICSEpRQ, InterpolatorS3BICSExRQ
 export InterpolatorChebyshevAICc, InterpolatorChebyshevBIC, InterpolatorAGPUQ, InterpolatorCustom
 export AGPInterpolator, agp_gpr_robust, mean_and_var
 export create_interpolants, AbstractInterpolator, solve_with_nlopt, solve_with_fast_nlopt
@@ -182,7 +182,7 @@ public Examples
 export EstimationOptions, SystemSolverMethod, PolishMethod, EstimationFlow
 export FlowStandard, FlowDirectOpt
 export SolverHC, SolverNLOpt, SolverFastNLOpt, SolverRobust
-export InterpolatorS3SE, InterpolatorS3RQ, InterpolatorS3SEpRQ, InterpolatorS3SExRQ, InterpolatorS3Matern52
+export InterpolatorS3SE, InterpolatorS3RQ, InterpolatorS3SEpRQ, InterpolatorS3SExRQ
 export PolishNewtonTrust, PolishBFGS, PolishLBFGS,
        PolishLSOBoundedLog, PolishFastLMBoundedLog
 export get_solver_function, get_interpolator_function, get_polish_optimizer, get_ad_backend

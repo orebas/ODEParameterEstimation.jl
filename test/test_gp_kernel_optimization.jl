@@ -9,8 +9,7 @@ using Random
     xs = collect(0.0:0.1:10.0)
     ys = sin.(xs) .+ 0.01 .* randn(length(xs))
 
-    # Test both kernel types
-    for kernel_type in [:se, :matern52]
+    for kernel_type in [:se, :rq]
         @testset "kernel_type=$kernel_type" begin
             # Call the function (uses the optimized in-place kernel computation)
             interp = ODEParameterEstimation.agp_gpr_robust(xs, ys; kernel_type=kernel_type)
@@ -77,21 +76,6 @@ end
         # Vectorized computation (as in optimized code)
         inv_2l² = 1.0 / (2.0 * l * l)
         K_manual = @. σ² * exp(-D² * inv_2l²)
-
-        @test K_manual ≈ K_kf atol=1e-10
-    end
-
-    @testset "Matern52 kernel" begin
-        # KernelFunctions.jl computation
-        k_kf = σ² * (Matern52Kernel() ∘ ScaleTransform(1.0 / l))
-        K_kf = kernelmatrix(k_kf, xs)
-
-        # Vectorized computation (as in optimized code)
-        # Matern52: k(r) = σ² * (1 + √5r + 5r²/3) * exp(-√5r), where r = d/l
-        const_sqrt5 = sqrt(5.0)
-        inv_l = 1.0 / l
-        K_r = @. sqrt(D²) * inv_l  # r = d/l
-        K_manual = @. σ² * (1.0 + const_sqrt5 * K_r + 5.0 * K_r^2 / 3.0) * exp(-const_sqrt5 * K_r)
 
         @test K_manual ≈ K_kf atol=1e-10
     end

@@ -844,8 +844,7 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 				end
 			end
 			varlist_template = collect(varset)
-			save_filepath_tpl = joinpath(isempty(opts.save_filepath) ? "saved_systems" : opts.save_filepath, "si_template_$(now()).jl")
-			mkpath(dirname(save_filepath_tpl))
+			save_filepath_tpl = _saved_system_path(opts, "si_template")
 			save_poly_system(save_filepath_tpl, template_equations, varlist_template,
 				metadata = Dict(
 					"timestamp" => string(now()),
@@ -1450,8 +1449,7 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 				# Optional: save system for debugging (mirror classic flow behavior)
 				if opts.save_system
 					# Save the instantiated polynomial system for this shooting point
-					save_filepath = joinpath(isempty(opts.save_filepath) ? "saved_systems" : opts.save_filepath, "system_point_$(point_idx)_$(now()).jl")
-					mkpath(dirname(save_filepath))
+					save_filepath = _saved_system_path(opts, "system_point_$(point_idx)")
 					save_poly_system(
 						save_filepath,
 						final_target,

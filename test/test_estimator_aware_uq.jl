@@ -182,6 +182,7 @@ using JSON
             EstimationOptions(compute_uncertainty = true,
                 uq_failure_policy = :throw, nooutput = true),
         )
+        @test startswith(sprint(showerror, UQComputationError(unavailable)), "Uncertainty quantification failed [")
 
         report = UncertaintyReport(
             "json_sidecar", 0.0,

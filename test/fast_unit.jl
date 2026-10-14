@@ -20,6 +20,7 @@ using Test
 
 @testset "fast_unit (quiet contract gate)" begin
     include("package_contracts.jl")
+	include("test_small_contracts.jl")    # every option check, interpolator names, ranking, messages
 	include("test_nested_ad.jl")          # derivatives of an ODE solve nest in a fixed order
 	include("test_example_models.jl")     # every example model builds, is documented and simulates
 	include("test_core_types.jl")        # Result/PEP/DerivativeData type contracts + constants

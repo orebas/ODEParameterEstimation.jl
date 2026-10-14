@@ -6,11 +6,19 @@
 #
 
 function pick_points(vec, n, interpolants, point_hint = 0.5)
+	len = length(vec)
+	at(fraction) = clamp(round(Int, fraction * len), 1, len)
 	if n == 1
-		return min(max(1, round(Int, point_hint * length(vec))), length(vec))
+		return at(point_hint)
 	else
 		if n == 2
-			return [min(max(1, round(Int, point_hint * length(vec))), length(vec)), min(max(1, round(Int, (point_hint + 1 / 3) * length(vec))), length(vec))]
+			first_index = at(point_hint)
+			second_index = at(point_hint + 1 / 3)
+			# Near the end of the interval the second point would land on the
+			# first; take it a third of the way back instead.
+			second_index == first_index && (second_index = at(point_hint - 1 / 3))
+			second_index == first_index && (second_index = first_index == 1 ? 2 : first_index - 1)
+			return [first_index, second_index]
 		else
 			# For n>2 points, use equidistant shooting indices (warp=false to preserve legacy behavior)
 			return compute_shooting_indices(n, length(vec); warp = false)

@@ -556,7 +556,7 @@ Returns an `AGPInterpolator` compatible with TaylorDiff for derivative computati
 # Arguments
 - `xs::AbstractArray{T}`: Input x-values
 - `ys::AbstractArray{T}`: Output y-values
-- `kernel_type::Symbol`: Kernel type, `:se` (default) or `:matern52`
+- `kernel_type::Symbol`: Kernel type: `:se` (default), `:rq`, `:se_plus_rq` or `:se_times_rq`
 
 # Returns
 - `AGPInterpolator`: GP interpolator with mean and std prediction functions
@@ -630,16 +630,8 @@ function agp_gpr_robust(xs::AbstractArray{T}, ys::AbstractArray{T};
 			init_noise = 0.01
 		end
 
-		# Constants for Matern52
-		is_matern52 = (kernel_type == :matern52)
-		const_sqrt5 = sqrt(5.0)
-
 		# --- Optimization in softplus-reparameterized space ---
-		if kernel_type == :matern52
-			θ0 = [_inv_softplus(init_lengthscale), _inv_softplus(init_signal_var), _inv_softplus(init_noise)]
-			θ_lower = [_inv_softplus(1e-3), _inv_softplus(1e-14), _inv_softplus(1e-14)]
-			θ_upper = [_inv_softplus(150.0), _inv_softplus(150.0), _inv_softplus(10.0)]
-		elseif kernel_type == :rq
+		if kernel_type == :rq
 			θ0 = [_inv_softplus(init_lengthscale), _inv_softplus(init_signal_var), _inv_softplus(init_noise), _inv_softplus(init_alpha)]
 			θ_lower = [_inv_softplus(1e-3), _inv_softplus(1e-14), _inv_softplus(1e-14), _inv_softplus(0.1)]
 			θ_upper = [_inv_softplus(150.0), _inv_softplus(150.0), _inv_softplus(10.0), _inv_softplus(100.0)]
@@ -658,17 +650,12 @@ function agp_gpr_robust(xs::AbstractArray{T}, ys::AbstractArray{T};
 			θ_upper = [_inv_softplus(150.0), _inv_softplus(150.0), _inv_softplus(10.0),
 			            _inv_softplus(150.0), _inv_softplus(100.0)]
 		else
-			error("agp_gpr_robust: unknown kernel_type=$kernel_type. Supported: :se, :matern52, :rq, :se_plus_rq, :se_times_rq")
+			error("agp_gpr_robust: unknown kernel_type=$kernel_type. Supported: :se, :rq, :se_plus_rq, :se_times_rq")
 		end
 
 		# Allocating NLL — ForwardDiff-compatible (no in-place mutation on captured matrix)
 		function neg_logpdf_robust(θ)
-			if kernel_type == :matern52
-				l = _softplus(θ[1]); σ² = _softplus(θ[2]); σₙ² = _softplus(θ[3])
-				inv_l = 1.0 / l
-				R = sqrt.(D²) .* inv_l
-				K = σ² .* (1.0 .+ const_sqrt5 .* R .+ 5.0 .* R .^ 2 ./ 3.0) .* exp.((-const_sqrt5) .* R)
-			elseif kernel_type == :rq
+			if kernel_type == :rq
 				l = _softplus(θ[1]); σ² = _softplus(θ[2]); σₙ² = _softplus(θ[3]); α = _softplus(θ[4])
 				inv_2αl² = 1.0 / (2.0 * α * l * l)
 				K = σ² .* (1.0 .+ D² .* inv_2αl²) .^ (-α)
@@ -718,9 +705,7 @@ function agp_gpr_robust(xs::AbstractArray{T}, ys::AbstractArray{T};
 				Optim.Options(iterations = 1000),
 			)
 			θ_opt = Optim.minimizer(result)
-			if kernel_type == :matern52
-				l_opt = _softplus(θ_opt[1]); σ²_opt = _softplus(θ_opt[2]); σₙ²_opt = _softplus(θ_opt[3])
-			elseif kernel_type == :rq
+			if kernel_type == :rq
 				l_opt = _softplus(θ_opt[1]); σ²_opt = _softplus(θ_opt[2]); σₙ²_opt = _softplus(θ_opt[3])
 				α_opt = _softplus(θ_opt[4])
 			elseif kernel_type == :se_plus_rq
@@ -735,11 +720,7 @@ function agp_gpr_robust(xs::AbstractArray{T}, ys::AbstractArray{T};
 		end
 
 		# Build AbstractGPs-compatible kernel for posterior/std_pred
-		if kernel_type == :matern52
-			base_kernel = Matern52Kernel()
-			scaled_kernel_opt = base_kernel ∘ ScaleTransform(1.0 / l_opt)
-			kernel_opt = σ²_opt * scaled_kernel_opt
-		elseif kernel_type == :rq
+		if kernel_type == :rq
 			rq_scaled = RationalQuadraticKernel(alpha = α_opt) ∘ ScaleTransform(1.0 / l_opt)
 			kernel_opt = σ²_opt * rq_scaled
 		elseif kernel_type == :se_plus_rq
@@ -786,8 +767,6 @@ function agp_gpr_robust(xs::AbstractArray{T}, ys::AbstractArray{T};
 	function mean_pred(x::Real)
 		if kernel_type == :se
 			k_star = [σ²_opt * exp(-(x - xi)^2 / (2.0 * l_opt^2)) for xi in xs_raw]
-		elseif kernel_type == :matern52
-			k_star = [σ²_opt * scaled_kernel_opt(x, xi) for xi in xs_raw]
 		elseif kernel_type == :rq
 			k_star = [σ²_opt * (1.0 + (x - xi)^2 / (2.0 * α_opt * l_opt^2))^(-α_opt) for xi in xs_raw]
 		elseif kernel_type == :se_plus_rq
@@ -1052,21 +1031,18 @@ s3_adapt_se_interpolator(xs, ys; k = 10.0) = _s3_adapt_interpolator(xs, ys; kern
 s3_adapt_rq_interpolator(xs, ys; k = 10.0) = _s3_adapt_interpolator(xs, ys; kernel_type = :rq, k = k)
 s3_adapt_se_plus_rq_interpolator(xs, ys; k = 10.0) = _s3_adapt_interpolator(xs, ys; kernel_type = :se_plus_rq, k = k)
 s3_adapt_se_times_rq_interpolator(xs, ys; k = 10.0) = _s3_adapt_interpolator(xs, ys; kernel_type = :se_times_rq, k = k)
-s3_adapt_matern52_interpolator(xs, ys; k = 10.0) = _s3_adapt_interpolator(xs, ys; kernel_type = :matern52, k = k)
 
 # --- BIC model selection convenience aliases ---
 s3_bic_se_interpolator(xs, ys) = _s3_bic_interpolator(xs, ys; kernel_type = :se)
 s3_bic_rq_interpolator(xs, ys) = _s3_bic_interpolator(xs, ys; kernel_type = :rq)
 s3_bic_se_plus_rq_interpolator(xs, ys) = _s3_bic_interpolator(xs, ys; kernel_type = :se_plus_rq)
 s3_bic_se_times_rq_interpolator(xs, ys) = _s3_bic_interpolator(xs, ys; kernel_type = :se_times_rq)
-s3_bic_matern52_interpolator(xs, ys) = _s3_bic_interpolator(xs, ys; kernel_type = :matern52)
 
 # --- Deprecated old S3 names (forward to adaptive with default k=10) ---
 s3_se_interpolator(xs, ys) = (_s3_adapt_interpolator(xs, ys; kernel_type = :se))
 s3_rq_interpolator(xs, ys) = (_s3_adapt_interpolator(xs, ys; kernel_type = :rq))
 s3_se_plus_rq_interpolator(xs, ys) = (_s3_adapt_interpolator(xs, ys; kernel_type = :se_plus_rq))
 s3_se_times_rq_interpolator(xs, ys) = (_s3_adapt_interpolator(xs, ys; kernel_type = :se_times_rq))
-s3_matern52_interpolator(xs, ys) = (_s3_adapt_interpolator(xs, ys; kernel_type = :matern52))
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Chebyshev polynomial interpolation with AICc degree selection

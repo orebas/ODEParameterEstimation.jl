@@ -315,9 +315,9 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         @test analysis[2] < 1e-2  # solutions should be reasonable
     end
 
-    @testset "terminal_fallback=:direct_opt rescues empty algebraic results" begin
-        # Use a partially observed problem that may produce 0 algebraic solutions,
-        # then verify the direct_opt fallback produces results.
+    @testset "terminal_fallback=:direct_opt leaves algebraic results alone" begin
+        # The fallback runs only when the algebraic solve finds nothing, which
+        # this model never does; no test reaches the fallback itself yet.
         fallback_opts = EstimationOptions(
             datasize = 11,
             noise_level = 0.0,
@@ -336,9 +336,8 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
 
         @test !isempty(raw_results[1])
         @test !isempty(analysis[1])
-        # Verify provenance tracks terminal_fallback when it's used
         for result in raw_results[1]
-            @test result.provenance isa ODEParameterEstimation.ResultProvenance
+            @test result.provenance.rescue_path != :direct_opt_fallback
         end
     end
 

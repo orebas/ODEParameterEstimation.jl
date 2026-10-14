@@ -463,6 +463,26 @@ end
 
 
 """
+	_saved_system_path(opts, stem) -> String
+
+Where `save_system` writes a file: under `opts.save_filepath`, or else
+`saved_systems/`, named after `stem` and the time, never over an existing file.
+"""
+function _saved_system_path(opts, stem::AbstractString)
+	directory = isempty(opts.save_filepath) ? "saved_systems" : opts.save_filepath
+	mkpath(directory)
+	base = "$(stem)_$(Dates.format(now(), "yyyymmdd-HHMMSS-sss"))"
+	path = joinpath(directory, base * ".jl")
+	copy_number = 1
+	while isfile(path)
+		copy_number += 1
+		path = joinpath(directory, "$(base)_$(copy_number).jl")
+	end
+	return path
+end
+
+
+"""
 	save_poly_system(filepath, poly_system, varlist;
 					 param_map=nothing, pep=nothing, metadata=nothing)
 

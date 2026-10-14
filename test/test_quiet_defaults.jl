@@ -73,6 +73,21 @@ end
 	@test !isempty(diagnostics.logs)
 	@test "artifacts" in diagnostics.files
 
+	# The polynomial systems, as Julia files, under `saved_systems/` or the
+	# directory asked for. The names have no colons, so Windows can store them.
+	saving(; options...) = _observe_run() do
+		analyze_parameter_estimation_problem(problem, EstimationOptions(; _QUICK_OPTS..., save_system = true, options...))
+		directory = only(readdir())
+		names = readdir(directory)
+		(; directory, names, header = isempty(names) ? "" : readline(joinpath(directory, first(filter(endswith(".jl"), names)))))
+	end
+	saved = saving()
+	@test saved.value.directory == "saved_systems"
+	@test any(endswith(".jl"), saved.value.names)
+	@test !any(name -> occursin(':', name), saved.value.names)
+	@test startswith(saved.value.header, "# Polynomial system saved on")
+	@test saving(save_filepath = "my_systems").value.directory == "my_systems"
+
 	# The three runs differ only in what they report.
 	best(run) = first(run.value[2].returned_results)
 	@test collect(values(best(progress).parameters)) ≈ collect(values(best(verbose).parameters))

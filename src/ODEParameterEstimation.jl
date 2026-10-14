@@ -141,7 +141,7 @@ export InterpolatorS2AAAMLE, InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ, Inter
 export InterpolatorS3BICSE, InterpolatorS3BICRQ, InterpolatorS3BICSEpRQ, InterpolatorS3BICSExRQ
 export InterpolatorChebyshevAICc, InterpolatorChebyshevBIC, InterpolatorAGPUQ, InterpolatorCustom
 export AGPInterpolator, agp_gpr_robust, mean_and_var
-export create_interpolants, AbstractInterpolator, solve_with_nlopt, solve_with_fast_nlopt
+export create_interpolants, AbstractInterpolator, solve_with_fast_nlopt
 export solve_with_hc_parameterized, convert_to_hc_format_with_params, extract_data_variables_from_DD, evaluate_data_vars_at_point
 export MultiPointTemplate, MultiPointEvaluation, build_multipoint_template, evaluate_multipoint_template, solve_multipoint_direct, solve_multipoint_parameterized
 export solve_multipoint_overdetermined
@@ -181,7 +181,7 @@ public Examples
 # Export the main types and functions
 export EstimationOptions, SystemSolverMethod, PolishMethod, EstimationFlow
 export FlowStandard, FlowDirectOpt
-export SolverHC, SolverNLOpt, SolverFastNLOpt, SolverRobust
+export SolverHC, SolverFastNLOpt, SolverRobust
 export InterpolatorS3SE, InterpolatorS3RQ, InterpolatorS3SEpRQ, InterpolatorS3SExRQ
 export PolishNewtonTrust, PolishBFGS, PolishLBFGS,
        PolishLSOBoundedLog, PolishFastLMBoundedLog

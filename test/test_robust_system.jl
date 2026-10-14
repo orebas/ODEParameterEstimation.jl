@@ -97,6 +97,10 @@ end
 	# Existing unprepared entry point still constructs and solves its equations.
 	solutions, _, _, _ = solve_with_robust([x^2-4],[x];start_point=[2.1],polish_only=true)
 	@test first(solutions) ≈ [2.0] atol=1e-5
+	# With no real solution the result has the same shape, with no solutions.
+	none, returned_vars, _, _ = solve_with_robust([x^2+1],[x];start_point=[0.5],polish_only=true)
+	@test isempty(none)
+	@test isequal(returned_vars, [x])
 end
 
 @testset "Overdetermined multipoint solve applies its least-squares refinement" begin

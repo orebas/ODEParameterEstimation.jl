@@ -30,30 +30,7 @@ _hc_solve(args...; kwargs...) = HomotopyContinuation.solve(args...;
 	compile = something(_run_ctx_hc_compile_mode(), HC_COMPILE_MODE[]),
 	kwargs...)
 
-"""
-	solve_with_nlopt(poly_system, varlist;
-					start_point=nothing,
-					optimizer=BFGS(),
-					polish_only=false,
-					options=Dict())
-
-Solves a polynomial system using traditional nonlinear optimization methods.
-Can be used either as a standalone solver or to polish solutions from other methods.
-
-# Arguments
-- `poly_system`: System of polynomial equations to solve
-- `varlist`: List of variables in the system
-- `start_point`: Optional starting point. If not provided, random initialization is used
-- `optimizer`: The optimization algorithm to use (default: BFGS)
-- `polish_only`: If true, assumes start_point is close to solution and uses more local methods
-- `options`: Dictionary of additional options for the optimizer
-
-# Returns
-- `solutions`: Array of solutions found
-- `hc_variables`: Variables in HomotopyContinuation format
-"""
-# Shared by the NLLS solvers below (Phase D2 dedup — was copied 4×): compile the
-# system via build_function, falling back to per-call substitute/value (orders of
+# Residual for solve_with_fast_nlopt: compile the system via build_function, falling back to per-call substitute/value (orders of
 # magnitude slower — the @warn matters). Returns (residual!, eval_count, is_compiled).
 function _nlls_residual_closure(prepared_system, mangled_varlist, label::AbstractString)
 	compiled! = nothing
@@ -81,7 +58,7 @@ function _nlls_residual_closure(prepared_system, mangled_varlist, label::Abstrac
 	return residual!, eval_count, compiled! !== nothing
 end
 
-# Shared 5-frame solver-exception report (Phase D2 dedup — was copied 4×).
+# Five-frame report of an exception thrown inside a solver.
 function _log_solver_exception(label::AbstractString, e, bt)
 	@error "$label failed" exception = (e, bt)
 	println("SOLVER_ERROR: $label threw exception:")
@@ -93,112 +70,15 @@ function _log_solver_exception(label::AbstractString, e, bt)
 	end
 end
 
-function solve_with_nlopt(poly_system, varlist;
-	start_point = nothing,
-	optimizer = NonlinearSolve.LevenbergMarquardt(),
-	polish_only = false,
-	options = Dict())
-
-	# Check if we received Nemo polynomials instead of Symbolics expressions
-	if !isempty(poly_system) && poly_system[1] isa Nemo.QQMPolyRingElem
-		error("solve_with_nlopt received Nemo polynomials instead of Symbolics expressions. This suggests a conversion issue in SI.jl integration.")
-	end
-
-	# Prepare system for optimization
-	prepared_system, mangled_varlist = (poly_system, varlist)
-
-	# Debug controls
-	debug = get(options, :debug, false)
-	jac_mode = get(options, :jacobian, :none)
-
-	# Compiled-or-fallback residual (shared helper; Phase D2 dedup)
-	residual!, res_evals_nlopt, _ = _nlls_residual_closure(prepared_system, mangled_varlist, "solve_with_nlopt")
-
-	# Set up optimization problem
-	n = length(varlist)
-	m = length(prepared_system)  # Number of equations
-	x0 = if isnothing(start_point)
-		randn(n)  # Random initialization if no start point provided
-	else
-		start_point
-	end
-
-	# Debug pre-solve
-	if debug
-		println("[NLOPT] equations=", m, " variables=", n)
-		println("[NLOPT] optimizer=", typeof(optimizer))
-		println("[NLOPT] jacobian_mode=", jac_mode)
-		println("[NLOPT] eltype(x0)=", eltype(x0))
-	end
-
-	# Calculate initial residual
-	initial_residual = zeros(m)
-	residual!(initial_residual, x0, nothing)
-	initial_norm = norm(initial_residual)
-
-	# Create NonlinearLeastSquaresProblem
-	prob = NonlinearLeastSquaresProblem(
-		NonlinearFunction(residual!),
-		x0,
-		nothing,
-	)
-
-	# Set solver options based on polish_only
-	solver_opts = if polish_only
-		(abstol = 1e-12, reltol = 1e-12, maxiters = 1000)
-	else
-		(abstol = 1e-8, reltol = 1e-8, maxiters = 10000)
-	end
-
-	# Merge with user options (only recognized keywords)
-	user_opts = Dict{Symbol, Any}()
-	for (k, v) in options
-		if k in (:abstol, :reltol, :maxiters)
-			user_opts[k] = v
-		end
-	end
-	solver_opts = merge(solver_opts, user_opts)
-
-	# Solve the problem with exception handling
-	sol = try
-		NonlinearSolve.solve(prob, optimizer; solver_opts...)
-	catch e
-		_rethrow_if_interrupt(e)
-		_log_solver_exception("solve_with_nlopt", e, catch_backtrace())
-		return [], mangled_varlist, Dict(), mangled_varlist
-	end
-
-	# Check if solution is valid
-	if SciMLBase.successful_retcode(sol)
-		# Calculate final residual
-		final_residual = zeros(m)
-		residual!(final_residual, sol.u, nothing)
-		final_norm = norm(final_residual)
-
-		improvement = initial_norm - final_norm
-		if debug
-			if improvement > 0
-				println("Optimization improved residual by $(improvement) (from $(initial_norm) to $(final_norm))")
-			else
-				println("Optimization did not improve residual (initial: $(initial_norm), final: $(final_norm))")
-			end
-		end
-
-		# Return all four expected values: solutions, variables, trivial_dict, trimmed_varlist
-		return [sol.u], mangled_varlist, Dict(), mangled_varlist
-	else
-		@warn "Optimization did not converge. RetCode: $(sol.retcode)"
-		return [], mangled_varlist, Dict(), mangled_varlist
-	end
-end
-
-
 """
 	solve_with_fast_nlopt(poly_system, varlist; kwargs...)
 
-Fast NonlinearLeastSquares solver using compiled symbolic functions.
-Uses Symbolics.build_function to compile the system into efficient Julia code.
-Falls back to substitute/value method if compilation fails.
+Levenberg–Marquardt on the polynomial system from one starting point (random
+unless `start_point` is given), with a ForwardDiff Jacobian. The system is
+compiled with Symbolics.build_function, falling back to substitution if that
+fails. If the iteration limit is reached it retries once with NonlinearSolve's
+`FastShortcutNLLSPolyalg`. A point is returned only when the solver reports
+success; otherwise the solution list is empty.
 """
 function solve_with_fast_nlopt(poly_system, varlist;
 	start_point = nothing,
@@ -213,7 +93,7 @@ function solve_with_fast_nlopt(poly_system, varlist;
 	n = length(mangled_varlist)
 	debug = get(options, :debug, false)
 
-	# Compiled-or-fallback residual (shared helper; Phase D2 dedup)
+	# Compiled residual, or the slow substitution fallback
 	residual!, eval_count, residual_is_compiled = _nlls_residual_closure(prepared_system, mangled_varlist, "solve_with_fast_nlopt")
 
 	# Initial guess and initial residual norm
@@ -299,12 +179,6 @@ function solve_with_fast_nlopt(poly_system, varlist;
 		" (compiled=", residual_is_compiled,
 		" solve_ms=", solve_ms,
 		" evals=", eval_count[], ")")
-
-	# If solver failed but improved significantly, accept the improvement as a polished point
-	if (!SciMLBase.successful_retcode(sol)) && (improvement > 0)
-		@warn "Optimization did not fully converge (RetCode=$(sol.retcode)) but improved residual by $(improvement). Returning best-so-far iterate."
-		return [sol.u], mangled_varlist, Dict(), mangled_varlist
-	end
 
 	if SciMLBase.successful_retcode(sol)
 		return [sol.u], mangled_varlist, Dict(), mangled_varlist

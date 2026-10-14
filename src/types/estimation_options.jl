@@ -9,7 +9,6 @@ Enum for selecting the polynomial system solver method.
 """
 @enum SystemSolverMethod begin
 	SolverHC           # solve_with_hc - HomotopyContinuation solver (default)
-	SolverNLOpt        # solve_with_nlopt - NonlinearSolve optimization
 	SolverFastNLOpt    # solve_with_fast_nlopt - Fast compiled NLOpt
 	SolverRobust       # solve_with_robust - Robust solver with multiple fallbacks
 end
@@ -211,8 +210,10 @@ These are read only by [`sample_problem_data`](@ref).
 - `flow` (default `FlowStandard`): `FlowStandard` is the algebraic method.
   `FlowDirectOpt` fits by local optimization alone.
 - `system_solver` (default `SolverHC`): how the polynomial systems are solved.
-  `SolverHC` is homotopy continuation, which finds every solution. `SolverNLOpt`,
-  `SolverFastNLOpt` and `SolverRobust` are local solvers.
+  `SolverHC` is homotopy continuation, which finds every solution. The others
+  are local solvers and can miss solutions: `SolverRobust` is a trust-region
+  method started from several points, and `SolverFastNLOpt` is
+  Levenberg–Marquardt from one point.
 - `use_si_template` (default `true`): build the equations with
   StructuralIdentifiability.jl.
 - `si_probability` (default `0.99`): the probability with which the
@@ -700,8 +701,6 @@ Convert SystemSolverMethod enum to actual solver function.
 function get_solver_function(method::SystemSolverMethod)
 	if method == SolverHC
 		return solve_with_hc
-	elseif method == SolverNLOpt
-		return solve_with_nlopt
 	elseif method == SolverFastNLOpt
 		return solve_with_fast_nlopt
 	elseif method == SolverRobust

@@ -315,6 +315,22 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         @test analysis[2] < 1e-2  # solutions should be reasonable
     end
 
+    @testset "local system solver $(solver) recovers the parameters" for solver in (SolverRobust, SolverFastNLOpt)
+        # Unpolished first, so the answer is the solver's own; then with the
+        # default refinement. Each local solve compiles its system, so a larger
+        # model costs minutes here.
+        raw_opts = EstimationOptions(datasize = 21, noise_level = 0.0, system_solver = solver, nooutput = true,
+            polish_solver_solutions = false, polish_solutions = false)
+        _, _, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, raw_opts)
+        @test !isempty(analysis.returned_results)
+        @test analysis.besterror < 1e-6
+
+        default_opts = EstimationOptions(datasize = 21, noise_level = 0.0, system_solver = solver, nooutput = true)
+        _, _, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, default_opts)
+        @test !isempty(analysis.returned_results)
+        @test analysis.besterror < 1e-6
+    end
+
     @testset "terminal_fallback=:direct_opt leaves algebraic results alone" begin
         # The fallback runs only when the algebraic solve finds nothing, which
         # this model never does; no test reaches the fallback itself yet.

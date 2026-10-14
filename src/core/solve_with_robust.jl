@@ -4,7 +4,8 @@
 A robust polynomial system solver that uses the best algorithms from our benchmarking.
 Supports both solving from scratch and polishing mode.
 
-This is a plug-in replacement for `solve_with_nlopt` with improved robustness.
+It is selected with `system_solver = SolverRobust`, and the estimation also uses
+it with `polish_only = true` to refine the roots homotopy continuation finds.
 
 # Arguments
 - `poly_system`: Vector of polynomial equations (Symbolics expressions)
@@ -31,8 +32,9 @@ This is a plug-in replacement for `solve_with_nlopt` with improved robustness.
     pattern from polish_residual.jl:22-28 is the escalation lever if that bites)
 
 # Returns
-Same format as solve_with_nlopt: (solutions, varmap, stats, varlist)
-where solutions is a vector of solution dictionaries.
+`(solutions, varlist, Dict(), varlist)`, the format of the other system solvers,
+where `solutions` is a vector of solution vectors in `varlist` order (empty if
+no start converged).
 """
 function solve_with_robust(poly_system, varlist;
 	start_point = nothing,
@@ -206,7 +208,6 @@ function solve_with_robust(poly_system, varlist;
 	all_solutions = []
 	best_solution = nothing
 	best_residual = Inf
-	stats = Dict{Symbol, Any}()
 
 	# Try each starting point
 	start_time = time()
@@ -418,6 +419,7 @@ function solve_with_robust(poly_system, varlist;
 			starts_skipped_bad_residual = starts_skipped_bad_residual,
 			successful_start_count = successful_start_count,
 			algorithm_failure_count = algorithm_failure_count,
+			maxtime_hit_count = maxtime_hit_count,
 			residual_call_count = residual_call_count,
 			residual_seconds = residual_seconds,
 			jacobian_call_count = jacobian_call_count,
@@ -433,22 +435,13 @@ function solve_with_robust(poly_system, varlist;
 		return nothing
 	end
 
-	# Prepare output in same format as solve_with_nlopt
+	# Prepare output in the format of the other system solvers
 	if isempty(all_solutions)
 		if debug
 			println("[ROBUST] No solutions found")
 		end
 		_record_robust_timing!(0)
-		# Fill the shared stats keys before the early return — the no-solution
-		# case is exactly when maxtime_hits matters most (everything timed out).
-		stats[:algorithm] = selected_algo
-		stats[:jacobian] = jac_mode
-		stats[:maxtime_hits] = maxtime_hit_count
-		stats[:best_residual] = best_residual
-		stats[:num_solutions] = 0
-		stats[:multistart] = multistart
-		# Return empty result
-		return ([], Dict(), stats, varlist)
+		return (Vector{Vector{Float64}}(), varlist, Dict(), varlist)
 	end
 
 	# Remove duplicate solutions
@@ -468,14 +461,6 @@ function solve_with_robust(poly_system, varlist;
 		end
 	end
 	robust_stages[:deduplicate_solutions] = get(robust_stages, :deduplicate_solutions, 0.0) + (time() - _deduplicate_t0)
-
-	# Update stats
-	stats[:algorithm] = selected_algo
-	stats[:jacobian] = jac_mode
-	stats[:maxtime_hits] = maxtime_hit_count
-	stats[:best_residual] = best_residual
-	stats[:num_solutions] = length(unique_solutions)
-	stats[:multistart] = multistart
 
 	if debug
 		println("[ROBUST] Found $(length(unique_solutions)) unique solution(s)")

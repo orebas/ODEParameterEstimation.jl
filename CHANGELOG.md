@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### One Levenberg–Marquardt solver — 2026-10-14
+
+- Removed `SolverNLOpt` and `solve_with_nlopt`. They did what
+  `SolverFastNLOpt` does (Levenberg–Marquardt from one starting point) without
+  its Jacobian or retry. The local solvers left are `SolverFastNLOpt` and
+  `SolverRobust`; both are now tested by estimating a model.
+- `SolverFastNLOpt` returns a point only when the solver converged. It used to
+  return a point that had not converged whenever the residual had gone down.
+- `solve_with_robust` returns the same shape of result when it finds nothing
+  as when it finds something.
+
 ### Small corrections found by new tests — 2026-10-14
 
 - `polish_maxtime` of zero or less is now rejected. It used to draw a warning

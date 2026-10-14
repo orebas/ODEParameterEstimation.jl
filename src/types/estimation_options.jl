@@ -48,7 +48,6 @@ Enum for selecting the data interpolation method.
 	InterpolatorAGPUQ          # agp_gpr_uq - GP with full UQ (for calibrated uncertainty)
 	InterpolatorChebyshevAICc  # Chebyshev polynomial with AICc degree selection (spectral)
 	InterpolatorChebyshevBIC   # Chebyshev polynomial with BIC degree selection (spectral)
-	InterpolatorFourierAdaptive # FFT spectral differentiation with adaptive filtering
 	InterpolatorCustom         # User-provided custom interpolator
 end
 
@@ -803,8 +802,6 @@ function get_interpolator_function(method::InterpolatorMethod, custom::Union{Not
 		return chebyshev_aicc
 	elseif method == InterpolatorChebyshevBIC
 		return chebyshev_bic
-	elseif method == InterpolatorFourierAdaptive
-		return fourier_adaptive
 	else
 		error("Unknown interpolator method: $method")
 	end
@@ -844,47 +841,10 @@ function interpolator_method_to_symbol(method::InterpolatorMethod)
 	method == InterpolatorS3BICMatern52 && return :s3_bic_matern52
 	method == InterpolatorChebyshevAICc && return :chebyshev_aicc
 	method == InterpolatorChebyshevBIC && return :chebyshev_bic
-	method == InterpolatorFourierAdaptive && return :fourier_adaptive
 	method == InterpolatorCustom && return :custom
 	return :unknown
 end
 
-"""
-	is_gp_interpolator(method::InterpolatorMethod) -> Bool
-
-Returns true if the interpolator method is a GP-based method that supports S3 refinement.
-"""
-function is_gp_interpolator(method::InterpolatorMethod)::Bool
-	return method in (InterpolatorAGPRobust, InterpolatorAGPRobustRQ,
-	                  InterpolatorAGPRobustSEpRQ, InterpolatorAGPRobustSExRQ,
-	                  InterpolatorAGPRobustMatern52,
-	                  InterpolatorAGPUQ)
-end
-
-"""
-	is_matern_interpolator(method::InterpolatorMethod) -> Bool
-
-Returns true if the interpolator is Matérn-5/2, which is only C² smooth and
-cannot produce valid 3rd+ order derivatives from raw GP output.
-"""
-function is_matern_interpolator(method::InterpolatorMethod)::Bool
-	return method in (InterpolatorAGPRobustMatern52,
-	                  InterpolatorS3Matern52, InterpolatorS3AdaptMatern52, InterpolatorS3BICMatern52)
-end
-
-"""
-	s3_symbol(method::InterpolatorMethod) -> Symbol
-
-Map a GP interpolator method to its S3 companion tag symbol.
-"""
-function s3_symbol(method::InterpolatorMethod)::Symbol
-	method == InterpolatorAGPRobust && return :s3_adapt_se
-	method == InterpolatorAGPRobustRQ && return :s3_adapt_rq
-	method == InterpolatorAGPRobustSEpRQ && return :s3_adapt_se_plus_rq
-	method == InterpolatorAGPRobustSExRQ && return :s3_adapt_se_times_rq
-	method == InterpolatorAGPRobustMatern52 && return :s3_adapt_matern52
-	return :s3_unknown
-end
 
 """
 	resolve_interpolator_list(opts::EstimationOptions) -> Vector{Tuple{InterpolatorMethod, Union{Nothing, Function}}}
@@ -1022,17 +982,6 @@ function _is_s3_method(method::InterpolatorMethod)::Bool
 	                  InterpolatorS3BICSExRQ, InterpolatorS3BICMatern52)
 end
 
-"""
-	_is_s3_adapt_method(method::InterpolatorMethod) -> Bool
-
-Returns true for S3 adaptive-tolerance methods (including deprecated old S3 names).
-"""
-function _is_s3_adapt_method(method::InterpolatorMethod)::Bool
-	return method in (InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ, InterpolatorS3AdaptSEpRQ,
-	                  InterpolatorS3AdaptSExRQ, InterpolatorS3AdaptMatern52,
-	                  InterpolatorS3SE, InterpolatorS3RQ, InterpolatorS3SEpRQ,
-	                  InterpolatorS3SExRQ, InterpolatorS3Matern52)
-end
 
 """
 	_is_s3_bic_method(method::InterpolatorMethod) -> Bool
@@ -1058,16 +1007,6 @@ function _make_cached_gp_func(kernel_type::Symbol, cache::Dict{UInt64, Any})
 	end
 end
 
-"""
-	_make_cached_s3_func(kernel_type, cache) -> Function
-
-Create a closure that reuses a cached GP (if available) for S3 refinement.
-On cache miss, fits the GP internally.
-DEPRECATED: use `_make_cached_s3_adapt_func` instead.
-"""
-function _make_cached_s3_func(kernel_type::Symbol, cache::Dict{UInt64, Any})
-	return _make_cached_s3_adapt_func(kernel_type, cache)
-end
 
 """
 	_make_cached_s3_adapt_func(kernel_type, cache; k=10.0) -> Function

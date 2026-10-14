@@ -145,8 +145,6 @@ end
 	states = ModelingToolkit.unwrap.([θ, ω])
 	@test ODEParameterEstimation._state_base_name_set(states) == Set(["θ", "ω"])
 	@test isequal(ODEParameterEstimation._model_symbol_from_name("ω", states, [ModelingToolkit.unwrap(g)]), states[2])
-	@test ODEParameterEstimation.extract_base_name(Symbol("θ(t)")) == "θ"
-	@test ODEParameterEstimation.extract_base_name(:x1) == "x1"
 end
 
 @testset "Reading a result" begin

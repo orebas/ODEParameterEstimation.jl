@@ -1445,38 +1445,6 @@ function get_polynomial_system_from_sian(si_ode, params_to_assess; p = 0.99, inf
 	)
 end
 
-"""
-	convert_si_polys_to_symbolics(polys::Vector, symbol_map::Vector, gens::Vector, transcendence_subs::Dict)
-
-Convert Nemo polynomial system back to Symbolics expressions that ODEPE expects.
-"""
-function convert_si_polys_to_symbolics(
-	polys::Vector,
-	symbol_map::Vector,
-	gens::Vector,
-	transcendence_subs::Dict,
-)
-	@info "Converting SI.jl polynomials to Symbolics format"
-
-	# Create mapping from Nemo generators to Symbolics variables
-	nemo_to_sym = Dict(gens .=> symbol_map)
-
-	symbolic_equations = []
-
-	for poly in polys
-		# Apply transcendence substitutions if provided
-		if !isempty(transcendence_subs)
-			poly = Symbolics.substitute(poly, transcendence_subs)
-		end
-
-		# Convert Nemo polynomial to Symbolics
-		sym_eq = nemo_to_symbolics(poly, nemo_to_sym)
-		push!(symbolic_equations, sym_eq)
-	end
-
-	@info "Converted $(length(symbolic_equations)) equations to Symbolics format"
-	return symbolic_equations
-end
 
 """
 	parse_derivative_variable_name(var_name::String)

@@ -12,7 +12,7 @@
 # timing sinks) lives on the scoped RunContext (run_context.jl) as of
 # 2026-07-24. The reuse bundle below stays module-global BY DESIGN: it is a
 # cross-run hand-off consumed after the run completes (consensus/benchmark
-# flows via `_last_estimation_reuse()`).
+# flows read `_LAST_ESTIMATION_REUSE[]`).
 const _LAST_ESTIMATION_REUSE = Ref{Any}(nothing)
 
 function _accumulate_timing!(dict::OrderedDict{Symbol, Float64}, key::Symbol, seconds::Real)
@@ -57,9 +57,6 @@ function with_estimation_timing(f::Function)
 	return _capture_estimation_timing(f)
 end
 
-function _last_estimation_reuse()
-	return _LAST_ESTIMATION_REUSE[]
-end
 
 function _timing_json_value(value)
 	if value === nothing || value isa AbstractString || value isa Bool || value isa Real

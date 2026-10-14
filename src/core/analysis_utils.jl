@@ -1,17 +1,3 @@
-"""
-	get_solution_vector(solution)
-
-Extract a vector of values from a solution object.
-
-# Arguments
-- `solution`: Solution object containing states and parameters
-
-# Returns
-- Vector containing concatenated state and parameter values
-"""
-function get_solution_vector(solution)
-	return vcat(collect(values(solution.states)), collect(values(solution.parameters)))
-end
 
 """
 	solution_distance(sol1, sol2)
@@ -574,11 +560,6 @@ function _scored_results(results)
 	end
 end
 
-function _best_scored_result(results)
-	scored = _scored_results(results)
-	isempty(scored) && return nothing
-	return first(sort(scored, by = _result_err_key))
-end
 
 # UQ kernel dispatch (_uq_kernel_for_result and friends) was deleted 2026-08-13:
 # production-uncalled — agp_gpr_uq is SE-only and throws on anything else.
@@ -635,26 +616,6 @@ function _compute_uq_result(
 	return uq_result
 end
 
-"""
-	print_stats_table(io, name, stats)
-
-Print a formatted table of statistics.
-
-# Arguments
-- `io`: IO stream to print to
-- `name`: Name of the statistics group
-- `stats`: Dictionary of statistics to print
-"""
-function print_stats_table(io, name, stats)
-	println(io, "\n$name Statistics:")
-	println(io, "-"^50)
-	println(io, "Variable      | Mean        | Std         | Min         | Max         | Range       | Turns")
-	println(io, "-"^50)
-	for (var, stat) in stats
-		@printf(io, "%-12s | %10.6f | %10.6f | %10.6f | %10.6f | %10.6f | %10d\n",
-			var, stat.mean, stat.std, stat.min, stat.max, stat.range, stat.turns)
-	end
-end
 
 """
 	analyze_estimation_result(problem::ParameterEstimationProblem, result)
@@ -952,9 +913,6 @@ function analyze_estimation_result(problem::ParameterEstimationProblem, result;
 		algebraic_multiplicity = opts.algebraic_multiplicity,
 	)
 end
-
-
-
 
 
 """

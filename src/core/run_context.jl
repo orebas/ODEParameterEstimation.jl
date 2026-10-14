@@ -10,7 +10,7 @@
 # Deliberately NOT migrated:
 #   - `_LAST_ESTIMATION_REUSE` (optimized_multishot_estimation.jl): a CROSS-run
 #     hand-off consumed after the run completes (consensus/benchmark flows via
-#     `_last_estimation_reuse()`). Global by design.
+#     `_LAST_ESTIMATION_REUSE[]`). Global by design.
 #   - the `_*_TIMING_CONTEXT_STACK` label stacks (si_template_integration.jl):
 #     module-global; worst case under concurrent runs is mislabeled timing
 #     rows. Follow-up candidate.

@@ -778,19 +778,6 @@ function _noise_svd_diagnostics(
 	)
 end
 
-function _noise_condition_proxy(J, selected; rank_atol::Float64 = 1e-8)
-	length(selected) == 0 && return Inf
-	Js = J[selected, :]
-	size(Js, 1) < size(Js, 2) && return Inf
-	svs = try
-		svdvals(Js)
-	catch err
-		_rethrow_if_interrupt(err)
-		return Inf
-	end
-	isempty(svs) && return Inf
-	return svs[1] / max(svs[end], rank_atol)
-end
 
 struct NoiseValidationCache
 	usable::Bool

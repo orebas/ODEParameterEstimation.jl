@@ -24,57 +24,6 @@ function Base.showerror(io::IO, err::UnsupportedDerivativeOrderError)
 	!isnothing(err.context) && print(io, " It came up $(err.context).")
 end
 
-"""
-	rational_interpolation_coefficients(x, y, n)
-Adapted from ParameterEstimation.jl (GPL-3.0), revision
-`99f4bd59d9c6cedcfeb644672168aaa3f0088984`,
-`src/rational_interpolation/bary_derivs.jl`. That file also supplied the
-original barycentric and rational interpolation helpers below. See the
-repository's `docs/internal/registry_preparation.md` attribution inventory.
-Perform a rational interpolation of the data `y` at the points `x` with numerator degree `n`.
-This function only returns the coefficients of the numerator and denominator polynomials.
-
-# Arguments
-- `x`: the points where the data is sampled (e.g. time points).
-- `y`: the data sample.
-- `n`: the degree of the numerator.
-
-# Returns
-- `c`: the coefficients of the numerator polynomial.
-- `d`: the coefficients of the denominator polynomial.
-"""
-function rational_interpolation_coefficients(x, y, n)
-	N = length(x)
-	m = N - n - 1
-	A = zeros(N, N)
-	if m > 0
-		A_left_submatrix = reduce(hcat, [x .^ (i) for i in 0:(n)])
-		A_right_submatrix = reduce(hcat, [x .^ (i) for i in 0:(m-1)])
-		A = hcat(A_left_submatrix, -y .* A_right_submatrix)
-		b = y .* (x .^ m)
-		try
-			prob = LinearSolve.LinearProblem(A, b)
-			c = LinearSolve.solve(prob)
-			return c[1:(n+1)], [c[(n+2):end]; 1]
-		catch SingularException
-			lu_res = lu(A)
-			y = lu_res.L \ lu_res.P * b
-			c = lu_res.U \ y
-			return c[1:(n+1)], [c[(n+2):end]; 1]
-		end
-
-	else
-		A = reduce(hcat, [x .^ i for i in 0:n])
-		b = y
-		prob = LinearSolve.LinearProblem(A, b)
-		c = LinearSolve.solve(prob)
-		return c, [1]
-	end
-end
-
-
-
-
 
 ######### TODO(orebas)  REFACTOR into bary_derivs or something similiar
 #to use the below, you can just pass vectors of xvalues and yvalues like so:
@@ -85,6 +34,11 @@ end
 #derivf(z) = ForwardDiff.derivative(F, z)
 #I hope and suspect that other AD frameworks should work as well.
 
+# The barycentric and rational interpolation helpers from here on were adapted
+# from ParameterEstimation.jl (GPL-3.0), revision
+# `99f4bd59d9c6cedcfeb644672168aaa3f0088984`,
+# `src/rational_interpolation/bary_derivs.jl`. See the repository's
+# `docs/internal/registry_preparation.md` attribution inventory.
 function baryEval(z, f::Vector{T}, x::Vector{T}, w::Vector{T}, tol = 1e-13) where {T}
 	@assert(length(f) == length(x) == length(w))
 	num = zero(T)
@@ -196,36 +150,6 @@ end
 
 # AbstractInterpolator is defined in types/core_types.jl (loaded before this file)
 
-"""
-	nth_deriv_at_DEPRECATED_USE_NTH_DERIV(f, n::Int, t::Real) -> Real
-
-DEPRECATED: This function uses recursive ForwardDiff which is inefficient for high-order derivatives.
-Use nth_deriv() instead, which uses TaylorDiff.
-
-Computes the nth derivative of function f at point t using recursive ForwardDiff.
-This becomes exponentially slow for n > 5 and may hang for n > 8.
-
-# Arguments
-- `f`: Function or interpolator to differentiate
-- `n::Int`: Derivative order
-- `t::Real`: Point at which to compute the derivative
-
-# Returns
-- Value of the nth derivative of f at t
-"""
-function nth_deriv_at_DEPRECATED_USE_NTH_DERIV(f, n::Int, t::Real)::Real
-	if n == 0
-		return f(t)
-	elseif n == 1
-		return ForwardDiff.derivative(f, t)
-	else
-		g(t) = nth_deriv_at_DEPRECATED_USE_NTH_DERIV(f, n - 1, t)
-		return ForwardDiff.derivative(g, t)
-	end
-end
-
-# Deprecated: Add specific methods for interpolators
-nth_deriv_at_DEPRECATED_USE_NTH_DERIV(f::AbstractInterpolator, n::Int, t::Real)::Real = nth_deriv_at_DEPRECATED_USE_NTH_DERIV(x -> f(x), n, t)
 
 # Keep nth_deriv_at as an alias to nth_deriv for backward compatibility but with a warning
 function nth_deriv_at(f, n::Int, t::Real)::Real
@@ -312,10 +236,6 @@ function aaad(xs::AbstractArray{T}, ys::AbstractArray{T}, force_gpr::Bool = fals
 end
 
 
-
-
-
-
 function fhd(xs::AbstractArray{T}, ys::AbstractArray{T}, N::Int) where {T}
 	#@suppress begin
 	@assert length(xs) == length(ys)
@@ -331,13 +251,6 @@ end
 
 
 ####################
-
-
-
-
-
-
-
 
 
 """
@@ -609,180 +522,6 @@ end
 
 
 """
-	agp_gpr(xs, ys; kernel_type=:se) -> AGPInterpolator
-
-Creates GP interpolator using AbstractGPs.jl with ForwardDiff-based hyperparameter optimization.
-This is the recommended approach - uses automatic differentiation for efficient gradient
-computation, following the AbstractGPs.jl best practices.
-
-Normalizes both X (to [0,1]) and Y (standardize) for numerical stability.
-
-# Arguments
-- `xs::AbstractArray{T}`: X coordinates (e.g., time points)
-- `ys::AbstractArray{T}`: Y coordinates (observations)
-- `kernel_type::Symbol`: `:se` (Squared Exponential) or `:matern52`
-
-# Returns
-- `AGPInterpolator` - callable as `interp(x)` for mean, or use `mean_and_var(interp, x)`
-
-# Example
-```julia
-interp = agp_gpr(t_data, y_data)
-prediction = interp(1.5)                      # Mean only
-mean_val, variance = mean_and_var(interp, 1.5)  # With uncertainty
-```
-"""
-function agp_gpr(xs::AbstractArray{T}, ys::AbstractArray{T};
-                 kernel_type::Symbol = :se)::AGPInterpolator where {T}
-	@assert length(xs) == length(ys) "Input arrays must have same length"
-	@assert length(xs) >= 3 "Need at least 3 points for GP interpolation"
-
-	# Handle constant data edge case
-	y_std_raw = std(ys)
-	if y_std_raw < 1e-10
-		constant_val = mean(ys)
-		return AGPInterpolator(
-			x -> constant_val,
-			x -> 0.0,
-			nothing,
-			0.0, 1.0, constant_val, 1.0
-		)
-	end
-
-	# NO X normalization - use raw X values like GPR does
-	# This avoids chain rule complications when computing derivatives with TaylorDiff
-	xs_raw = collect(xs)
-
-	# Standardize Y only (zero mean, unit variance)
-	y_mean = mean(ys)
-	y_std = max(y_std_raw, 1e-8)
-	ys_norm = (collect(ys) .- y_mean) ./ y_std
-
-	# No fixed jitter in the NLL — let the optimizer find the true noise level.
-	# Adaptive jitter (_cholesky_adaptive) is used only for the final Cholesky
-	# factorization after optimization, purely for numerical stability.
-	# Previously kernel_jitter=1e-8 here created an artificial noise floor that
-	# over-regularized the GP by ~100x at low noise, inflating derivative errors.
-
-	# Initial hyperparameters (in log space for unconstrained optimization)
-	# Match GPR: use raw xs std (not normalized)
-	initial_log_lengthscale = log(std(xs_raw) / 8)
-	initial_log_variance = 0.0  # log(1.0)
-	initial_log_noise = -2.0    # ~0.135
-
-	# Build base kernel using KernelFunctions.jl (used only for final GP posterior)
-	base_kernel = kernel_type == :matern52 ? Matern52Kernel() : SqExponentialKernel()
-	is_matern52 = (kernel_type == :matern52)
-	const_sqrt5 = sqrt(5.0)
-
-	# Precompute squared distance matrix for manual kernel (ForwardDiff-compatible)
-	n = length(xs_raw)
-	D² = Matrix{Float64}(undef, n, n)
-	for j in 1:n
-		for i in 1:n
-			D²[i, j] = abs2(xs_raw[i] - xs_raw[j])
-		end
-	end
-
-	# Manual negative log marginal likelihood — ForwardDiff-compatible.
-	# Uses log-space parameterization (unconstrained) matching GaussianProcesses.jl.
-	# This replaces the Zygote+AbstractGPs path that segfaults in Julia 1.12.
-	function neg_logpdf_agp(θ)
-		l = exp(θ[1])      # lengthscale
-		σ² = exp(θ[2])     # signal variance
-		σₙ² = exp(θ[3])    # noise variance
-
-		# Build kernel matrix manually (ForwardDiff-safe: no KernelFunctions dispatch)
-		if is_matern52
-			inv_l = 1 / l
-			R = sqrt.(D²) .* inv_l
-			K = σ² .* (1 .+ const_sqrt5 .* R .+ 5 .* R .^ 2 ./ 3) .* exp.((-const_sqrt5) .* R)
-		else
-			inv_2l² = 1 / (2 * l * l)
-			K = σ² .* exp.((-inv_2l²) .* D²)
-		end
-
-		# Add noise variance to diagonal (no fixed jitter — let optimizer find true σₙ²)
-		Kn = K + σₙ² * I
-		try
-			C = cholesky(Symmetric(Kn))
-			alpha_local = C \ ys_norm
-			data_fit = dot(ys_norm, alpha_local)
-			log_det = 2 * sum(log.(diag(C.U)))
-			return (data_fit + log_det + n * log(2π)) / 2
-		catch e
-			@debug "agp_gpr log-likelihood evaluation failed (Cholesky)" exception = e
-			return 1e8 + sum(abs2, θ)
-		end
-	end
-
-	# Initial values (log-space, unconstrained)
-	θ0 = [initial_log_lengthscale, initial_log_variance, initial_log_noise]
-
-	# Optimized hyperparameters (defaults in case optimization fails)
-	l_opt = exp(initial_log_lengthscale)
-	σ²_opt = 1.0
-	σₙ²_opt = exp(initial_log_noise)
-
-	try
-		# Use unconstrained LBFGS with ForwardDiff exact gradients.
-		# This matches GaussianProcesses.jl's optimize! behavior.
-		od = Optim.OnceDifferentiable(neg_logpdf_agp, θ0; autodiff = AutoForwardDiff())
-		result = Optim.optimize(
-			od,
-			θ0,
-			LBFGS(linesearch = LineSearches.BackTracking()),
-			Optim.Options(iterations = 1000),
-		)
-		θ_opt = Optim.minimizer(result)
-		l_opt = exp(θ_opt[1])
-		σ²_opt = exp(θ_opt[2])
-		σₙ²_opt = exp(θ_opt[3])
-	catch e
-		@warn "agp_gpr hyperparameter optimization failed, using defaults" exception = e
-	end
-
-	# Build final GP with optimized hyperparameters (using raw X)
-	scaled_kernel_opt = base_kernel ∘ ScaleTransform(1.0 / l_opt)
-	kernel_opt = σ²_opt * scaled_kernel_opt
-	f_opt = AbstractGPs.GP(kernel_opt)
-
-	# Pre-compute cached alpha for TaylorDiff-compatible predictions
-	# This avoids going through AbstractGPs/KernelFunctions/Distances which don't support TaylorScalar
-	n = length(xs_raw)
-	I_n = Matrix{Float64}(I, n, n)
-	K_train = σ²_opt * kernelmatrix(scaled_kernel_opt, xs_raw)
-	K_noisy = K_train + σₙ²_opt * I_n
-	C_opt, _jitter_used = _cholesky_adaptive(K_noisy)
-	alpha = C_opt \ collect(ys_norm)  # Pre-computed weights for mean prediction
-
-	# Build posterior for variance predictions (needs effective noise including any jitter)
-	effective_noise = σₙ²_opt + _jitter_used
-	f_posterior = AbstractGPs.posterior(f_opt(xs_raw, effective_noise), ys_norm)
-
-	# Prediction using cached alpha - TaylorDiff compatible (only basic arithmetic)
-	# This is O(n) per prediction and works with TaylorScalar because kernel(x, xi)
-	# is just exp(-0.5 * (x - xi)^2 / l^2) - basic math operations
-	# NO X normalization - use raw x directly like GPR
-	function mean_pred(x::Real)
-		# Compute k_star = kernel vector between x and training points (raw X)
-		# Using manual evaluation instead of kernelmatrix to support TaylorScalar
-		k_star = [σ²_opt * scaled_kernel_opt(x, xi) for xi in xs_raw]
-		# Mean = k_star' * alpha
-		return y_std * dot(k_star, alpha) + y_mean
-	end
-
-	function std_pred(x::Real)
-		# For variance, still use posterior (not used in TaylorDiff path)
-		pred_var = AbstractGPs.var(f_posterior([x]))[1]
-		return y_std * sqrt(pred_var)
-	end
-
-	# Store dummy values for x_min/x_range since we're not using X normalization
-	return AGPInterpolator(mean_pred, std_pred, f_posterior, 0.0, 1.0, y_mean, y_std)
-end
-
-"""
 	mean_and_var(interp::AGPInterpolator, x::Real) -> (Float64, Float64)
 
 Returns both mean prediction and variance at point x.
@@ -827,7 +566,7 @@ function agp_gpr_robust(xs::AbstractArray{T}, ys::AbstractArray{T};
 	@assert length(xs) == length(ys) "Input arrays must have same length"
 	@assert length(xs) >= 3 "Need at least 3 points for GP interpolation"
 
-	# Handle constant data edge case (same as agp_gpr)
+	# Handle constant data edge case
 	y_std_raw = std(ys)
 	if y_std_raw < 1e-10
 		constant_val = mean(ys)
@@ -839,7 +578,7 @@ function agp_gpr_robust(xs::AbstractArray{T}, ys::AbstractArray{T};
 		)
 	end
 
-	# NO X normalization (same as agp_gpr, required for TaylorDiff)
+	# NO X normalization (required for TaylorDiff)
 	xs_raw = collect(Float64, xs)
 	n = length(xs_raw)
 
@@ -1473,158 +1212,3 @@ function chebyshev_bic(xs::AbstractArray{T}, ys::AbstractArray{T})::ChebyshevApp
 	return ChebyshevApprox(coeffs, x_min, x_max, deg)
 end
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Fourier spectral interpolation with adaptive low-pass filtering
-# ═══════════════════════════════════════════════════════════════════════════════
-
-"""
-    FourierApprox <: AbstractInterpolator
-
-FFT-based spectral interpolation with symmetric extension for non-periodic data.
-Derivatives use spectral differentiation (ik)^n with low-pass filtering.
-
-Since TaylorDiff through linear interpolation only gives piecewise-constant
-derivatives, this struct precomputes derivative grids at construction time.
-"""
-struct FourierApprox <: AbstractInterpolator
-	x_grid::Vector{Float64}
-	y_grid::Vector{Float64}
-	deriv_grids::Dict{Int, Vector{Float64}}  # order => derivative values on x_grid
-	max_precomputed_order::Int
-end
-
-function (fa::FourierApprox)(x)
-	# Linear interpolation on original grid
-	idx = searchsortedfirst(fa.x_grid, x)
-	idx <= 1 && return fa.y_grid[1]
-	idx > length(fa.x_grid) && return fa.y_grid[end]
-	t = (x - fa.x_grid[idx-1]) / (fa.x_grid[idx] - fa.x_grid[idx-1])
-	return (1 - t) * fa.y_grid[idx-1] + t * fa.y_grid[idx]
-end
-
-"""
-    _fourier_deriv_grid(x, y, order, filter_frac)
-
-Compute the `order`-th derivative on the grid via spectral differentiation.
-Uses symmetric extension + DFT + (ik)^n + low-pass filter + IDFT.
-Pure Julia implementation (no FFTW dependency).
-"""
-function _fourier_deriv_grid(x::Vector{Float64}, y::Vector{Float64}, order::Int, filter_frac::Float64)
-	N = length(y)
-	# Symmetric extension to reduce edge effects
-	y_ext = vcat(reverse(y[2:end]), y, reverse(y[1:end-1]))
-	N_ext = length(y_ext)
-
-	# DFT (pure Julia — O(N²) but fine for N≤500)
-	y_fft = zeros(ComplexF64, N_ext)
-	for k in 0:(N_ext-1)
-		for j in 0:(N_ext-1)
-			y_fft[k+1] += y_ext[j+1] * exp(-2π * im * k * j / N_ext)
-		end
-	end
-
-	# Wavenumber array
-	dx = mean(diff(x))
-	freqs = [(k <= N_ext ÷ 2 ? k : k - N_ext) / (N_ext * dx) for k in 0:(N_ext-1)]
-	angular_k = 2π .* freqs
-
-	# Spectral differentiation with low-pass filter
-	k_max = maximum(abs.(angular_k))
-	k_cutoff = filter_frac * k_max
-	for i in eachindex(y_fft)
-		if abs(angular_k[i]) <= k_cutoff
-			y_fft[i] *= (im * angular_k[i])^order
-		else
-			y_fft[i] = 0.0
-		end
-	end
-
-	# IDFT
-	deriv_ext = zeros(Float64, N_ext)
-	for j in 0:(N_ext-1)
-		val = zero(ComplexF64)
-		for k in 0:(N_ext-1)
-			val += y_fft[k+1] * exp(2π * im * k * j / N_ext)
-		end
-		deriv_ext[j+1] = real(val) / N_ext
-	end
-
-	# Extract middle section (original domain)
-	offset = N - 1
-	return deriv_ext[(offset+1):(offset+N)]
-end
-
-"""
-    _estimate_noise_fraction(y)
-
-Estimate the fraction of energy in high-frequency noise from the DFT spectrum.
-Returns a value in [0, 1] where 0 = noiseless, 1 = pure noise.
-"""
-function _estimate_noise_fraction(y::Vector{Float64})
-	N = length(y)
-	N < 10 && return 0.5
-
-	# Simple DFT magnitude spectrum
-	mags = zeros(N)
-	for k in 0:(N-1)
-		val = zero(ComplexF64)
-		for j in 0:(N-1)
-			val += y[j+1] * exp(-2π * im * k * j / N)
-		end
-		mags[k+1] = abs(val)
-	end
-
-	# Compare energy in top quarter vs total
-	half = N ÷ 2
-	quarter = N ÷ 4
-	total_energy = sum(mags[2:half] .^ 2)
-	high_energy = sum(mags[(half-quarter+1):half] .^ 2)
-	total_energy < 1e-15 && return 0.0
-	return clamp(high_energy / total_energy, 0.0, 1.0)
-end
-
-"""
-    fourier_adaptive(xs, ys) -> FourierApprox
-
-Fit a Fourier spectral interpolant with adaptive low-pass filter.
-Precomputes derivatives up to order 8 on the data grid.
-"""
-function fourier_adaptive(xs::AbstractArray{T}, ys::AbstractArray{T})::FourierApprox where {T}
-	x = Float64.(xs)
-	y = Float64.(ys)
-
-	# Adaptive filter fraction based on noise estimation
-	noise_frac = _estimate_noise_fraction(y)
-	filter_frac = clamp(0.5 - 0.3 * noise_frac, 0.15, 0.5)
-
-	# Precompute derivative grids
-	max_order = 8
-	deriv_grids = Dict{Int, Vector{Float64}}()
-	for order in 1:max_order
-		try
-			deriv_grids[order] = _fourier_deriv_grid(x, y, order, filter_frac)
-		catch
-			deriv_grids[order] = fill(NaN, length(x))
-		end
-	end
-
-	return FourierApprox(x, y, deriv_grids, max_order)
-end
-
-"""
-    nth_deriv_at(fa::FourierApprox, n::Int, t::Float64) -> Float64
-
-Evaluate nth derivative of FourierApprox at point t using precomputed grids.
-"""
-function nth_deriv_at(fa::FourierApprox, n::Int, t::Float64)
-	n == 0 && return fa(t)
-	!haskey(fa.deriv_grids, n) && return NaN
-
-	grid = fa.deriv_grids[n]
-	# Linear interpolation on the derivative grid
-	idx = searchsortedfirst(fa.x_grid, t)
-	idx <= 1 && return grid[1]
-	idx > length(fa.x_grid) && return grid[end]
-	frac = (t - fa.x_grid[idx-1]) / (fa.x_grid[idx] - fa.x_grid[idx-1])
-	return (1 - frac) * grid[idx-1] + frac * grid[idx]
-end

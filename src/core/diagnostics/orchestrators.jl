@@ -59,7 +59,7 @@ function diagnose(
     kwargs...,
 )
     # Auto-handle transcendental forcings (sin/cos/exp). Mirrors what
-    # diagnose_model and analyze_parameter_estimation_problem already do.
+    # analyze_parameter_estimation_problem already does.
     # transform_pep_for_estimation is idempotent: short-circuits to (pep, nothing)
     # when no transcendentals are detected, so this is a no-op for polynomial models.
     t_var_for_trfn = ModelingToolkit.get_iv(pep.model.system)

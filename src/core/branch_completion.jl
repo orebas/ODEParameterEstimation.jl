@@ -1,15 +1,11 @@
-"""
-	complete_branches_from_anchor(PEP, anchor, setup_data, opts)
-
-Experimental branch-completion adapter.
-
-The normal pipeline still does all interpolation, shooting, synthesis, and
-polish work needed to choose a strong anchor candidate. Branch completion then
-uses that anchor only to build exact observable jets, instantiates the existing
-SI template with those jets, solves the trimmed algebraic system, verifies the
-solutions against any rank-trimmed dropped equations, and returns the verified
-algebraic sibling set.
-"""
+# Experimental branch completion (`complete_branches_from_anchor_report`).
+#
+# The normal pipeline still does all interpolation, shooting, synthesis, and
+# polish work needed to choose a strong anchor candidate. Branch completion then
+# uses that anchor only to build exact observable jets, instantiates the existing
+# SI template with those jets, solves the trimmed algebraic system, verifies the
+# solutions against any rank-trimmed dropped equations, and returns the verified
+# algebraic sibling set.
 
 const _LAST_BRANCH_COMPLETION_DEBUG = Ref{Any}(nothing)
 
@@ -440,14 +436,6 @@ function complete_branches_from_anchor_report(
 	)
 end
 
-function complete_branches_from_anchor(
-	PEP::ParameterEstimationProblem,
-	anchor::ParameterEstimationResult,
-	setup_data,
-	opts::EstimationOptions,
-)
-	return complete_branches_from_anchor_report(PEP, anchor, setup_data, opts).results
-end
 
 function maybe_replace_with_branch_completion(
 	PEP::ParameterEstimationProblem,

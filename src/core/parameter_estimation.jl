@@ -142,9 +142,6 @@ function convert_to_real_or_complex_array(values)::Union{Array{Float64, 1}, Arra
 end
 
 
-
-
-
 """
 	create_interpolants(
 		measured_quantities::Vector{ModelingToolkit.Equation},
@@ -193,8 +190,6 @@ function create_interpolants(
 end
 
 
-
-
 function determine_optimal_points_count(model, measured_quantities, max_num_points, t_vector, nooutput)
 	(t, eqns, states, params) = unpack_ODE(model)
 	time_interval = extrema(t_vector)
@@ -230,8 +225,6 @@ function determine_optimal_points_count(model, measured_quantities, max_num_poin
 	return good_num_points, good_deriv_level, good_udict, good_varlist, good_DD
 
 end
-
-
 
 
 function _state_base_name_set(states)
@@ -533,25 +526,6 @@ function build_si_template_for_fixed_params(
 	)
 end
 
-function select_one_legacy_template_fix_variable(si_template, already_fixed::Set, diagnostics; states = nothing)
-	if hasproperty(si_template, :structural_analysis) && si_template.structural_analysis.strategy == :local_basis
-		fixed_names = Set(string.(collect(already_fixed)))
-		remaining = filter(q -> !(q in fixed_names), si_template.structural_analysis.coordinate_basis)
-		return isempty(remaining) ? (nothing, nothing) : (Symbolics.variable(Symbol(first(remaining))), 1.0)
-	end
-	candidate_vars = _candidate_fix_variables(si_template.unidentifiable, already_fixed, states)
-	if isempty(candidate_vars)
-		diagnostics && println("[LEGACY-TEMPLATE-REPAIR] No unfixed structural candidates remain for legacy square repair")
-		return nothing, nothing
-	end
-
-	symbolic_identifiable_funcs = _symbolic_identifiable_functions(si_template.identifiable_funcs)
-	selected = _rank_based_fix_candidates(candidate_vars, symbolic_identifiable_funcs, diagnostics)
-	param_to_fix = isempty(selected) ? candidate_vars[1] : selected[1]
-	param_to_fix_sym = Symbolics.variable(Symbol(string(param_to_fix)))
-	diagnostics && println("[LEGACY-TEMPLATE-REPAIR] Selected fix variable: $param_to_fix_sym")
-	return param_to_fix_sym, 1.0
-end
 
 function prepare_si_template_with_structural_fix(
 	ordered_model,
@@ -629,33 +603,6 @@ function prepare_si_template_with_structural_fix(
 	return final_template, structure
 end
 
-
-"""
-	handle_unidentifiability(si_template, diagnostics; states, params)
-
-# Arguments
-- `si_template`: Template with structural analysis (or a legacy identifiable-function list).
-- `states`, `params`: Original symbols used to report representative assignments.
-
-# Returns
-The equations and template after applying the chosen representative assignments
-to jet-0 coordinates. Differential equations remain unchanged.
-"""
-function handle_unidentifiability(si_template, diagnostics; states = nothing, params = nothing)
-	structural_fix_info = derive_structural_fix_set(si_template, diagnostics; states = states, params = params)
-	if isempty(structural_fix_info.pre_fixed)
-		return si_template.equations, si_template
-	end
-	fix_dict = Dict{Any, Float64}()
-	for (param, fix_value) in structural_fix_info.pre_fixed
-		fix_dict[Symbolics.variable(Symbol(string(param) * "_0"))] = fix_value
-	end
-	template_equations = Symbolics.substitute.(si_template.equations, Ref(fix_dict))
-	full_equations = hasproperty(si_template, :all_equations) ? si_template.all_equations : si_template.equations
-	new_si_template = (; si_template..., equations = template_equations,
-		all_equations = Symbolics.substitute.(full_equations, Ref(fix_dict)))
-	return template_equations, new_si_template
-end
 
 """
 	compute_default_bounds(PEP::ParameterEstimationProblem; multiplier = DEFAULT_BOUND_MULTIPLIER)
@@ -948,7 +895,6 @@ function multipoint_numerical_jacobian(
 	end
 
 
-
 	matrix = ForwardDiff.jacobian(f, full_values)
 	matrix_float = map(x -> Float64(Symbolics.value(x)), matrix)
 	return matrix_float, DD
@@ -1173,47 +1119,6 @@ function multipoint_local_identifiability_analysis(
 	DD.all_unidentifiable = unident_set
 	return (deriv_level, unident_dict, varlist, DD)
 end
-
-
-
-
-
-
-
-"""
-	calculate_observable_derivatives(equations, measured_quantities, nderivs=5)
-
-Calculate symbolic derivatives of observables up to the specified order using ModelingToolkit.
-Returns the expanded measured quantities with derivatives and the derivative variables.
-"""
-function calculate_observable_derivatives(equations, measured_quantities, nderivs = 5)
-	# Create equation dictionary for substitution
-	equation_dict = Dict(eq.lhs => eq.rhs for eq in equations)
-
-	n_observables = length(measured_quantities)
-
-	# Create symbolic variables for derivatives
-	ObservableDerivatives = Symbolics.variables(:d_obs, 1:n_observables, 1:nderivs)
-
-	# Initialize vector to store derivative equations
-	SymbolicDerivs = Vector{Vector{Equation}}(undef, nderivs)
-
-	# Calculate first derivatives
-	SymbolicDerivs[1] = [ObservableDerivatives[i, 1] ~ Symbolics.substitute(expand_derivatives(D(measured_quantities[i].rhs)), equation_dict) for i in 1:n_observables]
-
-	# Calculate higher order derivatives
-	for j in 2:nderivs
-		SymbolicDerivs[j] = [ObservableDerivatives[i, j] ~ Symbolics.substitute(expand_derivatives(D(SymbolicDerivs[j-1][i].rhs)), equation_dict) for i in 1:n_observables]
-	end
-
-	# Create new measured quantities with derivatives
-	expanded_measured_quantities = copy(measured_quantities)
-	append!(expanded_measured_quantities, vcat(SymbolicDerivs...))
-
-	return expanded_measured_quantities, ObservableDerivatives
-end
-
-
 
 
 """

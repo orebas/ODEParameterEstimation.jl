@@ -131,25 +131,21 @@ export direct_optimization_parameter_estimation
 # Export utility functions
 export unpack_ODE, tag_symbol, create_ordered_ode_system
 export add_relative_noise, add_additive_noise, add_synthetic_noise, sample_problem_data, calculate_error_stats
-export analyze_estimation_result, print_stats_table, cluster_solutions
+export analyze_estimation_result, cluster_solutions
 export clear_denoms, hmcs, analyze_parameter_estimation_problem, estimate
 export aaad, aaad_old_reliable, AAADapprox, GPRapprox, FHDapprox, nth_deriv, nth_deriv_at, aaad_gpr_pivot, fhdn
-export ChebyshevApprox, chebyshev_aicc, chebyshev_bic, FourierApprox, fourier_adaptive
+export ChebyshevApprox, chebyshev_aicc, chebyshev_bic
 export InterpolatorMethod, InterpolatorAAAD, InterpolatorAAADGPR, InterpolatorAAADOld, InterpolatorFHD
 export InterpolatorAGPRobust, InterpolatorAGPRobustRQ, InterpolatorAGPRobustSEpRQ, InterpolatorAGPRobustSExRQ, InterpolatorAGPRobustMatern52
 export InterpolatorS2AAAMLE, InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ, InterpolatorS3AdaptSEpRQ, InterpolatorS3AdaptSExRQ, InterpolatorS3AdaptMatern52
 export InterpolatorS3BICSE, InterpolatorS3BICRQ, InterpolatorS3BICSEpRQ, InterpolatorS3BICSExRQ, InterpolatorS3BICMatern52
-export InterpolatorChebyshevAICc, InterpolatorChebyshevBIC, InterpolatorFourierAdaptive, InterpolatorAGPUQ, InterpolatorCustom
-export AGPInterpolator, agp_gpr, agp_gpr_robust, mean_and_var
-export calculate_observable_derivatives, create_interpolants, AbstractInterpolator, solve_with_nlopt, solve_with_fast_nlopt
+export InterpolatorChebyshevAICc, InterpolatorChebyshevBIC, InterpolatorAGPUQ, InterpolatorCustom
+export AGPInterpolator, agp_gpr_robust, mean_and_var
+export create_interpolants, AbstractInterpolator, solve_with_nlopt, solve_with_fast_nlopt
 export solve_with_hc_parameterized, convert_to_hc_format_with_params, extract_data_variables_from_DD, evaluate_data_vars_at_point
-export MultiPointTemplate, MultiPointEvaluation, build_multipoint_template, evaluate_multipoint_template, solve_multipoint_direct, solve_multipoint_parameterized, select_time_point_pairs
-export select_time_point_pairs_gp_quality, select_time_point_pairs_sensitivity, select_time_point_pairs_homotopy_probed
-export select_time_points_by_conditioning, solve_multipoint_overdetermined
+export MultiPointTemplate, MultiPointEvaluation, build_multipoint_template, evaluate_multipoint_template, solve_multipoint_direct, solve_multipoint_parameterized
+export solve_multipoint_overdetermined
 export NoiseFrontierCandidate, NoiseFrontierResult, build_noise_frontier_system, build_noise_frontier_multipoint_template, evaluate_noise_frontier_data_vars_at_point, instantiate_noise_frontier_candidate, validate_noise_frontier_instantiation, validate_noise_frontier_candidate_at_values, noise_frontier_rows, write_noise_frontier_csv
-
-# Export logging functions
-export configure_logging, log_matrix, log_equations, log_dict
 
 # Export derivative utilities
 export calculate_higher_derivatives, calculate_higher_derivative_terms
@@ -161,20 +157,20 @@ export detect_transcendentals, transform_pep_for_estimation, TranscendentalInfo
 export rescale_pep, unrescale_results, ScaleInfo, choose_scales
 
 # Export diagnostic functions and types
-export diagnose, diagnose_model, diagnose_derivative_accuracy, diagnose_polynomial_system, diagnose_sensitivity
+export diagnose, diagnose_derivative_accuracy, diagnose_polynomial_system, diagnose_sensitivity
 export PerfectInterpolant, DiagnosticReport, ComprehensiveDiagnosticReport, DerivativeAccuracyReport, PolynomialFeasibilityReport, SensitivityReport, MultipointDiagnosticAnalysis
 export EstimationResultsReport, BacksolveUQReport, AbstractUQOutcome, UncertaintyReport, UQUnavailable, UQComputationError, UQTargetSnapshot, UQLinearizationDiagnostics, UQReliabilityAssessment, uq_reliability, JetInfluenceEstimate, StackedJetInfluenceEstimate, PracticalIdentifiabilityIndex, LocalUQSnapshot, UQBacksolveTransform
-export DerivativeUncertaintyEstimate, compute_sigma_d, get_sigma_d, sigma_d_diagonal
+export DerivativeUncertaintyEstimate, compute_sigma_d, get_sigma_d
 export SensitivitySeedReport, generate_sensitivity_seeds, seed_vectors_to_candidates
 export ErrorBudgetEntry, ErrorBudgetReport, compute_error_budget, compute_multipoint_error_budget
-export ParameterSpreadEntry, CrossSolutionSpread, compute_cross_solution_spread
+export ParameterSpreadEntry, CrossSolutionSpread
 export build_perfect_interpolants, compute_oracle_taylor_coefficients, compute_observable_taylor_coefficients
 export TimingPhaseEntry, TimingBreakdown, with_estimation_timing, timing_breakdown_to_dict
 
 # Export UQ (Uncertainty Quantification) functions
 export AGPInterpolatorUQ, agp_gpr_uq, gp_factorization_diagnostics
 export se_kernel_derivative, se_kernel_prior_covariance_matrix, se_kernel_cross_time_covariance_matrix
-export joint_derivative_covariance, joint_derivative_covariance_cross_time, build_observation_covariance
+export joint_derivative_covariance, build_observation_covariance
 export gp_derivative_influence_matrix, joint_derivative_estimator_covariance, stacked_jet_index, learned_observation_noise_variance, compute_practical_identifiability_index, physicalize_uncertainty_report, unrescale_uncertainty_report
 export print_uncertainty_results
 
@@ -191,7 +187,7 @@ export PolishNewtonTrust, PolishBFGS, PolishLBFGS,
        PolishLSOBoundedLog, PolishFastLMBoundedLog
 export get_solver_function, get_interpolator_function, get_polish_optimizer, get_ad_backend
 export interpolator_method_to_symbol, resolve_interpolator_list, setup_identifiability, compute_shooting_indices
-export is_gp_interpolator, is_matern_interpolator, s3_symbol, s3_refine_gp, s3_refine_gp_adaptive, s3_refine_gp_bic
+export s3_refine_gp, s3_refine_gp_adaptive, s3_refine_gp_bic
 export merge_options, validate_options, print_options
 export compatibility_return_code, sync_result_contract!, lineage_summary
 

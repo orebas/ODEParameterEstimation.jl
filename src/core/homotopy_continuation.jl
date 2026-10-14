@@ -193,8 +193,6 @@ function solve_with_nlopt(poly_system, varlist;
 end
 
 
-
-
 """
 	solve_with_fast_nlopt(poly_system, varlist; kwargs...)
 
@@ -317,26 +315,6 @@ function solve_with_fast_nlopt(poly_system, varlist;
 end
 
 
-
-
-
-
-
-
-
-
-"""
-	exprs_to_AA_polys(exprs, vars)
-
-Convert each symbolic expression in `exprs` into a polynomial in an
-AbstractAlgebra polynomial ring in the variables `vars`. This returns
-both the ring `R` and the vector of polynomials in `R`.
-"""
-function round_floats(expr, digits)
-	r = SymbolicUtils.Rewriters.Prewalk(x -> x isa Float64 ? rationalize(x, tol = 1.0/(10^digits)) : x)
-	return r(expr)
-end
-
 function sanitize_vars(varlist)
 	var_names = string.(varlist)
 	sanitize = name -> begin
@@ -366,44 +344,6 @@ function sanitize_vars(varlist)
 		end
 	end
 	return sanitized
-end
-
-
-
-
-
-
-
-
-
-
-"""
-	add_random_linear_equation_direct(poly_system, varlist)
-
-Returns a modified polynomial system with an additional random linear equation.
-This tries to lower the dimension by 1, hopefully making the solution set finite.
-
-# Arguments
-- `poly_system`: The system of polynomial equations
-- `varlist`: List of variables in the system
-
-# Returns
-- A new polynomial system with an additional random linear equation
-"""
-function add_random_linear_equation_direct(poly_system, varlist)
-	# Get the number of variables
-	n = length(varlist)
-
-	# Generate random coefficients for the linear equation
-	coeffs = rand(Float64, n)
-
-	# Create the linear equation
-	linear_equation = sum(coeffs[i] * varlist[i] for i in 1:n) - rand(Float64)
-
-	# Add the new equation to the system
-	new_poly_system = [poly_system; linear_equation]
-
-	return new_poly_system
 end
 
 
@@ -522,7 +462,6 @@ function solve_with_hc(poly_system, varlist; options = Dict())
 end
 
 
-
 """
 	save_poly_system(filepath, poly_system, varlist;
 					 param_map=nothing, pep=nothing, metadata=nothing)
@@ -604,29 +543,6 @@ function save_poly_system(filepath, poly_system, varlist;
 		end
 	end
 end
-
-"""
-	load_poly_system(filepath)
-
-Loads a polynomial system from a Julia source file.
-
-# Arguments
-- `filepath`: Path to the file to load.
-
-# Returns
-A tuple containing:
-- `poly_system`: The loaded polynomial system.
-- `varlist`: The list of variables.
-"""
-function load_poly_system(filepath)
-	# The file is expected to define `poly_system` and `varlist`
-	loaded_module = @eval Module() begin
-		include($filepath)
-		(poly_system, varlist)
-	end
-	return loaded_module
-end
-
 
 
 # ============================================================================

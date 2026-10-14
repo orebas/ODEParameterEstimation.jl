@@ -61,28 +61,6 @@ function get_sigma_d(estimate::DerivativeUncertaintyEstimate, obs_idx::Int, orde
     return estimate.sigma_d[obs_idx, order + 1]
 end
 
-"""
-    sigma_d_diagonal(estimate; obs_order_pairs) -> Vector{Float64}
-
-Flatten σ_d in the order matching a given list of `(obs_idx, order)` pairs.
-Caller supplies the column ordering from `SensitivityReport.data_sensitivity_data_labels`
-(parsed back to (obs_idx, order)) so the resulting vector aligns with S's columns.
-
-Each entry `i` in the returned vector is `σ_d[obs_pairs[i][1], obs_pairs[i][2]]`,
-ready to be squared and used as `diag(σ_d²)` in `Σ_x = S · diag(σ_d²) · S'`.
-"""
-function sigma_d_diagonal(
-    estimate::DerivativeUncertaintyEstimate,
-    obs_order_pairs::AbstractVector{<:Tuple{Int, Int}},
-)
-    n = length(obs_order_pairs)
-    result = Vector{Float64}(undef, n)
-    @inbounds for i in 1:n
-        obs_idx, order = obs_order_pairs[i]
-        result[i] = get_sigma_d(estimate, obs_idx, order)
-    end
-    return result
-end
 
 """
     compute_sigma_d(interpolant_cache, measured_quantities, t_eval, max_order;

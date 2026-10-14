@@ -331,51 +331,6 @@ end
 
 # ─── Public API: single-series line plot ───────────────────────────────
 
-"""
-    _svg_line_plot(x, y; kwargs...) → String
-
-Generate a complete SVG line plot as a string.
-
-# Keyword arguments
-- `width`, `height`: pixel dimensions (default 600×300)
-- `title`, `xlabel`, `ylabel`: axis labels
-- `color`: line color (default blue)
-"""
-function _svg_line_plot(x::Vector{Float64}, y::Vector{Float64};
-    width::Int = _SVG_DEFAULT_WIDTH,
-    height::Int = _SVG_DEFAULT_HEIGHT,
-    title::String = "",
-    xlabel::String = "",
-    ylabel::String = "",
-    color::String = _SVG_COLORS[1])
-
-    # Filter out NaN/Inf for range computation
-    valid = [(x[i], y[i]) for i in eachindex(x) if isfinite(x[i]) && isfinite(y[i])]
-    isempty(valid) && return "<!-- no valid data -->"
-
-    xs = first.(valid)
-    ys = last.(valid)
-    xmin, xmax = extrema(xs)
-    ymin, ymax = extrema(ys)
-
-    # Add 5% padding
-    x_pad = max((xmax - xmin) * 0.05, 1e-10)
-    y_pad = max((ymax - ymin) * 0.05, abs(ymin) * 0.05 + 1e-10)
-    xmin -= x_pad; xmax += x_pad
-    ymin -= y_pad; ymax += y_pad
-
-    buf = IOBuffer()
-    println(buf, _svg_open(width, height))
-    println(buf, """<rect width="$width" height="$height" fill="white" rx="4"/>""")
-    !isempty(title) && println(buf, _svg_title(title, width))
-    println(buf, _svg_axes(xmin, xmax, ymin, ymax, width, height))
-    println(buf, _svg_polyline(x, y, xmin, xmax, ymin, ymax, width, height; color = color))
-    !isempty(xlabel) && println(buf, _svg_xlabel(xlabel, width, height))
-    !isempty(ylabel) && println(buf, _svg_ylabel(ylabel, height))
-    println(buf, "</svg>")
-
-    return String(take!(buf))
-end
 
 # ─── Public API: multi-series line plot with optional scatter ──────────
 
@@ -388,7 +343,7 @@ plotted against the shared `x` vector.
 # Keyword arguments
 - `scatter_x`, `scatter_y`: optional scatter overlay (data points)
 - `scatter_label`: label for scatter series
-- `width`, `height`, `title`, `xlabel`, `ylabel`: as in `_svg_line_plot`
+- `width`, `height`, `title`, `xlabel`, `ylabel`: size in pixels and the labels
 """
 function _svg_multi_line_plot(x::Vector{Float64}, ys::Vector{Vector{Float64}},
     labels::Vector{String};

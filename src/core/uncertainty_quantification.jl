@@ -20,46 +20,6 @@ Given parameter estimation as F(θ, z) = 0, the IFT gives:
  Helper Functions for Symbol Handling
 ==========================================================================#
 
-"""
-    extract_base_name(sym) -> String
-
-Extract the base variable name from a symbol that may have time-dependent notation.
-E.g., Symbol("x1(t)") -> "x1", :x1 -> "x1"
-"""
-function extract_base_name(sym)
-	# chopsuffix, not a byte range: names such as θ(t) are not ASCII.
-	return String(chopsuffix(string(sym), "(t)"))
-end
-
-"""
-    get_solution_value(dict, target_sym)
-
-Safely get a value from a solution dictionary (states or parameters) by matching
-the base variable name, regardless of whether keys are Symbol("x1(t)") or :x1.
-"""
-function get_solution_value(dict, target_sym)
-	target_base = extract_base_name(target_sym)
-
-	# First try direct lookup
-	if haskey(dict, target_sym)
-		return dict[target_sym]
-	end
-
-	# Try with Symbol()
-	sym_key = Symbol(target_sym)
-	if haskey(dict, sym_key)
-		return dict[sym_key]
-	end
-
-	# Search by base name
-	for (k, v) in dict
-		if extract_base_name(k) == target_base
-			return v
-		end
-	end
-
-	error("Could not find key matching '$target_sym' in dictionary with keys: $(collect(keys(dict)))")
-end
 
 #==========================================================================
  SE Kernel Derivatives - Core Building Block
@@ -688,51 +648,6 @@ function joint_derivative_covariance(interp::AGPInterpolatorUQ, t::Real, max_der
 	return μ_scaled, Matrix(Σ_scaled)
 end
 
-"""
-    joint_derivative_covariance_cross_time(interp::AGPInterpolatorUQ, t_a::Real, t_b::Real, max_deriv::Int=2)
-
-Compute the posterior cross-covariance between derivative vectors at two different time points.
-
-Returns the matrix Σ where Σ[a+1, b+1] = Cov_posterior(f^(a)(t_a), f^(b)(t_b)).
-
-When `t_a == t_b`, this is equivalent to `joint_derivative_covariance`.
-
-# Arguments
-- `interp::AGPInterpolatorUQ`: The GP interpolator
-- `t_a::Real`: First time point
-- `t_b::Real`: Second time point
-- `max_deriv::Int`: Maximum derivative order (default 2)
-
-# Returns
-- `Σ_cross::Matrix{Float64}`: Cross-covariance matrix (NOT necessarily PSD — this is an off-diagonal block)
-
-# Theory
-The posterior cross-covariance is:
-    Σ_cross = Σ_prior_cross(t_a - t_b) - K_*n(t_a) K⁻¹ K_n*(t_b)
-"""
-function joint_derivative_covariance_cross_time(interp::AGPInterpolatorUQ, t_a::Real, t_b::Real, max_deriv::Int = 2)
-	σ² = interp.signal_var
-	ℓ = interp.lengthscale
-	C = interp.chol
-
-	# Prior cross-covariance at delta_t = t_a - t_b
-	Σ_prior_cross = se_kernel_cross_time_covariance_matrix(σ², ℓ, t_a - t_b, max_deriv)
-
-	# Build K_*n matrices for both time points
-	K_star_n_a = _build_K_star_n(interp, t_a, max_deriv)
-	K_star_n_b = _build_K_star_n(interp, t_b, max_deriv)
-
-	# Posterior cross-covariance: Σ_prior_cross - K_*n(t_a) K⁻¹ K_n*(t_b)
-	V_b = C \ K_star_n_b'  # n_train × n_derivs
-	Σ_cross = Σ_prior_cross - K_star_n_a * V_b
-
-	# De-normalize to original scale
-	scale_factors = fill(interp.y_std, max_deriv + 1)
-	Σ_cross_scaled = Diagonal(scale_factors) * Σ_cross * Diagonal(scale_factors)
-
-	# NO PSD enforcement — this is an off-diagonal block, not a covariance matrix
-	return Matrix(Σ_cross_scaled)
-end
 
 #==========================================================================
  Building Full Observation Covariance Matrix Σ_z
@@ -867,7 +782,7 @@ end
 
 Create a GP interpolator with full uncertainty quantification support.
 
-This is like `agp_gpr` but returns an `AGPInterpolatorUQ` that stores all the
+Like `agp_gpr_robust`, but it returns an `AGPInterpolatorUQ` that stores all the
 information needed for computing derivative covariances.
 
 # Arguments
@@ -911,7 +826,7 @@ function agp_gpr_uq(xs::AbstractArray{T}, ys::AbstractArray{T};
 		)
 	end
 
-	# Use raw X values (no normalization) like the standard agp_gpr
+	# Use raw X values (no normalization), as agp_gpr_robust does
 	xs_raw = collect(Float64, xs)
 	n = length(xs_raw)
 

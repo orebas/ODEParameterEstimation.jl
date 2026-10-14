@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### Unused code removed — 2026-10-14
+
+- Removed functions that nothing in the package calls. Some were research
+  tools, which remain on the `research` branch: the alternative ways of
+  choosing time points for the multipoint system
+  (`select_time_point_pairs` and its `_gp_quality`, `_sensitivity` and
+  `_homotopy_probed` variants, `select_time_points_by_conditioning`), the
+  sensitivity-aware equation stripping behind the `strip_strategy` keyword of
+  `build_multipoint_template`, `diagnose_model` with
+  `compute_cross_solution_spread`, and `agp_gpr` (`agp_gpr_robust` and
+  `agp_gpr_uq` remain).
+- Removed the Fourier interpolator (`InterpolatorFourierAdaptive`,
+  `fourier_adaptive`, `FourierApprox`).
+- Removed exported helpers that nothing used: `calculate_observable_derivatives`,
+  `joint_derivative_covariance_cross_time`, `print_stats_table`,
+  `sigma_d_diagonal`, `s3_symbol`, `is_gp_interpolator`,
+  `is_matern_interpolator`, `configure_logging`, `log_matrix`,
+  `log_equations` and `log_dict`, and about twenty internal ones.
+- The package no longer sets the global logger. It only ever did so while it
+  was being precompiled, so a session never saw it, and the `ODEPE_DEBUG`
+  variable that controlled it had no effect.
+- Everything removed is in the history at commit `784d865`.
+
 ### The final refinement works again — 2026-10-13
 
 - Since the precompile step was added on 2026-10-06, the final refinement of

@@ -223,41 +223,6 @@ function detect_transcendentals(equations, measured_quantities, t_var; max_deriv
 	return TranscendentalInfo(entries, substitution_dict, reverse_dict, input_variables, max_derivative_order)
 end
 
-"""
-	transform_equations_for_si(equations, measured_quantities, tr_info)
-
-Replace transcendental subexpressions in equations and measured quantities
-with input variables for SIAN/SI.jl analysis.
-
-# Arguments
-- `equations`: Vector of ODE equations
-- `measured_quantities`: Vector of measurement equations
-- `tr_info::TranscendentalInfo`: Transcendental detection info
-
-# Returns
-- `(new_equations, new_measured_quantities)`: Transformed equation vectors
-"""
-function transform_equations_for_si(equations, measured_quantities, tr_info::TranscendentalInfo)
-	# Build substitution dict for Symbolics.substitute
-	sub_dict = Dict{Any, Any}()
-	for entry in tr_info.entries
-		sub_dict[entry.original_expr] = entry.input_variable
-	end
-
-	# Transform equations
-	new_equations = map(equations) do eq
-		new_rhs = Symbolics.substitute(eq.rhs, sub_dict)
-		eq.lhs ~ new_rhs
-	end
-
-	# Transform measured quantities
-	new_measured = map(measured_quantities) do mq
-		new_rhs = Symbolics.substitute(mq.rhs, sub_dict)
-		mq.lhs ~ new_rhs
-	end
-
-	return new_equations, new_measured
-end
 
 """
 	create_transformed_model(model::OrderedODESystem, measured_quantities, tr_info, t_var)
@@ -424,50 +389,6 @@ function create_transformed_model(model::OrderedODESystem, measured_quantities, 
 	return new_model, all_measured_eqs, all_states_vec, all_params_vec, additional_ic
 end
 
-"""
-	evaluate_input_at_time(tr_info::TranscendentalInfo, t_value::Float64, max_order::Int)
-
-Evaluate all transcendental input variables and their derivatives at a given time point.
-
-# Arguments
-- `tr_info::TranscendentalInfo`: Transcendental detection info
-- `t_value::Float64`: Time point to evaluate at
-- `max_order::Int`: Maximum derivative order to compute
-
-# Returns
-- `Dict{Any, Float64}`: Maps input variables (and their derivatives) to numerical values
-"""
-function evaluate_input_at_time(tr_info::TranscendentalInfo, t_value::Float64, max_order::Int)
-	values = Dict{Any, Float64}()
-
-	for entry in tr_info.entries
-		# Evaluate the original function and its derivatives at t_value
-		c = entry.frequency
-		for order in 0:min(max_order, length(entry.derivative_exprs) - 1)
-			# Compute the value numerically
-			if entry.func_type == :sin
-				# d^n/dt^n sin(c*t) follows the pattern:
-				# n=0: sin(ct), n=1: c*cos(ct), n=2: -c²*sin(ct), n=3: -c³*cos(ct), ...
-				val = _eval_sin_derivative(c, t_value, order)
-			elseif entry.func_type == :cos
-				val = _eval_cos_derivative(c, t_value, order)
-			elseif entry.func_type == :exp
-				val = _eval_exp_derivative(c, t_value, order)
-			else
-				error("Unknown transcendental function type: $(entry.func_type)")
-			end
-
-			# Store with a key that matches what SIAN/SI will produce
-			# The 0th derivative is keyed by the input variable itself
-			if order == 0
-				values[entry.input_variable] = val
-			end
-			# Higher derivatives will be handled by the DD structure
-		end
-	end
-
-	return values
-end
 
 """
 	_eval_sin_derivative(c, t, n)
@@ -741,18 +662,6 @@ function _is_trfn_observable(mq_rhs::Num)::Bool
 	return startswith(name, "_trfn_")
 end
 
-"""
-	is_trfn_template_variable(var_name::String)
-
-Check if a variable name from a SIAN template represents a _trfn_ transcendental
-input variable (or its derivative). These have the form `_trfn_{type}_{freq}_{order}`.
-
-# Returns
-- `true` if the variable is a _trfn_ template variable
-"""
-function is_trfn_template_variable(var_name::AbstractString)
-	return !isnothing(_parse_trfn_template_name(var_name))
-end
 
 """
 	evaluate_trfn_template_variable(var_name::String, t_value::Float64)
@@ -899,18 +808,6 @@ function _parse_obs_trfn_template_name(var_name::AbstractString)
 	return (base_name, func_type, frequency, deriv_order)
 end
 
-"""
-	is_obs_trfn_template_variable(var_name::AbstractString)
-
-Check if a variable name from a SIAN template represents an `_obs_trfn_` transcendental
-observable variable (or its derivative).
-
-# Returns
-- `true` if the variable is an `_obs_trfn_` template variable
-"""
-function is_obs_trfn_template_variable(var_name::AbstractString)
-	return !isnothing(_parse_obs_trfn_template_name(var_name))
-end
 
 """
 	evaluate_obs_trfn_template_variable(var_name::AbstractString, t_value::Float64)

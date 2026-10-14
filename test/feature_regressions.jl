@@ -331,6 +331,14 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         @test analysis.besterror < 1e-6
     end
 
+    @testset "the older way of building the equations still estimates" begin
+        legacy_opts = EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true,
+            system_construction_policy = :legacy)
+        _, _, analysis, _ = run_feature_canary(ODEParameterEstimation.Examples.harmonic_oscillator, legacy_opts)
+        @test !isempty(analysis.returned_results)
+        @test analysis.besterror < 1e-6
+    end
+
     @testset "terminal_fallback=:direct_opt leaves algebraic results alone" begin
         # The fallback runs only when the algebraic solve finds nothing, which
         # this model never does; no test reaches the fallback itself yet.

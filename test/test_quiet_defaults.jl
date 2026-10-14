@@ -73,6 +73,14 @@ end
 	@test !isempty(diagnostics.logs)
 	@test "artifacts" in diagnostics.files
 
+	# Both at once, with every other option at its default, so the printing in
+	# the parameter-homotopy, multipoint and refinement steps runs too.
+	everything = _observe_run(() -> analyze_parameter_estimation_problem(problem,
+		EstimationOptions(datasize = 31, nooutput = false, diagnostics = true)))
+	@test occursin("Starting model: harmonic_oscillator", everything.printed)
+	@test !isempty(everything.logs)
+	@test everything.value[2].best_max_error < 1e-6
+
 	# The polynomial systems, as Julia files, under `saved_systems/` or the
 	# directory asked for. The names have no colons, so Windows can store them.
 	saving(; options...) = _observe_run() do

@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: agp_gpr_uq, gp_factorization_diagnostics
 using Test
 using LinearAlgebra
 using ModelingToolkit

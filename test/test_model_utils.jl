@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: tag_symbol, unpack_ODE
 using Test
 using ModelingToolkit
 using ModelingToolkit: System

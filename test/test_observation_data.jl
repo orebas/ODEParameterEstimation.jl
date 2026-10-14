@@ -1,5 +1,8 @@
 using Test, ODEParameterEstimation, ModelingToolkit, OrderedCollections
 const ODEPE = ODEParameterEstimation
+using ODEParameterEstimation: AbstractInterpolator, agp_gpr_robust, create_interpolants,
+    direct_optimization_parameter_estimation, nth_deriv_at,
+    optimized_multishot_parameter_estimation, package_wide_default_ode_solver, rescale_pep
 
 struct GridRecordingInterpolator <: AbstractInterpolator
     times::Vector{Float64}

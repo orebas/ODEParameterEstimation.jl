@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: InterpolatorMethod
 using ODEParameterEstimation.Examples
 using Test
 using Logging

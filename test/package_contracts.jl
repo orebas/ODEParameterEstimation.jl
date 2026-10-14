@@ -7,6 +7,37 @@ using Test
     @test isempty(undefined)
 end
 
+# What 1.x promises. Removing a name from either list is a breaking change;
+# adding one is not, but should be a decision, not a side effect.
+@testset "Exported and public names are the intended ones" begin
+    exported = Set([
+        :ParameterEstimationProblem, :create_ordered_ode_system, :sample_problem_data,
+        :ObservationData, :ObservationSeries, :observation_times,
+        :estimate, :analyze_parameter_estimation_problem, :EstimationOptions,
+        :SolverHC, :SolverRobust, :SolverFastNLOpt,
+        :FlowStandard, :FlowDirectOpt,
+        :PolishLSOBoundedLog, :PolishFastLMBoundedLog, :PolishNewtonTrust, :PolishBFGS, :PolishLBFGS,
+        :InterpolatorAGPRobust, :InterpolatorAGPRobustRQ, :InterpolatorS3AdaptSE,
+        :InterpolatorS3AdaptRQ, :InterpolatorChebyshevBIC, :InterpolatorChebyshevAICc,
+        :InterpolatorAAADGPR, :InterpolatorAAAD, :InterpolatorS2AAAMLE, :InterpolatorAGPUQ,
+        :InterpolatorCustom,
+        :ParameterEstimationResult,
+        :UncertaintyReport, :UQUnavailable, :print_uncertainty_results,
+        :UnsupportedModelClassError, :UnsupportedDerivativeOrderError, :SamplingFailureError,
+    ])
+    public_only = Set([
+        :Examples,
+        :SystemSolverMethod, :EstimationFlow, :PolishMethod, :InterpolatorMethod,
+        :OrderedODESystem, :ResultProvenance,
+        :AbstractUQOutcome, :UQComputationError, :uq_reliability, :UQReliabilityAssessment,
+        :merge_options, :validate_options, :print_options,
+    ])
+    M = ODEParameterEstimation
+    listed = filter(!=(:ODEParameterEstimation), names(M))
+    @test Set(filter(n -> Base.isexported(M, n), listed)) == exported
+    @test Set(filter(n -> !Base.isexported(M, n) && Base.ispublic(M, n), listed)) == public_only
+end
+
 # A name exported by two imported packages cannot be used unqualified: it stays
 # undefined in this module and fails only when that line runs. Lowered method
 # bodies record every global they reference, so all of them can be checked up

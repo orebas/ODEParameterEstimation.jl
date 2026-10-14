@@ -3,6 +3,7 @@
 # Run: julia --startup-file=no -e 'using ODEParameterEstimation; include("test/test_multipoint_pipeline.jl")'
 
 using ODEParameterEstimation
+using ODEParameterEstimation: InterpolatorMethod
 using Test
 
 function flatten_r(x)

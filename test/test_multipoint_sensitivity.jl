@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: UQTargetSnapshot
 using Symbolics
 # The uncertainty report for a multipoint estimate, built from the exact
 # template, time points and interpolants that produced it.

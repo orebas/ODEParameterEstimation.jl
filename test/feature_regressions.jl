@@ -1,4 +1,7 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: InterpolatorAGPRobustSEpRQ, InterpolatorAGPRobustSExRQ,
+    InterpolatorMethod, InterpolatorS3AdaptSEpRQ, InterpolatorS3AdaptSExRQ,
+    InterpolatorS3BICSE, compute_sigma_d
 using Symbolics
 using Test
 using LinearAlgebra

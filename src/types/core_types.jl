@@ -788,6 +788,13 @@ struct UQUnavailable <: AbstractUQOutcome
     warnings::Vector{String}
 end
 
+"""
+    UQComputationError
+
+Thrown instead of returning a [`UQUnavailable`](@ref) when the uncertainty
+cannot be worked out and the options say `uq_failure_policy = :throw`. Its
+`outcome` field is that `UQUnavailable`.
+"""
 struct UQComputationError <: Exception
     outcome::UQUnavailable
 end

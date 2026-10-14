@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: package_wide_default_ode_solver
 using LinearAlgebra
 using Symbolics
 using Test

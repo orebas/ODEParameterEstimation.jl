@@ -1,4 +1,5 @@
 using ODEParameterEstimation, ModelingToolkit, Symbolics, OrderedCollections, LinearAlgebra, Random, Test
+using ODEParameterEstimation: merge_options
 using ModelingToolkit: t_nounits as t, D_nounits as D
 
 include("estimation_helpers.jl")

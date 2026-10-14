@@ -1,4 +1,5 @@
 using ODEParameterEstimation, Test, LinearAlgebra
+using ODEParameterEstimation: solve_multipoint_overdetermined, solve_with_robust
 using ODEParameterEstimation.Symbolics: @variables, Num, substitute
 const RobustODEPE = ODEParameterEstimation
 

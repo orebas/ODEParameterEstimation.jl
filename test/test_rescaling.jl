@@ -1,4 +1,6 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: choose_scales, rescale_pep, transform_pep_for_estimation,
+    unrescale_results
 using ODEParameterEstimation.Examples
 # Fast unit/contract tests for the opt-in power-of-2 problem rescaling
 # (src/core/problem_rescaling.jl). The slow end-to-end PAYOFF test (hiv recovery

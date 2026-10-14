@@ -1,4 +1,6 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: AbstractInterpolator, UQComputationError, uq_metadata_dict,
+    uq_reliability
 using Test
 using Logging
 using LinearAlgebra

@@ -482,6 +482,3 @@ function solve_with_robust(poly_system, varlist;
 	# Return in same format as other solvers: (solutions, varlist, trivial_dict, trimmed_varlist)
 	return (solutions_as_vectors, varlist, Dict(), varlist)
 end
-
-# Export the function
-export solve_with_robust

@@ -108,78 +108,36 @@ include("core/diagnostics/estimator_aware_uq.jl")
 include("core/estimate.jl")  # keyword problem constructor, `estimate`, result display
 include("examples/Examples.jl")  # the example models, a submodule
 
-# Export types
-export OrderedODESystem, ParameterEstimationProblem, ParameterEstimationResult, ResultProvenance, EstimatorIdentity, NumericalIdentifiabilityAdvisory, DerivativeData, UnsupportedModelClassError, SamplingFailureError, UnsupportedDerivativeOrderError, TAYLORDIFF_MAX_DERIVATIVE_ORDER
-export provenance_metadata_dict, uq_metadata_dict
-export ObservationSeries, ObservationData, observation_times
+# The names a user writes. Everything else is reached as
+# `ODEParameterEstimation.name`; the `public` names below are supported that way,
+# the rest are internal and may change.
 
-# Export constants
-export package_wide_default_ode_solver, CLUSTERING_THRESHOLD, MAX_ERROR_THRESHOLD, IMAG_THRESHOLD, MAX_SOLUTIONS
+# Setting up a problem
+export ParameterEstimationProblem, create_ordered_ode_system, sample_problem_data
+export ObservationData, ObservationSeries, observation_times
 
-# Export core functions
-export solve_with_hc
-export optimized_multishot_parameter_estimation, solve_with_robust
-export direct_optimization_parameter_estimation
+# Estimating
+export estimate, analyze_parameter_estimation_problem, EstimationOptions
 
-# Export utility functions
-export unpack_ODE, tag_symbol, create_ordered_ode_system
-export add_relative_noise, add_additive_noise, add_synthetic_noise, sample_problem_data, calculate_error_stats
-export analyze_estimation_result, cluster_solutions
-export clear_denoms, hmcs, analyze_parameter_estimation_problem, estimate
-export aaad, aaad_old_reliable, AAADapprox, GPRapprox, FHDapprox, nth_deriv, nth_deriv_at, aaad_gpr_pivot, fhdn
-export ChebyshevApprox, chebyshev_aicc, chebyshev_bic
-export InterpolatorMethod, InterpolatorAAAD, InterpolatorAAADGPR, InterpolatorAAADOld, InterpolatorFHD
-export InterpolatorAGPRobust, InterpolatorAGPRobustRQ, InterpolatorAGPRobustSEpRQ, InterpolatorAGPRobustSExRQ
-export InterpolatorS2AAAMLE, InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ, InterpolatorS3AdaptSEpRQ, InterpolatorS3AdaptSExRQ
-export InterpolatorS3BICSE, InterpolatorS3BICRQ, InterpolatorS3BICSEpRQ, InterpolatorS3BICSExRQ
-export InterpolatorChebyshevAICc, InterpolatorChebyshevBIC, InterpolatorAGPUQ, InterpolatorCustom
-export AGPInterpolator, agp_gpr_robust, mean_and_var
-export create_interpolants, AbstractInterpolator, solve_with_fast_nlopt
-export solve_with_hc_parameterized, convert_to_hc_format_with_params, extract_data_variables_from_DD, evaluate_data_vars_at_point
-export MultiPointTemplate, MultiPointEvaluation, build_multipoint_template, evaluate_multipoint_template, solve_multipoint_direct, solve_multipoint_parameterized
-export solve_multipoint_overdetermined
-export NoiseFrontierCandidate, NoiseFrontierResult, build_noise_frontier_system, build_noise_frontier_multipoint_template, evaluate_noise_frontier_data_vars_at_point, instantiate_noise_frontier_candidate, validate_noise_frontier_instantiation, validate_noise_frontier_candidate_at_values, noise_frontier_rows, write_noise_frontier_csv
-
-# Export derivative utilities
-export calculate_higher_derivatives, calculate_higher_derivative_terms
-
-# Export transcendental handling
-export detect_transcendentals, transform_pep_for_estimation, TranscendentalInfo
-
-# Export problem rescaling
-export rescale_pep, unrescale_results, ScaleInfo, choose_scales
-
-# Export uncertainty and sensitivity types
-export PerfectInterpolant
-export AbstractUQOutcome, UncertaintyReport, UQUnavailable, UQComputationError, UQTargetSnapshot, UQLinearizationDiagnostics, UQReliabilityAssessment, uq_reliability, JetInfluenceEstimate, StackedJetInfluenceEstimate, PracticalIdentifiabilityIndex, LocalUQSnapshot, UQBacksolveTransform
-export DerivativeUncertaintyEstimate, compute_sigma_d, get_sigma_d
-export SensitivitySeedReport, generate_sensitivity_seeds, seed_vectors_to_candidates
-export build_perfect_interpolants, compute_oracle_taylor_coefficients, compute_observable_taylor_coefficients
-export TimingPhaseEntry, TimingBreakdown, with_estimation_timing, timing_breakdown_to_dict
-
-# Export UQ (Uncertainty Quantification) functions
-export AGPInterpolatorUQ, agp_gpr_uq, gp_factorization_diagnostics
-export se_kernel_derivative, se_kernel_prior_covariance_matrix, se_kernel_cross_time_covariance_matrix
-export joint_derivative_covariance, build_observation_covariance
-export gp_derivative_influence_matrix, joint_derivative_estimator_covariance, stacked_jet_index, learned_observation_noise_variance, compute_practical_identifiability_index, unrescale_uncertainty_report
-export print_uncertainty_results
-
-# The example models are reached as `ODEParameterEstimation.Examples`.
-public Examples
-
-
-# Export the main types and functions
-export EstimationOptions, SystemSolverMethod, PolishMethod, EstimationFlow
+# Option values
+export SolverHC, SolverRobust, SolverFastNLOpt
 export FlowStandard, FlowDirectOpt
-export SolverHC, SolverFastNLOpt, SolverRobust
-export InterpolatorS3SE, InterpolatorS3RQ, InterpolatorS3SEpRQ, InterpolatorS3SExRQ
-export PolishNewtonTrust, PolishBFGS, PolishLBFGS,
-       PolishLSOBoundedLog, PolishFastLMBoundedLog
-export get_solver_function, get_interpolator_function, get_polish_optimizer, get_ad_backend
-export interpolator_method_to_symbol, resolve_interpolator_list, setup_identifiability, compute_shooting_indices
-export s3_refine_gp, s3_refine_gp_adaptive, s3_refine_gp_bic
-export merge_options, validate_options, print_options
-export compatibility_return_code, sync_result_contract!, lineage_summary
+export PolishLSOBoundedLog, PolishFastLMBoundedLog, PolishNewtonTrust, PolishBFGS, PolishLBFGS
+export InterpolatorAGPRobust, InterpolatorAGPRobustRQ, InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ,
+       InterpolatorChebyshevBIC, InterpolatorChebyshevAICc, InterpolatorAAADGPR, InterpolatorAAAD,
+       InterpolatorS2AAAMLE, InterpolatorAGPUQ, InterpolatorCustom
+
+# Results, uncertainty and errors
+export ParameterEstimationResult
+export UncertaintyReport, UQUnavailable, print_uncertainty_results
+export UnsupportedModelClassError, UnsupportedDerivativeOrderError, SamplingFailureError
+
+# Supported, but written with the module name
+public Examples
+public SystemSolverMethod, EstimationFlow, PolishMethod, InterpolatorMethod
+public OrderedODESystem, ResultProvenance
+public AbstractUQOutcome, UQComputationError, uq_reliability, UQReliabilityAssessment
+public merge_options, validate_options, print_options
 
 include("precompile_workload.jl")  # the estimation that runs while the package is precompiled
 

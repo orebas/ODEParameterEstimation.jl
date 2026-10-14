@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: InterpolatorMethod
 # The uncertainty report (compute_uncertainty=true) is evaluated at the
 # estimate and the interpolants' derivatives, not at the true values, so it
 # runs on real data where pep.p_true and pep.ic are unknown.

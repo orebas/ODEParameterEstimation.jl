@@ -28,10 +28,6 @@ Enum for selecting the data interpolation method.
 	InterpolatorAGPRobustSEpRQ # agp_gpr_robust with SE + RQ sum kernel
 	InterpolatorAGPRobustSExRQ # agp_gpr_robust with SE * RQ product kernel
 	InterpolatorS2AAAMLE           # S2 composite: AAA(raw data) → MLE (no GP)
-	InterpolatorS3SE               # S3 composite: GP(SE) → AAA → MLE (deprecated — forwards to AdaptSE)
-	InterpolatorS3RQ               # S3 composite: GP(RQ) → AAA → MLE (deprecated — forwards to AdaptRQ)
-	InterpolatorS3SEpRQ            # S3 composite: GP(SE+RQ) → AAA → MLE (deprecated — forwards to AdaptSEpRQ)
-	InterpolatorS3SExRQ            # S3 composite: GP(SE×RQ) → AAA → MLE (deprecated — forwards to AdaptSExRQ)
 	InterpolatorS3AdaptSE          # S3 adaptive-tol: GP(SE) → AAA(adaptive) → MLE
 	InterpolatorS3AdaptRQ          # S3 adaptive-tol: GP(RQ) → AAA(adaptive) → MLE
 	InterpolatorS3AdaptSEpRQ       # S3 adaptive-tol: GP(SE+RQ) → AAA(adaptive) → MLE
@@ -767,19 +763,6 @@ function get_interpolator_function(method::InterpolatorMethod, custom::Union{Not
 		return s3_bic_se_plus_rq_interpolator
 	elseif method == InterpolatorS3BICSExRQ
 		return s3_bic_se_times_rq_interpolator
-	# --- Old S3 names (deprecated, forward to adaptive) ---
-	elseif method == InterpolatorS3SE
-		k = s3_adapt_k
-		return (xs, ys) -> s3_adapt_se_interpolator(xs, ys; k = k)
-	elseif method == InterpolatorS3RQ
-		k = s3_adapt_k
-		return (xs, ys) -> s3_adapt_rq_interpolator(xs, ys; k = k)
-	elseif method == InterpolatorS3SEpRQ
-		k = s3_adapt_k
-		return (xs, ys) -> s3_adapt_se_plus_rq_interpolator(xs, ys; k = k)
-	elseif method == InterpolatorS3SExRQ
-		k = s3_adapt_k
-		return (xs, ys) -> s3_adapt_se_times_rq_interpolator(xs, ys; k = k)
 	elseif method == InterpolatorChebyshevAICc
 		return chebyshev_aicc
 	elseif method == InterpolatorChebyshevBIC
@@ -805,10 +788,6 @@ function interpolator_method_to_symbol(method::InterpolatorMethod)
 	method == InterpolatorAGPRobustSEpRQ && return :agp_robust_se_plus_rq
 	method == InterpolatorAGPRobustSExRQ && return :agp_robust_se_times_rq
 	method == InterpolatorS2AAAMLE && return :s2_aaa_mle
-	method == InterpolatorS3SE && return :s3_se
-	method == InterpolatorS3RQ && return :s3_rq
-	method == InterpolatorS3SEpRQ && return :s3_se_plus_rq
-	method == InterpolatorS3SExRQ && return :s3_se_times_rq
 	method == InterpolatorS3AdaptSE && return :s3_adapt_se
 	method == InterpolatorS3AdaptRQ && return :s3_adapt_rq
 	method == InterpolatorS3AdaptSEpRQ && return :s3_adapt_se_plus_rq
@@ -923,11 +902,6 @@ function _gp_kernel_of(method::InterpolatorMethod)::Union{Nothing, Symbol}
 	method == InterpolatorAGPRobustRQ && return :rq
 	method == InterpolatorAGPRobustSEpRQ && return :se_plus_rq
 	method == InterpolatorAGPRobustSExRQ && return :se_times_rq
-	# Old S3 names
-	method == InterpolatorS3SE && return :se
-	method == InterpolatorS3RQ && return :rq
-	method == InterpolatorS3SEpRQ && return :se_plus_rq
-	method == InterpolatorS3SExRQ && return :se_times_rq
 	# S3 Adaptive
 	method == InterpolatorS3AdaptSE && return :se
 	method == InterpolatorS3AdaptRQ && return :rq
@@ -947,9 +921,7 @@ end
 Returns true if the interpolator method is an S3 composite (GP→AAA→MLE).
 """
 function _is_s3_method(method::InterpolatorMethod)::Bool
-	return method in (InterpolatorS3SE, InterpolatorS3RQ, InterpolatorS3SEpRQ,
-	                  InterpolatorS3SExRQ,
-	                  InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ, InterpolatorS3AdaptSEpRQ,
+	return method in (InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ, InterpolatorS3AdaptSEpRQ,
 	                  InterpolatorS3AdaptSExRQ,
 	                  InterpolatorS3BICSE, InterpolatorS3BICRQ, InterpolatorS3BICSEpRQ,
 	                  InterpolatorS3BICSExRQ)
@@ -1020,7 +992,7 @@ end
 """
 	_inject_gp_caching!(interpolator_list; s3_adapt_k=10.0)
 
-For interpolator methods that share a GP kernel (e.g., AGPRobust + S3SE both use SE),
+For interpolator methods that share a GP kernel (e.g., AGPRobust + S3AdaptSE both use SE),
 inject closure-wrapped functions that share a `Dict` cache so the GP is fitted only once.
 """
 function _inject_gp_caching!(interpolator_list::Vector{Tuple{InterpolatorMethod, Union{Nothing, Function}}};

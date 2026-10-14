@@ -24,6 +24,8 @@ The gap: Var_indep(X+Y) = Var(X) + Var(Y) > 0
 
 using Test
 using ODEParameterEstimation
+using ODEParameterEstimation: AGPInterpolatorUQ, agp_gpr_uq, build_observation_covariance,
+    joint_derivative_covariance
 using LinearAlgebra
 using Statistics
 using Random

@@ -1638,6 +1638,3 @@ function nemo_to_symbolics(nemo_expr, var_map::Dict; fail_categories = Symbol[])
 	@error "Cannot convert Nemo expression of type $(typeof(nemo_expr))"
 	return nemo_expr
 end
-
-# Export main functions
-export get_si_equation_system, convert_to_si_ode

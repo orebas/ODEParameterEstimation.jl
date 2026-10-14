@@ -800,6 +800,3 @@ function resolve_states_with_fixed_params(
 		rethrow()
 	end
 end
-
-# Export the template-based constructor
-export construct_equation_system_from_si_template

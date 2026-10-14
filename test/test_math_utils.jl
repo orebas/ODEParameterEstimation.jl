@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: calculate_error_stats, clear_denoms, hmcs
 using Test
 using ModelingToolkit
 using Symbolics

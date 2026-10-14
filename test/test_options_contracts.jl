@@ -3,6 +3,9 @@
 # and the newly wired fields actually reach their consumers.
 
 using ODEParameterEstimation
+using ODEParameterEstimation: InterpolatorMethod, PolishMethod, ResultProvenance,
+    get_ad_backend, get_polish_optimizer, print_options, provenance_metadata_dict,
+    validate_options
 using Test
 using OrderedCollections
 

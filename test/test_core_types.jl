@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: DerivativeData, OrderedODESystem
 using Test
 using ModelingToolkit
 using ModelingToolkit: System

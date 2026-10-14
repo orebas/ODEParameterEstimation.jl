@@ -10,6 +10,7 @@ using Symbolics
 #   @test_broken -> CORRECT behavior the P0 fix should produce (red now -> flips on fix)
 
 using ODEParameterEstimation
+using ODEParameterEstimation: aaad, evaluate_data_vars_at_point
 using Test
 using LinearAlgebra
 import ModelingToolkit

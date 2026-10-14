@@ -1,4 +1,5 @@
 using ODEParameterEstimation, Test, TOML, Random, LinearAlgebra, Statistics, ForwardDiff, TaylorDiff
+using ODEParameterEstimation: aaad_gpr_pivot, get_interpolator_function, merge_options
 using ODEParameterEstimation.Examples: harmonic_oscillator
 using ODEParameterEstimation: Nemo, StructuralIdentifiability
 include("support/backend_fixtures.jl")

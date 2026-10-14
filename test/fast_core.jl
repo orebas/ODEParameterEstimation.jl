@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: EstimationFlow, InterpolatorMethod
 using Symbolics
 using Test
 using Logging

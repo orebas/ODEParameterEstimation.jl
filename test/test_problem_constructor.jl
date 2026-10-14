@@ -4,6 +4,7 @@
 # Also how a result prints. Nothing here runs an estimation.
 
 using ODEParameterEstimation
+using ODEParameterEstimation: package_wide_default_ode_solver
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using OrderedCollections

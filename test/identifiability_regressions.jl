@@ -1,4 +1,5 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: merge_options
 using Test
 
 include("estimation_helpers.jl")

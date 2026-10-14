@@ -4,6 +4,9 @@
 # found them untested.
 
 using ODEParameterEstimation
+using ODEParameterEstimation: InterpolatorMethod, SystemSolverMethod, agp_gpr_robust,
+    get_interpolator_function, get_solver_function, interpolator_method_to_symbol,
+    mean_and_var, uq_reliability, validate_options
 using OrderedCollections
 using Test
 

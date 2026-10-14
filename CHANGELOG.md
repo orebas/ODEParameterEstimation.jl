@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### Fewer exported names — 2026-10-14
+
+- `using ODEParameterEstimation` now brings in 37 names instead of 190: the
+  problem and data types, `sample_problem_data`, `estimate`,
+  `analyze_parameter_estimation_problem`, `EstimationOptions` and the option
+  values it documents (the three system solvers, the two flows, the five
+  polishing methods, the nine default curve fits, `InterpolatorAGPUQ` and
+  `InterpolatorCustom`), the result, uncertainty and error types, and
+  `print_uncertainty_results`.
+- Marked `public` but not exported, so written with the module name:
+  `Examples`, the option types (`InterpolatorMethod` and the others),
+  `OrderedODESystem`, `ResultProvenance`, `AbstractUQOutcome`,
+  `UQComputationError`, `uq_reliability`, `UQReliabilityAssessment`,
+  `merge_options`, `validate_options` and `print_options`.
+- Everything else is internal. It can still be reached as
+  `ODEParameterEstimation.name` or imported by name, but it may change in any
+  release. This covers the individual curve-fit and solver functions, the
+  stages of the estimation, the uncertainty internals, the result bookkeeping
+  helpers, the noise helpers and the constants.
+- Removed `InterpolatorS3SE`, `InterpolatorS3RQ`, `InterpolatorS3SEpRQ` and
+  `InterpolatorS3SExRQ`. They were marked deprecated and did what the
+  `InterpolatorS3Adapt` values do.
+
 ### Equation building trimmed — 2026-10-14
 
 - `construct_equation_system_from_si_template` now requires `si_template`,

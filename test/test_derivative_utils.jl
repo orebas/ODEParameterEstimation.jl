@@ -1,4 +1,6 @@
 using ODEParameterEstimation
+using ODEParameterEstimation: calculate_higher_derivative_terms,
+    calculate_higher_derivatives
 using ModelingToolkit: @parameters
 using Test
 using Symbolics

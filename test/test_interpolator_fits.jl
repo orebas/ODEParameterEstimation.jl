@@ -3,6 +3,7 @@
 # called by a test.
 
 using ODEParameterEstimation
+using ODEParameterEstimation: InterpolatorMethod, get_interpolator_function, nth_deriv_at
 using Test
 
 @testset "Every built-in interpolator fits a smooth curve" begin

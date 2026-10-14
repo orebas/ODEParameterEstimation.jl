@@ -36,7 +36,6 @@ using OrderedCollections
 	@test o.si_fix_strategy == :local_basis
 	@test validate_options(EstimationOptions(si_fix_strategy=:local_basis))
 	@test !validate_options(EstimationOptions(si_fix_strategy=:unknown))
-	@test o.point_hint == 0.5                # == pick_points' old kwarg default
 	@test o.save_filepath == ""              # empty = legacy "saved_systems/" base
 	@test o.hc_threading === true
 	@test o.hc_compile_mode === :all

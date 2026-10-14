@@ -319,59 +319,6 @@ function setup_identifiability(
 	)
 end
 
-"""
-	setup_parameter_estimation(PEP::ParameterEstimationProblem; max_num_points, point_hint)
-
-Setup phase for parameter estimation. This extracts the necessary data from the problem,
-determines the optimal number of points to use, analyzes identifiability, and selects
-time indices for sampling.
-
-This is a backward-compatible wrapper around `setup_identifiability` that also creates
-interpolants and picks time points.
-
-# Arguments
-- `PEP`: Parameter estimation problem
-- `max_num_points`: Maximum number of points to use
-- `point_hint`: Hint for where to sample in the time series (0-1 range)
-
-# Returns
-- Named tuple with all settings needed for the solution phase
-"""
-function setup_parameter_estimation(
-	PEP::ParameterEstimationProblem;
-	max_num_points = 1,
-	point_hint = 0.5,
-	nooutput = false,
-	interpolator = nothing,
-)
-	# Run the shared identifiability analysis
-	ident_data = setup_identifiability(PEP; max_num_points = max_num_points, nooutput = nooutput)
-
-	# Create interpolants for measurement data (interpolator-dependent)
-	interpolants = create_interpolants(PEP.measured_quantities, PEP.data_sample, ident_data.t_vector, interpolator)
-
-	# Pick time points for estimation
-	time_index_set = pick_points(ident_data.t_vector, ident_data.good_num_points, interpolants, point_hint)
-	@debug "Using these points: $(time_index_set)"
-	@debug "Using these observations and their derivatives: $(ident_data.good_deriv_level)"
-
-	return (
-		states = ident_data.states,
-		params = ident_data.params,
-		t_vector = ident_data.t_vector,
-		interpolants = interpolants,
-		good_num_points = ident_data.good_num_points,
-		good_deriv_level = ident_data.good_deriv_level,
-		good_udict = ident_data.good_udict,
-		good_varlist = ident_data.good_varlist,
-		good_DD = ident_data.good_DD,
-		time_index_set = time_index_set,
-		all_unidentifiable = ident_data.all_unidentifiable,
-		numerical_advisory = ident_data.numerical_advisory,
-	)
-end
-
-
 function is_structurally_unidentifiable(var, all_unidentifiable)
 	return any(entry -> isequal(entry, var) || string(entry) == string(var), all_unidentifiable)
 end

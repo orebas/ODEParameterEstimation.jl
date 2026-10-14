@@ -102,10 +102,9 @@ sensitivity matrix `S` and per-derivative uncertainty `sigma_d_estimate`.
 # Arguments
 - `candidates::Vector{ParameterEstimationResult}` — pool from the polynomial
   pipeline (post-cluster, pre-polish).
-- `S::Matrix{Float64}` — reference data-sensitivity matrix
-  (`SensitivityReport.data_sensitivity_matrix`). Shape `(n_unknowns, n_data)`.
-- `data_labels::Vector{String}` — column labels of `S` (from
-  `SensitivityReport.data_sensitivity_data_labels`).
+- `S::Matrix{Float64}` — reference data-sensitivity matrix from
+  `_compute_data_sensitivity`. Shape `(n_unknowns, n_data)`.
+- `data_labels::Vector{String}` — column labels of `S`.
 - `unknown_labels::Vector{String}` — row labels of `S`. Used to align with
   the candidate's parameter ordering via `polish_ctx.unknown_syms`/`param_syms`.
 - `sigma_d_estimate::DerivativeUncertaintyEstimate` — at the reference t_eval.

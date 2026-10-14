@@ -56,12 +56,11 @@ const TEST_FILES = [
     "test_hc_sanitize.jl",            # HC name injectivity + cross-list dedup 2026-08-12
     "test_options_contracts.jl",      # dead-options cleanup contracts 2026-08-12
     "test_taylor_propagation.jl",     # estimate-conditioned Taylor cores 2026-08-13
-    "test_estimate_conditioned_uq.jl", # estimate-conditioned S = default UQ path 2026-08-13
-    "test_uq_coverage_smoke.jl",      # N=20 two_exp coverage tripwires (test/support helper) 2026-08-13
+    "test_estimate_conditioned_uq.jl", # the uncertainty report is evaluated at the estimate
     "test_exact_index_matching.jl",   # per-point index lists + exact obs-name match 2026-08-13
     "test_stacked_jet_covariance.jl", # cross-time W-stack Σ_d core (MC-validated) 2026-08-13
     "test_ift_solve.jl",              # factorized IFT, loud degradation 2026-08-13
-    "test_multipoint_sensitivity.jl", # multipoint estimate-conditioned S + FD validation 2026-08-14
+    "test_multipoint_sensitivity.jl", # the uncertainty report for a multipoint estimate
     "test_multipoint_pipeline.jl", # actual adaptive + fixed-pair MP production routes 2026-08-16
     "test_estimator_aware_uq.jl", # exact rank-one target + typed outcome/lineage contract 2026-08-14
     "test_polish_uq_pipeline.jl", # actual tiny-ODE polish/direct report + perturb/refit influence 2026-08-16

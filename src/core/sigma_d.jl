@@ -22,7 +22,7 @@
 
 Per-(observable index, derivative order) uncertainty σ_d at a single evaluation
 time `t_eval`. Σ_d for downstream covariance propagation is `diag(σ_d²)` flattened
-in the same order as `SensitivityReport.data_sensitivity_data_labels`.
+in the same order as the data labels returned by `_compute_data_sensitivity`.
 
 # Fields
 - `t_eval::Float64` — the time at which σ_d is evaluated.
@@ -173,7 +173,7 @@ doesn't match the expected pattern.
 The mapping from observable name (e.g. `"y1"`) to its index in `measured_quantities`
 is required separately — this function only extracts the suffix order. The caller
 typically holds an `obs_name_to_idx::Dict{String, Int}` built from the measured
-quantities at the same time the SensitivityReport is constructed.
+quantities.
 """
 function parse_sensitivity_label(label::AbstractString)
     # Thin adapter over the single shared parser (Phase D1); this caller's

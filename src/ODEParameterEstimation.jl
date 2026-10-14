@@ -85,7 +85,6 @@ include("core/si_template_integration.jl")  # Template-based SI.jl integration
 include("core/homotopy_continuation.jl")
 include("core/robust_system.jl")  # Reusable polynomial residual/Jacobian kernels
 include("core/solve_with_robust.jl")  # Robust solver with multiple fallbacks
-include("core/pointpicker.jl")
 
 include("core/parameter_estimation_helpers.jl")
 include("core/parameter_estimation.jl")
@@ -101,15 +100,9 @@ include("core/sensitivity_seeds.jl")  # σ_d-aware seed generation (Layer 2)
 include("core/synthesize_aggregates.jl")  # Per-component median/mean/trim25 synthesis of SP+MP aggregates
 include("core/uncertainty_quantification.jl")  # UQ via GP derivative covariances and IFT
 include("core/sampling.jl")
-include("core/svg_plots.jl")
-# diagnostics.jl (5,443 lines) split 2026-06-10 along its section seams (Phase F2);
-# original include order preserved.
+# Taylor coefficients, sensitivities and the uncertainty reports
 include("core/diagnostics/taylor_oracle.jl")
 include("core/diagnostics/feasibility_sensitivity.jl")
-include("core/diagnostics/multipoint_sensitivity.jl")  # estimate-conditioned S over multipoint templates
-include("core/diagnostics/error_budget.jl")
-include("core/diagnostics/orchestrators.jl")
-include("core/diagnostics/html_report.jl")
 include("core/diagnostics/uq_and_reports.jl")
 include("core/diagnostics/estimator_aware_uq.jl")
 include("core/estimate.jl")  # keyword problem constructor, `estimate`, result display
@@ -156,14 +149,11 @@ export detect_transcendentals, transform_pep_for_estimation, TranscendentalInfo
 # Export problem rescaling
 export rescale_pep, unrescale_results, ScaleInfo, choose_scales
 
-# Export diagnostic functions and types
-export diagnose, diagnose_derivative_accuracy, diagnose_polynomial_system, diagnose_sensitivity
-export PerfectInterpolant, DiagnosticReport, ComprehensiveDiagnosticReport, DerivativeAccuracyReport, PolynomialFeasibilityReport, SensitivityReport, MultipointDiagnosticAnalysis
-export EstimationResultsReport, BacksolveUQReport, AbstractUQOutcome, UncertaintyReport, UQUnavailable, UQComputationError, UQTargetSnapshot, UQLinearizationDiagnostics, UQReliabilityAssessment, uq_reliability, JetInfluenceEstimate, StackedJetInfluenceEstimate, PracticalIdentifiabilityIndex, LocalUQSnapshot, UQBacksolveTransform
+# Export uncertainty and sensitivity types
+export PerfectInterpolant
+export AbstractUQOutcome, UncertaintyReport, UQUnavailable, UQComputationError, UQTargetSnapshot, UQLinearizationDiagnostics, UQReliabilityAssessment, uq_reliability, JetInfluenceEstimate, StackedJetInfluenceEstimate, PracticalIdentifiabilityIndex, LocalUQSnapshot, UQBacksolveTransform
 export DerivativeUncertaintyEstimate, compute_sigma_d, get_sigma_d
 export SensitivitySeedReport, generate_sensitivity_seeds, seed_vectors_to_candidates
-export ErrorBudgetEntry, ErrorBudgetReport, compute_error_budget, compute_multipoint_error_budget
-export ParameterSpreadEntry, CrossSolutionSpread
 export build_perfect_interpolants, compute_oracle_taylor_coefficients, compute_observable_taylor_coefficients
 export TimingPhaseEntry, TimingBreakdown, with_estimation_timing, timing_breakdown_to_dict
 
@@ -171,7 +161,7 @@ export TimingPhaseEntry, TimingBreakdown, with_estimation_timing, timing_breakdo
 export AGPInterpolatorUQ, agp_gpr_uq, gp_factorization_diagnostics
 export se_kernel_derivative, se_kernel_prior_covariance_matrix, se_kernel_cross_time_covariance_matrix
 export joint_derivative_covariance, build_observation_covariance
-export gp_derivative_influence_matrix, joint_derivative_estimator_covariance, stacked_jet_index, learned_observation_noise_variance, compute_practical_identifiability_index, physicalize_uncertainty_report, unrescale_uncertainty_report
+export gp_derivative_influence_matrix, joint_derivative_estimator_covariance, stacked_jet_index, learned_observation_noise_variance, compute_practical_identifiability_index, unrescale_uncertainty_report
 export print_uncertainty_results
 
 # The example models are reached as `ODEParameterEstimation.Examples`.

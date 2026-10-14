@@ -232,8 +232,6 @@ These are read only by [`sample_problem_data`](@ref).
 - `shooting_warp` (default `true`), `shooting_warp_beta` (default `3.0`):
   place more of the `shooting_points` near the start of the data, and how
   strongly.
-- `point_hint` (default `0.5`): where in the time range, from 0 to 1, to work
-  when a single time point is needed, as for uncertainty.
 - `use_multipoint` (default `true`), `multipoint_n_points` (default `2`),
   `multipoint_max_pairs` (default `20`), `multipoint_pair_strategy` (default
   `:spread`): also solve systems that combine equations from several time
@@ -514,7 +512,6 @@ Base.@kwdef struct EstimationOptions
 	shooting_points::Int = 12
 	shooting_warp::Bool = true                   # true = exponential warp, false = equidistant
 	shooting_warp_beta::Float64 = 3.0            # warp strength (0≈uniform, 3=default)
-	point_hint::Float64 = 0.5
 
 	# Derivative and Reconstruction Parameters
 
@@ -1243,12 +1240,6 @@ function validate_options(opts::EstimationOptions)
 		valid = false
 	end
 
-	# Check point_hint
-	if opts.point_hint < 0 || opts.point_hint > 1
-		@error "point_hint must be in [0, 1]"
-		valid = false
-	end
-
 	# Check optimization bounds
 	if !isnothing(opts.opt_lb) && !isnothing(opts.opt_ub)
 		if length(opts.opt_lb) != length(opts.opt_ub)
@@ -1503,7 +1494,7 @@ function print_options(io::IO, opts::EstimationOptions; compact = false)
 		("Solver and Algorithm", [:system_solver, :ode_solver, :interpolators]),
 		("Tolerances", [:abstol, :reltol]),
 		("Solution Validation", [:clustering_threshold]),
-		("Multi-shot", [:shooting_points, :shooting_warp, :shooting_warp_beta, :point_hint]),
+		("Multi-shot", [:shooting_points, :shooting_warp, :shooting_warp_beta]),
 		("Optimization", [:polish_solutions, :polish_solver_solutions, :polish_solver_jacobian, :polish_solver_chunk_size, :polish_method, :polish_maxiters, :opt_maxiters,
 			:opt_lb, :opt_ub, :opt_ad_backend, :polish_maxtime, :polish_divergence_factor, :polish_stagnation_window, :polish_ode_maxiters]),
 		("Rescue Policy", [:terminal_fallback, :backsolve_recovery, :t0_state_completion]),

@@ -28,7 +28,6 @@ _has_record(logs, level, pattern) =
 		(reltol = -1.0,) => "Tolerances must be positive",
 		(clustering_threshold = -1.0,) => "clustering_threshold",
 		(shooting_points = -1,) => "shooting_points",
-		(point_hint = 1.5,) => "point_hint",
 		(opt_lb = [0.0, 0.0], opt_ub = [1.0, 1.0, 1.0]) => "bounds must have the same length",
 		(opt_lb = [2.0], opt_ub = [1.0]) => "Lower bounds must not exceed upper bounds",
 		(polish_maxtime = 0.0,) => "polish_maxtime",
@@ -178,19 +177,6 @@ end
 	table = printed(older)
 	@test occursin("TOTAL", table) && !occursin("RSS", table)
 	@test printed(OrderedDict{String, NamedTuple}()) == ""
-end
-
-@testset "Shooting points" begin
-	times = collect(1:21)
-	@test _SMALL.pick_points(times, 1, nothing, 0.5) == 10
-	@test _SMALL.pick_points(times, 1, nothing, 0.0) == 1
-	for hint in (0.0, 0.25, 0.5, 0.7, 0.9, 1.0)
-		indices = _SMALL.pick_points(times, 2, nothing, hint)
-		@test length(indices) == 2
-		@test allunique(indices)
-		@test all(i -> 1 <= i <= 21, indices)
-	end
-	@test _SMALL.pick_points(times, 4, nothing, 0.5) == compute_shooting_indices(4, 21; warp = false)
 end
 
 @testset "Error messages" begin

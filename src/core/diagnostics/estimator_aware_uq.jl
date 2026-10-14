@@ -1,6 +1,6 @@
 # Estimator-aware production UQ
 #
-# This file is deliberately downstream of the legacy diagnostic UQ helpers. It
+# This file is downstream of the shared UQ helpers in uq_and_reports.jl. It
 # routes from the exact rank-one estimator artifact retained during production;
 # it never refits an interpolator or independently chooses a candidate.
 
@@ -458,6 +458,18 @@ function _uq_exact_ift(
         assessment.degraded || residual_degraded, NaN, NaN,
     )
     return S, diagnostics
+end
+
+"""
+    _multipoint_solve_var_point(name) → (point::Int, clean_name::String)
+
+Point index and `_ptK`-stripped name for one multipoint solve/data variable
+(point 1 = unsuffixed).
+"""
+function _multipoint_solve_var_point(name::AbstractString)
+    m = match(r"_pt(\d+)$", name)
+    isnothing(m) && return 1, String(name)
+    return parse(Int, m.captures[1]), replace(String(name), r"_pt\d+$" => "")
 end
 
 function _uq_var_base_order_point(variable)

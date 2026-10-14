@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### `diagnose` moved to the `research` branch — 2026-10-14
+
+- Removed `diagnose` and everything only it used: `diagnose_derivative_accuracy`,
+  `diagnose_polynomial_system`, `diagnose_sensitivity`, the error budget
+  (`compute_error_budget`, `compute_multipoint_error_budget`), the HTML
+  diagnostic report and its plots, `physicalize_uncertainty_report`, and the
+  report types `DiagnosticReport`, `ComprehensiveDiagnosticReport`,
+  `DerivativeAccuracyReport`, `PolynomialFeasibilityReport`,
+  `SensitivityReport`, `MultipointDiagnosticAnalysis`, `ErrorBudgetEntry`,
+  `ErrorBudgetReport`, `EstimationResultsReport`, `BacksolveUQReport`,
+  `ParameterSpreadEntry` and `CrossSolutionSpread`. `diagnose` compares the
+  interpolated derivatives with exact ones computed from the true parameter
+  values, so it works only on simulated problems; it is a tool for developing
+  the method and stays on the `research` branch. The uncertainty report
+  (`compute_uncertainty = true`) is unchanged.
+- Removed the `point_hint` option. Estimation never read it.
+- Everything removed is in the history at commit `35d9a73`.
+
 ### One Levenberg–Marquardt solver — 2026-10-14
 
 - Removed `SolverNLOpt` and `solve_with_nlopt`. They did what
@@ -23,8 +41,6 @@
 - With `uneven_sampling = true`, `uneven_sampling_times` must have `datasize`
   entries in increasing order, and `validate_options` says so before any
   sampling starts.
-- When two shooting points are needed and `point_hint` is near the end of the
-  interval, the second point no longer lands on the first.
 - Files written by `save_system` are named without colons, so they can be
   stored on Windows, and a second file in the same millisecond no longer
   overwrites the first.

@@ -1,11 +1,6 @@
 using Symbolics
-# Stream B phase 1 (2026-08-13): estimate-conditioned Taylor propagation cores.
+# The Taylor-coefficient recursion behind compute_oracle_taylor_coefficients.
 # Pure numerics — no ODE solves, no SIAN, no GP fits. fast_unit tier.
-#
-# _propagate_state_taylor is the shared jet recursion behind BOTH
-# compute_oracle_taylor_coefficients (truth) and
-# compute_estimate_taylor_coefficients (θ̂/x̂); interpolant_taylor_coefficients
-# is the GP-jet view of obs_taylor the estimate-conditioned path consumes.
 
 using Test
 using ODEParameterEstimation
@@ -44,26 +39,5 @@ using LinearAlgebra
 	@testset "_propagate_state_taylor rejects mis-sized anchors" begin
 		@test_throws ErrorException ODEParameterEstimation._propagate_state_taylor(
 			sys_tp, [1.0], param_vals_tp, t_eval_tp, 3)
-	end
-
-	@testset "interpolant_taylor_coefficients round-trips known jets" begin
-		# harmonic_oscillator() observes y1 ~ x1, y2 ~ x2; interpolants are keyed by the
-		# diff2term'd observable RHS (same convention as precomputed_interpolants).
-		k1 = Symbolics.diff2term(pep_tp.measured_quantities[1].rhs)
-		k2 = Symbolics.diff2term(pep_tp.measured_quantities[2].rhs)
-		f_poly = t -> 2.0 * t^3 + t          # jets: [2t³+t, 6t²+1, 12t, 12, 0]
-		f_exp = t -> exp(0.5 * t)            # jets: 0.5ᵏ · e^{t/2}
-		interps = Dict{Any, Any}(k1 => f_poly, k2 => f_exp)
-
-		tc = ODEParameterEstimation.interpolant_taylor_coefficients(pep_tp, interps, t_eval_tp, 4)
-		@test haskey(tc, k1) && haskey(tc, k2)
-		@test length(tc[k1]) == 5
-
-		expected_poly = [2 * t_eval_tp^3 + t_eval_tp, 6 * t_eval_tp^2 + 1, 12 * t_eval_tp, 12.0, 0.0]
-		for k in 0:4
-			# Consumers recover derivative values as tc[k+1] * k! — assert on that contract.
-			@test tc[k1][k+1] * factorial(k) ≈ expected_poly[k+1] rtol = 1e-8 atol = 1e-10
-			@test tc[k2][k+1] * factorial(k) ≈ 0.5^k * exp(0.5 * t_eval_tp) rtol = 1e-8
-		end
 	end
 end

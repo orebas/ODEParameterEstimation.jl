@@ -1,9 +1,6 @@
 using ODEParameterEstimation
-# Two silent-mismatch fixes (2026-08-13, multipoint-UQ pre-fixes):
-# 1. _per_point_data_indices returns EXACT per-point index lists — the old
-#    first:last range collapse mis-assigned data when indices interleave.
-# 2. _match_obs_name is exact-only — the old startswith prefix fallback let
-#    "y1" match "y10" depending on dict iteration order.
+# _per_point_data_indices returns EXACT per-point index lists — the old
+# first:last range collapse mis-assigned data when indices interleave.
 # Pure functions; fast_unit tier.
 
 using Test
@@ -59,14 +56,5 @@ using Symbolics
 		# y<N> positional fallback stays bounded by length(mq)
 		meta_fb = ODEParameterEstimation._build_data_var_meta(Any[v("y9_0")], 1, mq)
 		@test meta_fb[1].kind == :unresolved && meta_fb[1].obs_idx === nothing
-	end
-
-	@testset "_match_obs_name is exact-only (y1 vs y10)" begin
-		d = Dict("y1" => 1, "y10" => 2)
-		@test ODEParameterEstimation._match_obs_name("y1", d) == 1
-		@test ODEParameterEstimation._match_obs_name("y10", d) == 2
-		@test ODEParameterEstimation._match_obs_name("y", d) === nothing
-		@test ODEParameterEstimation._match_obs_name("y9", d) === nothing
-		@test ODEParameterEstimation._match_obs_name("y100", d) === nothing
 	end
 end

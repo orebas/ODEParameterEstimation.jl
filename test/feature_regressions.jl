@@ -579,7 +579,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         @test all(est_single.floor_active[1, :])
     end
 
-    @testset "Variational backsolve UQ matches one-exponential analytic transform" begin
+    @testset "Variational backsolve Jacobian and unrescaling match the one-exponential model" begin
         @independent_variables t
         @parameters k
         @variables x(t)
@@ -642,97 +642,12 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             sol,
         )
 
-        σ_k = 0.03
-        σ_xshoot = 0.04
-        Σ_theta = diagm([σ_k^2, σ_xshoot^2])
-        uq_report = ODEParameterEstimation.UncertaintyReport(
-            sampled.name,
-            t_shoot,
-            String[],
-            Vector{Float64}[],
-            Vector{Float64}[],
-            zeros(0, 0),
-            String[],
-            Σ_theta,
-            sqrt.(diag(Σ_theta)),
-            ["k_0", "x_0"],
-            Dict("k_0" => :parameter, "x_0" => :state_at_eval),
-            [k_true, sol(t_shoot)[1]],
-            Matrix{Float64}(I, 2, 2),
-            0.0,
-            :ok,
-            String[],
-            :estimator_sampling,
-            :test,
-            nothing,
-        )
-
-        report = ODEParameterEstimation.propagate_backsolve_uncertainty(sampled, best_result, uq_report)
+        # ∂x(t0) / ∂(k, x(t_shoot))
         Δt = t_shoot - t0
         expected_j = reshape([-Δt * x0_true, exp(-k_true * Δt)], 1, 2)
-        expected_var = only(expected_j * Σ_theta * expected_j')
-        expected_full_j = [
-            1.0 0.0
-            expected_j[1, 1] expected_j[1, 2]
-        ]
-        expected_full_cov = expected_full_j * Σ_theta * expected_full_j'
-
-        @test report.success
-        @test report.ic_names == ["x"]
-        @test report.ic_estimated[1] ≈ x0_true atol = 1e-8
-        @test report.backsolve_jacobian ≈ expected_j rtol = 1e-8 atol = 1e-8
-        @test report.ic_std[1] ≈ sqrt(expected_var) rtol = 1e-8 atol = 1e-8
-
-        physical = ODEParameterEstimation.physicalize_uncertainty_report(sampled, best_result, uq_report)
-        @test physical.coordinate_system == :physical_initial_conditions
-        @test physical.param_labels == ["k", "x"]
-        @test get(physical.param_roles, "k", :unknown) == :parameter
-        @test get(physical.param_roles, "x", :unknown) == :state_ic
-        @test physical.param_covariance ≈ expected_full_cov rtol = 1e-8 atol = 1e-8
-        @test physical.param_std ≈ sqrt.(diag(expected_full_cov)) rtol = 1e-8 atol = 1e-8
-        @test physical.backsolve_transform.transform_matrix ≈ expected_full_j rtol = 1e-8 atol = 1e-8
-        @test physical.backsolve_transform.status == :variational
-        @test isfinite(physical.backsolve_transform.amplification)
-        @test physical.local_coordinate_report isa ODEParameterEstimation.LocalUQSnapshot
-        @test get(physical.local_coordinate_report.param_roles, "x_0", :unknown) == :state_at_eval
-
-        uq_at_t0 = ODEParameterEstimation.UncertaintyReport(
-            sampled.name,
-            t0,
-            String[],
-            Vector{Float64}[],
-            Vector{Float64}[],
-            zeros(0, 0),
-            String[],
-            Σ_theta,
-            sqrt.(diag(Σ_theta)),
-            ["k_0", "x_0"],
-            Dict("k_0" => :parameter, "x_0" => :state_at_eval),
-            [k_true, x0_true],
-            Matrix{Float64}(I, 2, 2),
-            0.0,
-            :ok,
-            String[],
-            :estimator_sampling,
-            :test,
-            nothing,
-        )
-        best_at_t0 = ODEParameterEstimation.ParameterEstimationResult(
-            OrderedDict(k => k_true),
-            OrderedDict(x => x0_true),
-            t0,
-            0.0,
-            nothing,
-            length(sampled.data_sample["t"]),
-            t0,
-            OrderedDict{Num, Float64}(),
-            Set{Num}(),
-            sol,
-        )
-        physical_t0 = ODEParameterEstimation.physicalize_uncertainty_report(sampled, best_at_t0, uq_at_t0)
-        @test physical_t0.backsolve_transform.status == :identity
-        @test physical_t0.backsolve_transform.transform_matrix ≈ Matrix{Float64}(I, 2, 2)
-        @test physical_t0.param_covariance ≈ Σ_theta
+        J, x_back = ODEParameterEstimation._uq_variational_backsolve_jacobian(sampled, best_result, t0, t_shoot)
+        @test J ≈ expected_j rtol = 1e-8 atol = 1e-8
+        @test x_back[1] ≈ x0_true atol = 1e-8
 
         scale_info = ODEParameterEstimation.ScaleInfo(
             OrderedDict(x => 4.0),
@@ -798,7 +713,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         @test original_uq.local_coordinate_report.param_std ≈ [0.2, 0.8, 1.2]
     end
 
-    @testset "Variational physical UQ matches two-exponential analytic block transform" begin
+    @testset "Variational backsolve Jacobian matches the two-exponential model" begin
         @independent_variables t
         @parameters k1 k2
         @variables x1(t) x2(t)
@@ -871,63 +786,14 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             sol,
         )
 
-        Σ_local = [
-            0.0009 0.0001 0.0002 0.0
-            0.0001 0.0016 0.0 0.0003
-            0.0002 0.0 0.0025 0.0004
-            0.0 0.0003 0.0004 0.0049
-        ]
-        local_labels = ["k1_0", "k2_0", "x1_0", "x2_0"]
-        local_roles = Dict(
-            "k1_0" => :parameter,
-            "k2_0" => :parameter,
-            "x1_0" => :state_at_eval,
-            "x2_0" => :state_at_eval,
-        )
-        local_values = [k1_true, k2_true, xshoot[1], xshoot[2]]
-        uq_report = ODEParameterEstimation.UncertaintyReport(
-            sampled.name,
-            t_shoot,
-            String[],
-            Vector{Float64}[],
-            Vector{Float64}[],
-            zeros(0, 0),
-            String[],
-            Σ_local,
-            sqrt.(diag(Σ_local)),
-            local_labels,
-            local_roles,
-            local_values,
-            Matrix{Float64}(I, 4, 4),
-            0.0,
-            :ok,
-            String[],
-            :estimator_sampling,
-            :test,
-            nothing,
-        )
-
+        # ∂(x1, x2)(t0) / ∂(k1, k2, x1(t_shoot), x2(t_shoot))
         expected_j = [
-            1.0 0.0 0.0 0.0
-            0.0 1.0 0.0 0.0
             -Δt * x10 0.0 exp(-k1_true * Δt) 0.0
             0.0 -Δt * x20 0.0 exp(-k2_true * Δt)
         ]
-        expected_cov = expected_j * Σ_local * expected_j'
-
-        physical = ODEParameterEstimation.physicalize_uncertainty_report(sampled, best_result, uq_report)
-        @test physical.coordinate_system == :physical_initial_conditions
-        @test physical.param_labels == ["k1", "k2", "x1", "x2"]
-        @test physical.backsolve_transform.status == :variational
-        @test physical.backsolve_transform.source_labels == ["k1", "k2", "x1", "x2"]
-        @test physical.backsolve_transform.target_labels == ["k1", "k2", "x1", "x2"]
-        @test physical.backsolve_transform.transform_matrix ≈ expected_j rtol = 1e-8 atol = 1e-8
-        @test physical.param_covariance ≈ expected_cov rtol = 1e-8 atol = 1e-8
-        @test physical.param_std ≈ sqrt.(diag(expected_cov)) rtol = 1e-8 atol = 1e-8
-        @test physical.param_true_values ≈ [k1_true, k2_true, x10, x20]
-        @test get(physical.param_roles, "x1", :unknown) == :state_ic
-        @test get(physical.local_coordinate_report.param_roles, "x1_0", :unknown) == :state_at_eval
-        @test physical.local_coordinate_report.coordinate_values ≈ local_values rtol = 1e-8 atol = 1e-8
+        J, x_back = ODEParameterEstimation._uq_variational_backsolve_jacobian(sampled, best_result, t0, t_shoot)
+        @test J ≈ expected_j rtol = 1e-8 atol = 1e-8
+        @test x_back ≈ [x10, x20] rtol = 1e-8
     end
 
     @testset "_obs_trfn_ parsing unit tests" begin
@@ -948,113 +814,6 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         # Non-trfn names return nothing
         @test parse_fn("y1") === nothing
         @test eval_fn("y1_0", 0.0) === nothing
-    end
-
-    @testset "Transcendental UQ: _obs_trfn_ not in unknowns" begin
-        # forced_decay: 1 state, 2 params, sin(0.5t) forcing → triggers _obs_trfn_ machinery
-        pep = ODEParameterEstimation.Examples.forced_decay()
-        pep_data = ODEParameterEstimation.sample_problem_data(
-            pep, EstimationOptions(datasize = 31, time_interval = [0.0, 10.0]))
-        t_var = ModelingToolkit.get_iv(pep_data.model.system)
-        pep_transformed, tr_info = ODEParameterEstimation.transform_pep_for_estimation(pep_data, t_var)
-        @test !isnothing(tr_info)  # confirms sin(0.5t) was detected
-
-        # Run diagnose with UQ-capable interpolator
-        report = quiet_feature_call() do
-            diagnose(pep_transformed; interpolators = [InterpolatorAGPUQ])
-        end
-        sr = report.best.sensitivity
-
-        # Data sensitivity matrix should be non-empty
-        @test !isempty(sr.data_sensitivity_matrix)
-
-        # Unknown labels must NOT contain _obs_trfn_
-        for label in sr.data_sensitivity_unknown_labels
-            @test !startswith(label, "_obs_trfn_")
-        end
-
-        # Dimension consistency: rows of S == length of unknown labels
-        n_unknowns, n_data = size(sr.data_sensitivity_matrix)
-        @test length(sr.data_sensitivity_unknown_labels) == n_unknowns
-        @test length(sr.data_sensitivity_data_labels) == n_data
-    end
-
-    @testset "_obs_trfn_ vars not in diagnostic pipeline" begin
-        # forced_decay triggers _obs_trfn_ machinery; verify it doesn't leak into diagnostics
-        pep = ODEParameterEstimation.Examples.forced_decay()
-        pep_data = ODEParameterEstimation.sample_problem_data(
-            pep, EstimationOptions(datasize = 31, time_interval = [0.0, 10.0]))
-        t_var = ModelingToolkit.get_iv(pep_data.model.system)
-        pep_transformed, tr_info = ODEParameterEstimation.transform_pep_for_estimation(pep_data, t_var)
-        @test !isnothing(tr_info)
-
-        # Run polynomial system and sensitivity diagnostics
-        poly_report, sr = quiet_feature_call() do
-            poly = diagnose_polynomial_system(pep_transformed)
-            sens = diagnose_sensitivity(pep_transformed)
-            (poly, sens)
-        end
-
-        # Polynomial report: no _obs_trfn_ in variable names
-        for vname in poly_report.variable_names
-            @test !contains(vname, "_obs_trfn_")
-        end
-
-        # Polynomial report: true residual is finite (not NaN)
-        @test isfinite(poly_report.true_residual_production)
-
-        # Sensitivity report: Jacobian cond is finite (not NaN)
-        @test isfinite(sr.jacobian_cond)
-
-        # Sensitivity report: no _obs_trfn_ in Jacobian column labels
-        for label in sr.jacobian_col_labels
-            @test !contains(label, "_obs_trfn_")
-        end
-    end
-
-    @testset "diagnose() auto-applies trfn transform" begin
-        # forced_decay has sin(0.5t) forcing — without auto-trfn diagnose would fail
-        # with "system does not seem to have rational right-hand side".
-        pep = ODEParameterEstimation.Examples.forced_decay()
-        pep_data = ODEParameterEstimation.sample_problem_data(
-            pep, EstimationOptions(datasize = 31, time_interval = [0.0, 10.0]))
-
-        # 1) Single-mode diagnose() on raw sin-forced PEP — must NOT throw.
-        report_auto = quiet_feature_call() do
-            diagnose(pep_data; save_to_disk = false, html_report = false)
-        end
-        @test report_auto isa ODEParameterEstimation.DiagnosticReport
-
-        # 2) Idempotence: works when caller pre-transformed.
-        t_var = ModelingToolkit.get_iv(pep_data.model.system)
-        pep_pre, _ = ODEParameterEstimation.transform_pep_for_estimation(pep_data, t_var)
-        report_pre = quiet_feature_call() do
-            diagnose(pep_pre; save_to_disk = false, html_report = false)
-        end
-        @test report_pre isa ODEParameterEstimation.DiagnosticReport
-
-        # 3) Lower-level peer entries also auto-transform (no setup_data passed).
-        poly_report = quiet_feature_call() do
-            diagnose_polynomial_system(pep_data)
-        end
-        @test isfinite(poly_report.true_residual_production)
-
-        sens_report = quiet_feature_call() do
-            diagnose_sensitivity(pep_data)
-        end
-        @test isfinite(sens_report.jacobian_cond)
-
-        deriv_report = quiet_feature_call() do
-            diagnose_derivative_accuracy(pep_data)
-        end
-        @test deriv_report isa ODEParameterEstimation.DerivativeAccuracyReport
-
-        # 4) Multi-mode diagnose() also auto-transforms.
-        report_multi = quiet_feature_call() do
-            diagnose(pep_data; interpolators = [InterpolatorAGPUQ],
-                     save_to_disk = false, html_report = false)
-        end
-        @test report_multi isa ODEParameterEstimation.ComprehensiveDiagnosticReport
     end
 
     @testset "Estimator-sampling UQ influence weights" begin
@@ -1085,9 +844,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
     end
 
     @testset "compute_uncertainty=true returns physical-coordinate UQ with local audit" begin
-        # Phase E2 (review P0#5): the experimental UQ sidecar is rewired from the
-        # broken FD-Jacobian path (archived in deprecated/uq_fd_path.jl) to the
-        # IFT-based diagnose_uncertainty. End-to-end smoke on harmonic_oscillator().
+        # End-to-end smoke test of the uncertainty report on harmonic_oscillator().
         uq_opts = EstimationOptions(
             datasize = 21, noise_level = 0.0, shooting_points = 1,
             nooutput = true, diagnostics = false, flow = FlowStandard,
@@ -1120,25 +877,6 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         @test uq.backsolve_transform isa ODEParameterEstimation.UQBacksolveTransform
         @test uq.practical_identifiability_index isa ODEParameterEstimation.PracticalIdentifiabilityIndex
         @test isfinite(uq.practical_identifiability_index.i_a)
-    end
-
-    @testset "diagnose writes HTML report to disk" begin
-        # Phase A smoke (insurance for the planned diagnostics.jl file split):
-        # the rest of CI only runs diagnose with html_report=false. Reports go to
-        # artifacts/diagnostics/<name>/ relative to pwd, so run inside a tempdir.
-        sampled = ODEParameterEstimation.sample_problem_data(
-            ODEParameterEstimation.Examples.harmonic_oscillator(),
-            EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true))
-        mktempdir() do dir
-            cd(dir) do
-                quiet_feature_call() do
-                    diagnose(sampled; save_to_disk = true, html_report = true)
-                end
-                report_path = joinpath("artifacts", "diagnostics", "harmonic_oscillator", "report.html")
-                @test isfile(report_path)
-                @test filesize(report_path) > 1000
-            end
-        end
     end
 
     @testset "Auto-filter interpolators by noise" begin

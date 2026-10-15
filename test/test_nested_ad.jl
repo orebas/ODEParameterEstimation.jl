@@ -1,5 +1,5 @@
 # Derivatives of an ODE solve carry a tag whose place in ForwardDiff's order is
-# fixed, whatever was compiled first (2026-10-13). See src/core/nested_ad.jl.
+# fixed, whatever was compiled first. See src/core/nested_ad.jl.
 
 using ODEParameterEstimation
 using Test

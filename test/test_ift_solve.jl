@@ -1,5 +1,5 @@
 using ODEParameterEstimation
-# _ift_solve contract (2026-08-13, "degrade loudly" decision): factorized IFT
+# _ift_solve contract (degrade loudly): factorized IFT
 # sensitivity, no silent pinv. The old cond>1e6 pinv fallback returned the
 # minimum-norm derivative — suppressing weak-direction sensitivity and making
 # downstream covariance overconfident exactly when conditioning is worst.

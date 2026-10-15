@@ -89,6 +89,6 @@ OrdinaryDiffEq 7.8.1, SciMLBase 3.57.0 and OrderedCollections 2.0.1.
 All eight cases match exactly in returned candidate count, rank-one and
 best-branch relative parameter errors, and rank-one trajectory fit error.
 Biohydrogenation has poor parameter recovery in both versions despite small
-trajectory error. These are package-model compatibility checks, not the
-audited PEB scientific campaign. Recorded elapsed times include compilation
+trajectory error. These are package-model compatibility checks. Recorded
+elapsed times include compilation
 and concurrent validation load and must not be used as a performance comparison.

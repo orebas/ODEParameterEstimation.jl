@@ -1,6 +1,6 @@
 # First-call latency: where the time went and what was changed
 
-Measured on 2026-10-06, starting from `3c7559d` (registered as 1.0.0), on one
+Measured on 2026-10-06, starting from `3c7559d`, on one
 machine: Julia 1.13.1, a 13-core `znver3` under WSL2, `JULIA_NUM_THREADS=7`
 unless a row says otherwise. Every number is a fresh process started with
 `julia --startup-file=no`. "Baseline" is a pristine checkout of `3c7559d`;
@@ -36,8 +36,9 @@ threads:
 Only the last row does not depend on the model, so only it can be compiled in
 advance. That was confirmed directly: estimating the proposed workload model
 first and the README example second in one session left the README example at
-63 s (from 110 s), `lotka_volterra()` at 86 s (from 121 s) and `simple()` at
-71 s (from 91 s). A workload alone could not halve the wait.
+63 s (from 110 s), `lotka_volterra()` at 86 s (from 121 s) and `simple()` (now
+`harmonic_oscillator()`) at 71 s (from 91 s). A workload alone could not halve
+the wait.
 
 ## Why 21 systems
 
@@ -195,10 +196,6 @@ workload's six). ForwardDiff's chunk size is the number of unknowns
   the dual parts, so results would change with the chunking.
 - **Solving the generic start on the scaled system**, which would save two
   more compiled systems per model. The start solve is deliberately unscaled.
-- `treatment()` and `biohydrogenation()` pass their time interval in the
-  constructor's solver slot. Moving it would change what
-  `run_parameter_estimation_examples` does for those two models, from the
-  default `[0, 5]` to `[0, 40]` and `[0, 36]`. Left for a decision.
 
 ## Reproducing
 
@@ -215,5 +212,4 @@ seeded = estimate(problem; seed = 1)   # values compared across builds
 run in a fresh process per number, in an environment that has the checkout
 developed and ModelingToolkit added. Precompile time is
 `@elapsed Base.compilecache(Base.identify_package("ODEParameterEstimation"))`.
-The scripts and raw output are kept locally under
-`repro/first_call_latency_2026_10_06/`, which is not tracked.
+The scripts and raw output are not in the repository.

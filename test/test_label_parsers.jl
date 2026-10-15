@@ -1,6 +1,5 @@
 using ODEParameterEstimation
-# Characterization tests for the three label/name parsers — added 2026-06-09
-# (maintainability campaign, Phase A; see docs/internal/2026-06-09_code_review.md).
+# Characterization tests for the three label/name parsers.
 #
 # These LOCK the parsers' CURRENT behavior, measured empirically, including their
 # distinct failure contracts:
@@ -8,8 +7,8 @@ using ODEParameterEstimation
 #   parse_sensitivity_label  -> nothing   on failure   (sigma_d.jl)
 #   _multipoint_deriv_order  -> 0         on failure   (multipoint_template.jl; order only)
 #
-# Known warts locked AS-IS (candidates for a deliberate fix when the parsers are
-# consolidated — Phase D1 — never to be changed silently):
+# Known warts locked AS-IS (candidates for a deliberate fix, never to be changed
+# silently):
 #   * Only the comma form "Differential(t, N)(var(t))" parses; the order-1 form
 #     "Differential(t)(var(t))" and nested forms fail.
 #   * A bare underscore-digit name parses its suffix as an order: "k_1" -> ("k", 1).

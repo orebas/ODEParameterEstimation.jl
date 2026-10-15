@@ -1,4 +1,4 @@
-# Contract tests for the scoped RunContext (run_context.jl, 2026-07-24):
+# Contract tests for the scoped RunContext (run_context.jl):
 # per-run isolated state replacing the run-state globals (auto-M hand-off,
 # timing capture, timing sinks). Pure/fast — no estimation runs.
 
@@ -87,7 +87,7 @@ const _OPE = ODEParameterEstimation
 	@test timing === nothing
 
 	# HC solver-config carry: nothing-fallback without a context, carried values
-	# inside one, cleared with the scope (2026-08-12 hardening).
+	# inside one, cleared with the scope.
 	@test _OPE._run_ctx_hc_threading() === nothing
 	@test _OPE._run_ctx_hc_compile_mode() === nothing
 	_OPE._run_ctx_set_hc_opts!(false, :none)          # no-op without a context

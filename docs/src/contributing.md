@@ -64,10 +64,20 @@ The pages are in `docs/src`. Their examples run during the build, so a page
 that builds is a page whose code works. Open `docs/build/index.html` to read
 the result.
 
+## Writing code
+
+- Functions and variables are `snake_case`, types are `PascalCase`.
+- Tolerances are `abstol` and `reltol`. A function that takes the problem or
+  the model takes it as its first argument.
+- Use `OrderedDict` for parameters and states, so their order is fixed.
+- Give each function a docstring with Arguments and Returns sections.
+- A change a user can see needs its page in this manual and its docstring
+  changed with it. `?EstimationOptions` names every option, and a test checks
+  that it does.
+
 ## Engineering notes
 
 [`docs/internal`](https://github.com/orebas/ODEParameterEstimation.jl/tree/main/docs/internal)
-holds the notes written while the package was developed: investigations, design
-discussions and release checklists. They are a record, not documentation, and
-many describe code that has since changed. Its `review_map.md` says where
-things are in the source.
+has a few notes for people working on the package: how the polynomial systems
+are built and solved, why the precompile step and the column scaling work as
+they do, and where the code adapted from other packages came from.

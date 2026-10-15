@@ -1,5 +1,5 @@
-# A run with default options prints nothing, logs nothing and writes no files
-# (2026-10-06). `progress = true` adds phase lines to a quiet run;
+# A run with default options prints nothing, logs nothing and writes no files.
+# `progress = true` adds phase lines to a quiet run;
 # `nooutput = false` and `diagnostics = true` bring the development output back.
 
 using ODEParameterEstimation

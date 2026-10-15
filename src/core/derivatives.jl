@@ -37,8 +37,7 @@ end
 # The barycentric and rational interpolation helpers from here on were adapted
 # from ParameterEstimation.jl (GPL-3.0), revision
 # `99f4bd59d9c6cedcfeb644672168aaa3f0088984`,
-# `src/rational_interpolation/bary_derivs.jl`. See the repository's
-# `docs/internal/registry_preparation.md` attribution inventory.
+# `src/rational_interpolation/bary_derivs.jl`. See `docs/internal/provenance.md`.
 function baryEval(z, f::Vector{T}, x::Vector{T}, w::Vector{T}, tol = 1e-13) where {T}
 	@assert(length(f) == length(x) == length(w))
 	num = zero(T)

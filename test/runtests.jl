@@ -30,42 +30,42 @@ const TEST_FILES = [
     "result_processing_helpers.jl",
     "feature_regressions.jl",
     "test_rescaling.jl",
-    "test_core_types.jl",     # re-homed 2026-07-21 (was orphaned + red; now green)
+    "test_core_types.jl",     # result and option types
     "test_solution_distance.jl",
     "test_math_utils.jl",
     "test_derivative_utils.jl",
     "test_observation_data.jl",
     "test_model_utils.jl",    # ordered model construction; also in the unit group
-    "column_scaling.jl",      # re-homed 2026-07-21 (was orphaned; green)
+    "column_scaling.jl",      # column scaling of the polynomial systems
     "test_noise_rank_matrix.jl", # Jacobian values and rank under bounded AD compilation
     "test_robust_system.jl", # reusable polynomial kernels, Jacobians, and root polishing
     "test_deferred_derivatives.jl", # rational rank support and on-demand polynomial derivatives
-    "test_interrupt_propagation.jl",  # Ctrl-C class fix 2026-07-24 (_rethrow_if_interrupt)
-    "test_run_context.jl",            # scoped RunContext contracts 2026-07-24
-    "test_seed_reproducibility.jl",   # EstimationOptions.seed: repeatable runs, caller RNG untouched 2026-10-05
-    "test_quiet_defaults.jl",         # default runs print, log and write nothing; output is opt-in 2026-10-06
-    "test_problem_constructor.jl",    # problem from an MTK system + named data; result display 2026-10-06
-    "test_estimate.jl",               # estimate(): measured data in, ranked results out 2026-10-06
-    "test_small_contracts.jl",        # every option check, interpolator names, ranking, messages 2026-10-14
-    "test_interpolator_fits.jl",      # every built-in interpolator fits a smooth curve 2026-10-14
-    "test_nested_ad.jl",              # derivatives of an ODE solve nest in a fixed order 2026-10-13
-    "test_precompile_workload.jl",    # the precompile workload is a quiet default run and leaves no state 2026-10-06
-    "test_gp_kernel_optimization.jl", # recovered 2026-08-12 (gitignore-trap survivor, Feb 2026)
-    "test_cross_observable_covariance.jl",  # recovered 2026-08-12 (joint-GP covariance, Mar 2026)
-    "test_polish_maxtime.jl",         # recovered 2026-08-12 (polish_maxtime enforcement, May 2026)
-    "test_hc_sanitize.jl",            # HC name injectivity + cross-list dedup 2026-08-12
-    "test_options_contracts.jl",      # dead-options cleanup contracts 2026-08-12
-    "test_taylor_propagation.jl",     # estimate-conditioned Taylor cores 2026-08-13
+    "test_interrupt_propagation.jl",  # Ctrl-C propagates out of the estimation
+    "test_run_context.jl",            # scoped RunContext contracts
+    "test_seed_reproducibility.jl",   # EstimationOptions.seed: repeatable runs, caller RNG untouched
+    "test_quiet_defaults.jl",         # default runs print, log and write nothing; output is opt-in
+    "test_problem_constructor.jl",    # problem from an MTK system + named data; result display
+    "test_estimate.jl",               # estimate(): measured data in, ranked results out
+    "test_small_contracts.jl",        # every option check, interpolator names, ranking, messages
+    "test_interpolator_fits.jl",      # every built-in interpolator fits a smooth curve
+    "test_nested_ad.jl",              # derivatives of an ODE solve nest in a fixed order
+    "test_precompile_workload.jl",    # the precompile workload is a quiet default run and leaves no state
+    "test_gp_kernel_optimization.jl", # GP kernel hyperparameter optimization
+    "test_cross_observable_covariance.jl",  # joint-GP covariance across observables
+    "test_polish_maxtime.jl",         # polish_maxtime is enforced
+    "test_hc_sanitize.jl",            # HC name injectivity + cross-list dedup
+    "test_options_contracts.jl",      # every option is documented, printed and checked
+    "test_taylor_propagation.jl",     # estimate-conditioned Taylor cores
     "test_estimate_conditioned_uq.jl", # the uncertainty report is evaluated at the estimate
-    "test_exact_index_matching.jl",   # per-point index lists + exact obs-name match 2026-08-13
-    "test_stacked_jet_covariance.jl", # cross-time W-stack Σ_d core (MC-validated) 2026-08-13
-    "test_ift_solve.jl",              # factorized IFT, loud degradation 2026-08-13
+    "test_exact_index_matching.jl",   # per-point index lists + exact obs-name match
+    "test_stacked_jet_covariance.jl", # cross-time W-stack Σ_d core (MC-validated)
+    "test_ift_solve.jl",              # factorized IFT, loud degradation
     "test_multipoint_sensitivity.jl", # the uncertainty report for a multipoint estimate
-    "test_multipoint_pipeline.jl", # actual adaptive + fixed-pair MP production routes 2026-08-16
-    "test_estimator_aware_uq.jl", # exact rank-one target + typed outcome/lineage contract 2026-08-14
-    "test_polish_uq_pipeline.jl", # actual tiny-ODE polish/direct report + perturb/refit influence 2026-08-16
-    "test_branch_uq_pipeline.jl", # actual retained parent->jet->sibling covariance composition 2026-08-16
-    "test_gp_factorization_consistency.jl", # one SE recipe + scale-relative jitter telemetry 2026-08-15
+    "test_multipoint_pipeline.jl", # actual adaptive + fixed-pair MP production routes
+    "test_estimator_aware_uq.jl", # exact rank-one target + typed outcome/lineage contract
+    "test_polish_uq_pipeline.jl", # actual tiny-ODE polish/direct report + perturb/refit influence
+    "test_branch_uq_pipeline.jl", # actual retained parent->jet->sibling covariance composition
+    "test_gp_factorization_consistency.jl", # one SE recipe + scale-relative jitter telemetry
 ]
 
 test_files = if isempty(ARGS) || ARGS == ["all"]

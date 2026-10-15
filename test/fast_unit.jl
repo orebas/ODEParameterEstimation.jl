@@ -6,8 +6,8 @@
 # test_example_models.jl, which simulates every example model once. Use this
 # for rapid iteration while refactoring.
 #
-# This is NOT a substitute for the full FAST gate. Per CLAUDE.md, any
-# estimation-touching change must still be verified with:
+# This is NOT a substitute for the full suite. Any estimation-touching change
+# must still be verified with (see docs/src/contributing.md):
 #     julia --startup-file=no -e 'using Pkg; Pkg.test("ODEParameterEstimation")'
 #
 # Composition: standalone unit contracts, including the restored math and

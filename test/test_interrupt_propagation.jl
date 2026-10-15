@@ -1,9 +1,8 @@
 # Regression: InterruptException (Ctrl-C) must PROPAGATE out of the estimation
 # flow — broad numerical-failure catches may not swallow cancellation.
-# Class fix 2026-07-24: `_rethrow_if_interrupt` guards at every default-path
-# catch (census in repro/hc_threading_mwe_2026_07_22/; external review finding:
-# 0/64 catches filtered InterruptException, turning Ctrl-C into
-# "log, return empty, keep trying fallbacks").
+# `_rethrow_if_interrupt` guards every default-path catch. Before it, no catch
+# filtered InterruptException, which turned Ctrl-C into "log, return empty, keep
+# trying fallbacks".
 
 using ODEParameterEstimation
 using Test

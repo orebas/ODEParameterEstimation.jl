@@ -82,11 +82,9 @@ basins.
 
 # Why not global MAD-normalization
 
-Global MAD across all candidates is what `_branch_cluster_linf` does in
-`_detect_branches`; the 2026-05-14 numbat regression eval found this drops
-truth-near candidates in 43% of regression cells because MAD is inflated by
-between-basin separation, which then compresses within-basin near-truth
-distinctions. The per-basin MAD here is computed only within an
+Global MAD across all candidates, which an earlier version of this stage used,
+often drops truth-near candidates: MAD is inflated by between-basin separation,
+which then compresses within-basin near-truth distinctions. The per-basin MAD here is computed only within an
 already-similar group, so it reflects practical non-identifiability noise
 rather than basin separation.
 
@@ -419,9 +417,9 @@ function _scored_results(results)
 end
 
 
-# UQ kernel dispatch (_uq_kernel_for_result and friends) was deleted 2026-08-13:
-# production-uncalled — agp_gpr_uq is SE-only and throws on anything else.
-# Matérn UQ returns together with the coverage harness that can validate it.
+# There is no per-kernel UQ dispatch: agp_gpr_uq supports only the SE kernel and
+# throws on anything else. Matérn kernels would need their own calibration check
+# before UQ could support them.
 
 function _compute_uq_result(
 	PEP::ParameterEstimationProblem,
@@ -507,8 +505,8 @@ function analyze_estimation_result(problem::ParameterEstimationProblem, result;
 	# Cluster ALL candidates first; rely on clustering to produce the set of
 	# distinct algebraic-basin representatives. The legacy
 	# `err < MAX_ERROR_THRESHOLD` gate silently dropped truth-near candidates
-	# whose trajectory loss was high (e.g. on practical-non-identifiability
-	# cases like flexible_arm where fit-best is anticorrelated with truth-best).
+	# whose trajectory loss was high (e.g. on practically non-identifiable
+	# models where fit-best is anticorrelated with truth-best).
 	# Cluster-first preserves them as separate basin reps.
 	#
 	# We do NOT cap cluster count: the legacy code's MAX_SOLUTIONS cap applied
@@ -688,25 +686,20 @@ function analyze_estimation_result(problem::ParameterEstimationProblem, result;
 	# cluster_solutions_identifiable_subspace). Each method preserves err
 	# order within clusters (first member = err-best). branch_size is annotated below.
 	#
-	# Historically this stage called _detect_branches to do additional L∞-MAD
-	# clustering on identifiable axes and filter by branch_resid_factor / branch_min_size.
-	# The 2026-05-14 numbat regression eval (results/numbat_analysis/three_way/) found
-	# _detect_branches drops the truth-near candidate in 43% of regression cells:
-	# MAD-normalization can compress near-truth and far-from-truth into one cluster,
-	# whose err-best rep then misses truth. Skipping it improves recovery from 3% to
-	# 77% (within 2× of the legacy "06" benchmark's oracle) on 101 probe cells.
-	# _detect_branches was archived 2026-06-09 to deprecated/branch_detection.jl
-	# (no longer part of the build); kept there for reference only.
+	# An earlier version of this stage did a further global L∞-MAD clustering on
+	# identifiable axes. It was removed because MAD-normalization can compress
+	# near-truth and far-from-truth candidates into one cluster, whose err-best rep
+	# then misses the truth.
 	#
-	# When opts.branch_detection is false, fall back to legacy oracle-based sort (the
-	# cheat) — retained for old-benchmark reproducibility.
+	# When opts.branch_detection is false, the reps are sorted by distance to the
+	# true values instead (`oracle_sort_key`), which needs them: this is for
+	# studying the method, not for estimation.
 	cluster_reps = [first(cluster) for cluster in clusters]
 	for (i, c) in enumerate(clusters)
 		cluster_reps[i].branch_size = length(c)
 	end
 	returned_results = if opts.branch_detection
-		# Rank by fit error before top-K slicing (the 2026-06-14 selection study
-		# found it near-optimal; the alternative orderings were removed 2026-10-15).
+		# Rank by fit error before top-K slicing.
 		sorted_reps = rank_cluster_representatives(cluster_reps)
 		# Truncation policy:
 		#   - `opts.algebraic_multiplicity = nothing` (default) → keep up to
@@ -716,8 +709,6 @@ function analyze_estimation_result(problem::ParameterEstimationProblem, result;
 		#     algebraic multiplicity of the problem; output should contain
 		#     exactly that many algebraic branches. `branch_top_k` remains
 		#     a safety cap in case M is set wrong.
-		# See PEB `results/wallaby_analysis/multiplicity/M_INFERENCE_INVESTIGATION.md`
-		# for the inference pipeline and the upstream-patch path.
 		M_eff = if opts.algebraic_multiplicity === nothing
 			opts.branch_top_k
 		elseif opts.branch_top_k > 0
@@ -926,9 +917,8 @@ end
 
 
 # _compile_system_function: a general symbolic->callable compiler (Symbolics.build_function
-# wrapper). Lives here, included before all callers (multipoint_template #86,
-# noise_frontier_construction #87, diagnostics #98/#99, research/consensus #107), so every
-# caller resolves it forward. Relocated out of diagnostics 2026-06-10.
+# wrapper). It lives here because this file is included before all of its callers
+# (multipoint_template.jl, noise_frontier_construction.jl and the diagnostics).
 """
 Compile a vector of symbolic equations into a callable `f(x) → Vector{Float64}`
 via `Symbolics.build_function`. Falls back to substitution-based evaluation.

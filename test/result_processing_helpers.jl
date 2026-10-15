@@ -228,8 +228,9 @@ end
     end
 
     @testset "lookup_value SIAN jet-name resolution contract" begin
-        # Synthetic SI-workflow varlist (jet-suffixed names), mirroring the P0#4
-        # scenario: MTK params k_1/k_2 and states x_1/x_2 must resolve to THEIR
+        # Synthetic SI-workflow varlist (jet-suffixed names), mirroring the
+        # underscore-digit case in example_canaries.jl: MTK params k_1/k_2 and
+        # states x_1/x_2 must resolve to THEIR
         # OWN jet-0 variables, never a neighbor's (the old base-name fallback
         # mapped both k_1 and k_2 onto k_2_0).
         t = ModelingToolkit.t_nounits
@@ -267,7 +268,7 @@ end
         )
     end
 
-    @testset "template_var_map drives SI-workflow lookups (Phase B)" begin
+    @testset "template_var_map drives SI-workflow lookups" begin
         # Discriminating design: the template variables here are named so that
         # lookup_value's name heuristics can NEVER find them (zz_* bears no
         # relation to the model names). Exact recovery therefore PROVES the

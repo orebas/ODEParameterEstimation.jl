@@ -1,26 +1,20 @@
 # ── HC.jl threading ───────────────────────────────────────────────────────────
 # `HomotopyContinuation.solve` defaults `threading = Threads.nthreads() > 1`, so at
 # JULIA_NUM_THREADS>1 it multi-threads its path tracker / mixed-cell (polyhedral)
-# computation. HC.jl is thread-safe since PR #669 (path tracking reworked onto native
-# Julia threading); the HC author (P. Breiding) confirms `threading=true` should always
-# work and the old "some CPUs hang" docstring is stale.
-# Validated 2026-06-05: biohydrogenation_3_1em8 ran end-to-end with threading=true in
-# 1.83h vs 4.81h threading-off — 2.63× faster, BIT-IDENTICAL recovery, no deadlock. The
-# earlier nondeterministic "Computing mixed cells" freeze (latent/receptor at threads=8)
-# did NOT reproduce on dedicated boxes and is believed pre-#669 / a rare race. We
-# therefore default HC's internal threading ON (the process already keeps all threads
-# for the pure-Julia polish, which yields to GC safepoints).
-# CAVEAT: that validation used bioh's SMALL mixed volume (~11/37). The large-mixed-volume
-# case (receptor, mixed_volume 63577) + threading is not yet proven deadlock-free; if a
-# hang recurs in HC's "Computing mixed cells", set this back to `false`.
+# computation. HC.jl has been thread-safe since PR #669 (path tracking reworked onto
+# native Julia threading). On a long biohydrogenation run, threading=true was 2.6× faster
+# than threading=false and gave bit-identical results. We therefore default HC's internal
+# threading ON (the process already keeps all threads for the pure-Julia polish, which
+# yields to GC safepoints).
+# CAVEAT: that check used a small mixed volume (~11/37). With a large mixed volume
+# (receptor, 63577) threading is not yet proven deadlock-free; if a hang recurs in HC's
+# "Computing mixed cells", set `hc_threading = false`.
 # All HomotopyContinuation.solve calls in this module route through `_hc_solve`.
 const HC_SOLVE_THREADING = Ref(true)
 # Compile mode for HC systems, passed EXPLICITLY per solve. Historically set
 # via `HomotopyContinuation.set_default_compile(:all)`, which mutates HC's
-# process-global default for every other caller/task in the process — a
-# composability defect (2026-07 review). Same Ref pattern as
-# HC_SOLVE_THREADING; promoting both to EstimationOptions fields is tracked
-# follow-up work.
+# process-global default for every other caller/task in the process. Same Ref
+# pattern as HC_SOLVE_THREADING.
 const HC_COMPILE_MODE = Ref{Symbol}(:all)
 # Per-analysis overrides come from the scoped RunContext (set from
 # EstimationOptions.hc_threading / hc_compile_mode at analyze entry); the Refs
@@ -200,9 +194,8 @@ function sanitize_vars(varlist)
 	# Injective-on-collision: the char-replacement above is lossy (xˍt and x_t
 	# both become x_t), and a collision silently IDENTIFIES two variables in
 	# the HC system — duplicate names pass HC's checks, one slot goes dead, and
-	# positionally-returned values are garbage for the first variable (traced
-	# 2026-08-12 audit). First occurrence keeps the clean name; later ones get
-	# __2, __3, …
+	# positionally-returned values are garbage for the first variable. The first
+	# occurrence keeps the clean name; later ones get __2, __3, …
 	seen = Dict{String, Int}()
 	for i in eachindex(sanitized)
 		s = sanitized[i]
@@ -469,7 +462,7 @@ function convert_to_hc_format_with_params(poly_system, solve_vars, data_vars)
 
 	# Data vars carry a p_ prefix in HC — which can collide ACROSS lists with a
 	# solve variable literally named p_<something> (e.g. solve var `p_y` vs data
-	# var `y`; 2026-08-12 audit finding). Deduplicate the prefixed data names
+	# var `y`). Deduplicate the prefixed data names
 	# against the solve-name set, then assert global uniqueness.
 	prefixed_data = ["p_" * s for s in sanitized_data]
 	taken = Set{String}(sanitized_solve)
@@ -652,8 +645,8 @@ real discriminant and stall (`terminated_max_steps`).
 """
 function _track_gamma_straight(hc_system, starts, p_start, p_target;
 	show_progress = false, rng = MersenneTwister(0x67a44a01), max_seeds = 5, target_count = length(starts))
-	# Deterministic default rng (postcampaign review P1): all in-package callers
-	# pass rng explicitly; an unseeded default made direct calls run-to-run random.
+	# Deterministic default rng: all in-package callers pass rng explicitly; an
+	# unseeded default made direct calls run-to-run random.
 	ps = ComplexF64.(p_start)
 	pt = ComplexF64.(p_target)
 	best_res = nothing
@@ -886,7 +879,7 @@ function solve_with_hc_parameterized(poly_system, solve_vars, data_vars, param_v
 				# solutions, so n_accounted ≤ N; bumping the target to the fresh solve's path/endpoint
 				# count (the homotopy path bound ~Bezout/BKK incl. at-infinity — e.g. 393) made
 				# `n_accounted < target` permanently true ⇒ EVERY subsequent point needlessly fresh-solved
-				# (the 15h-cstr blowup; report 2026-06-10). Use the FRESH FINITE count: it raises the
+				# (a 15-hour run on the CSTR model). Use the FRESH FINITE count: it raises the
 				# target only on genuine generic-anchor undercoverage (fresh finds > N real solutions),
 				# the one case where fan-outs of N really are incomplete and should keep fresh-solving.
 				fresh_finite = length(all_solutions)
@@ -1095,12 +1088,12 @@ function evaluate_data_vars_at_point(interpolants, data_vars, DD, measured_quant
 				else
 					# Analytic transformed observables (y ~ _trfn_* / _obs_trfn_*)
 					# legitimately have no data-fitted interpolant — derive the
-					# value in closed form from the observable RHS. (The quoll-era
-					# pipeline named these jets y<k>_<n>, bypassed the trfn check
-					# above, and injected 0.0 here in place of REAL sin/cos
-					# derivative values — 34k hits across cstr/bicycle benchmark
-					# logs. Current naming resolves them at the trfn check; this
-					# branch is defense-in-depth for y-named analytic jets.)
+					# value in closed form from the observable RHS. (An earlier
+					# naming scheme called these jets y<k>_<n>, bypassed the trfn
+					# check above, and injected 0.0 here in place of the real
+					# sin/cos derivative values. Current naming resolves them at
+					# the trfn check; this branch is defense-in-depth for y-named
+					# analytic jets.)
 					rhs_base = replace(string(measured_quantities[obs_idx].rhs), r"\(t\)$" => "")
 					analytic_name = deriv_level == 0 ? rhs_base : string(rhs_base, "_", deriv_level)
 					aval = evaluate_known_trfn_variable(analytic_name, Float64(t_point))

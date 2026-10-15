@@ -1,9 +1,6 @@
 using Symbolics
-# Refactor safety net — added 2026-06-09, BEFORE the code-review cleanup
-# (see docs/internal/2026-06-09_code_review.md and docs/internal/2026-06-09_test_safety_net.md).
-#
-# Purpose: give the upcoming refactors (dead-code removal, dedup, type annotations,
-# file splits) a behavior lock, and give the P0 bug fixes a concrete target.
+# Refactor safety net, written before a round of dead-code removal, dedup, type
+# annotations and file splits, to lock the behavior those refactors had to keep.
 #
 # Convention:
 #   @test        -> behavior to LOCK (green now, must stay green through refactors)
@@ -17,7 +14,7 @@ import ModelingToolkit
 
 @testset "Refactor safety net (pre-cleanup)" begin
 
-	# --- P0#4 (caller-side): lock the parser's documented behavior ------------
+	# --- Names ending in _<digit>: lock the parser's documented behavior -------
 	# The parser is correct per its docstring ("last _N is always the derivative
 	# order"); the real bug is callers applying it to bare param/state names that
 	# legitimately end in _<digit>. Lock current behavior so the caller-side fix
@@ -30,12 +27,12 @@ import ModelingToolkit
 		@test P("y1_0") == ("y1", 0)
 		@test P("_obs_trfn_cos_5_0_cos_3") == ("_obs_trfn_cos_5_0_cos", 3)
 		@test P("y1") === nothing            # no _N suffix -> nothing
-		# Ambiguity at the heart of P0#4: a parameter literally named k_2 parses as
+		# The ambiguity: a parameter literally named k_2 parses as
 		# d^2/dt^2 of k. Documented here so the fix lands caller-side, not here.
 		@test P("k_2") == ("k", 2)
 	end
 
-	# --- P0#3: lock AAA interior accuracy so the baryEval tolerance fix can't
+	# --- Lock AAA interior accuracy so the baryEval tolerance fix can't
 	# regress the common case (normal grid spacing, well clear of the ~5.6e-4
 	# special-case window). ----------------------------------------------------
 	@testset "aaad/baryEval interior accuracy lock" begin
@@ -88,19 +85,19 @@ import ModelingToolkit
 			my_sum += sum(abs2, ode_solution(t)[k] .- offset_data[k])
 		end
 
-		# 2026-06-11: `err` is now the canonical SSE — Σ over every observable and time
+		# `err` is the canonical SSE — Σ over every observable and time
 		# point of squared residuals (see `_trajectory_sse`), so every candidate (algebraic
 		# / polished / synthesized) is reported and ranked in ONE unit. No `/N`, no
 		# `/n_obs` divisor — the earlier divisor bug is moot because there is no divisor.
 		@test err ≈ my_sum rtol = 1e-6
 	end
 
-	# --- Phase C1: legacy-path homotopy data evaluator ---------------------
+	# --- Legacy-path homotopy data evaluator ---------------------------------
 	# Locks two behaviors of evaluate_data_vars_at_point:
 	#  (1) analytic transformed observables (y ~ _trfn_*) with no data-fitted
-	#      interpolant resolve in CLOSED FORM from the observable RHS — the
-	#      quoll-era pipeline injected 0.0 for these (34k hits on cstr/bicycle
-	#      benchmark logs), silently corrupting the homotopy data;
+	#      interpolant resolve in CLOSED FORM from the observable RHS — an
+	#      earlier version injected 0.0 for these, silently corrupting the
+	#      homotopy data;
 	#  (2) a genuinely unresolvable data variable yields NaN (visible failure),
 	#      never 0.0 (fake data).
 	@testset "evaluate_data_vars_at_point: analytic observables + NaN fail-fast" begin

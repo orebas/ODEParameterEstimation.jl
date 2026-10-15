@@ -9,10 +9,9 @@
 # ============================================================================
 
 # Run-scoped state (timing capture flag, timing breakdown, auto-M hand-off,
-# timing sinks) lives on the scoped RunContext (run_context.jl) as of
-# 2026-07-24. The reuse bundle below stays module-global BY DESIGN: it is a
-# cross-run hand-off consumed after the run completes (consensus/benchmark
-# flows read `_LAST_ESTIMATION_REUSE[]`).
+# timing sinks) lives on the scoped RunContext (run_context.jl). The reuse
+# bundle below stays module-global by design: it is a hand-off for callers that
+# inspect a run after it completes.
 const _LAST_ESTIMATION_REUSE = Ref{Any}(nothing)
 
 function _accumulate_timing!(dict::OrderedDict{Symbol, Float64}, key::Symbol, seconds::Real)
@@ -656,8 +655,8 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 	end
 	_run_ctx_begin_uq!(opts.compute_uncertainty)
 	# Carry the per-analysis HC solver config onto whatever RunContext is bound —
-	# covers direct callers (consensus/benchmark flows) that bypass
-	# analyze_parameter_estimation_problem; no-op when no context is bound.
+	# covers direct callers that bypass analyze_parameter_estimation_problem;
+	# no-op when no context is bound.
 	_run_ctx_set_hc_opts!(opts.hc_threading, opts.hc_compile_mode)
 	# Check input validity
 	_LAST_ESTIMATION_REUSE[] = nothing
@@ -692,7 +691,7 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 			if interpolator_method_to_symbol(first(entry)) == requested_source
 		]
 		isempty(interpolator_list) && throw(ArgumentError(
-			"fixed campaign recipe requested interpolator '$requested_source', but it is absent from the resolved pool",
+			"the selection recipe requests interpolator '$requested_source', which is not in the resolved interpolator list",
 		))
 	end
 
@@ -1569,8 +1568,8 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 					end
 				catch e
 					_rethrow_if_interrupt(e)
-					# Ungated (postcampaign review P1): a systematically failing template
-					# build must not be invisible at default verbosity.
+					# Ungated: a systematically failing template build must not be
+					# invisible at default verbosity.
 					@warn "[MULTIPOINT] Template build failed" exception = e maxlog = 10
 					nothing
 				end
@@ -1732,8 +1731,7 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 								# Project: extract only the components matching single-point vars.
 								# Unmapped vars are NaN (NEVER 0.0 — a fabricated value enters the
 								# candidate pool as plausible data; the downstream finite guards
-								# reject NaN cleanly). Postcampaign review P0#3, same class as
-								# the Phase-C data-evaluator fixes.
+								# reject NaN cleanly).
 								projected = Float64[idx > 0 ? sol[idx] : NaN for idx in mp_to_sp]
 								push!(interp_solutions, projected)
 								push!(interp_time_indices, evals[pidx].time_indices[1])
@@ -1775,8 +1773,8 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 			# interp_solutions is empty, so accumulation below appends nothing
 		end  # end try/catch for interpolator
 
-			# A fixed multipoint campaign targets only roots of that exact
-			# multipoint recipe. Single-point solves above are retained internally
+			# A fixed multipoint recipe targets only roots of that exact
+			# multipoint system. Single-point solves above are retained internally
 			# because their variable ordering is the production projection contract,
 			# but they cannot enter ranking or become the reported estimator.
 			if selection_recipe isa FixedMultipointRecipe
@@ -1840,7 +1838,7 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 			solution_mp_time_indices = solution_mp_time_indices,
 			solution_mp_combo_indices = solution_mp_combo_indices,
 			solution_uq_artifacts = solution_uq_artifacts,
-			# Phase B: explicit MTK→jet-0 template map (built at SI template
+			# Explicit MTK→jet-0 template map (built at SI template
 			# construction; see si_equation_builder.jl). Consumed by
 			# process_estimation_results so SI-workflow lookups hit the exact
 			# template variable instead of guessing names.
@@ -2076,8 +2074,8 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 
 		# PHASE: Synthesize aggregate candidates (default on; opt-out via opts.synthesize_aggregate_candidates=false).
 		# Per-component median/mean/trim25 of SP and MP candidates (Categories B/C/A/D);
-		# tagged with provenance.source_type = :synthesized_aggregate. Sidecar log at
-		# artifacts/diagnostics/<model>/synthesis_log.csv.
+		# tagged with provenance.source_type = :synthesized_aggregate. With
+		# diagnostics = true, a sidecar log goes to artifacts/diagnostics/<model>/synthesis_log.csv.
 		if opts.synthesize_aggregate_candidates && !isempty(solved_res)
 			solved_res = _record_phase!(phase_stats, opts, "Synthesize aggregates") do
 				try
@@ -2111,10 +2109,9 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 						# Draw on unit scale and clamp into bounds when present — uniform-in-bounds
 						# under ±1e9 default bounds almost always blows up the ODE and Optim 2's
 						# Fminbox hard-errors on the resulting NaN initial mu.
-						# Seeded per problem (postcampaign review P1): unseeded draws made
-						# this terminal rescue a per-session coin flip — the same class as
-						# the direct-opt canary flake (ddb06b4). Hash-derived like the
-						# RESOLVE-SEED pattern above.
+						# Seeded per problem: unseeded draws made this terminal rescue a
+						# per-session coin flip. Hash-derived like the RESOLVE-SEED pattern
+						# above.
 						_draw_rng = MersenneTwister(UInt(abs(hash((PEP.name, :direct_opt_fallback_seed)))))
 						_draw = scale -> begin
 							raw = scale .* randn(_draw_rng, p_size)
@@ -2258,12 +2255,10 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 		end
 	end
 
-	# Non-SI-template path (use_si_template=false) archived 2026-06-10 →
-	# deprecated/multishot_legacy.jl (postcampaign review P2). It had zero callers
-	# and crashed anyway on undefined `use_adaptive_id` / `process_single_solution`.
-	# The SI-template branch above always returns; reaching here means it was
-	# explicitly disabled.
-	error("optimized_multishot_parameter_estimation: use_si_template=false is no longer supported — the non-SI-template path was archived to deprecated/multishot_legacy.jl. Use the default use_si_template=true.")
+	# The non-SI-template path (use_si_template=false) was removed: it had no
+	# callers and no longer worked. The SI-template branch above always returns;
+	# reaching here means it was explicitly disabled.
+	error("optimized_multishot_parameter_estimation: use_si_template=false is no longer supported. Use the default use_si_template=true.")
 end
 
 # Export the main function

@@ -1,4 +1,4 @@
-# estimate (2026-10-06): the short path from a ModelingToolkit system and
+# estimate: the short path from a ModelingToolkit system and
 # measured data to ranked results.
 
 using ODEParameterEstimation

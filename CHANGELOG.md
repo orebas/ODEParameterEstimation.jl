@@ -1,8 +1,16 @@
 # Changelog
 
-## Unreleased
+## 1.0.0
 
-### Documentation checked against the changes above — 2026-10-15
+The first registered release. It needs Julia 1.12 or later.
+
+Before registration the package was installed from GitHub. The entries below
+list what changed from those development versions, newest first; read them if
+you used one. From 1.0.0 on, releases follow semantic versioning for the
+documented API: the exported names, the names marked `public`, and the options
+that are not marked experimental.
+
+### Documentation checked against these changes
 
 - `print_options`, and so the way `EstimationOptions` values print, covers
   every option. It left out about a third of them, so a changed
@@ -17,7 +25,7 @@
   measured on rescaled data; and that bounds cannot yet be used with inputs
   such as `sin(c * t)`.
 
-### Options for old or research-only behaviour removed — 2026-10-15
+### Options for old or research-only behaviour removed
 
 - Removed `rank_strategy` and `cluster_method`. Results are ranked by fit
   error and clustered as before by default; the alternatives were kept only
@@ -36,7 +44,7 @@
   were applied at the start of `time_interval`. It is now simulated from the
   first sample time to the last, with the initial conditions at the first.
 
-### A plain `Dict` of data is accepted again — 2026-10-15
+### A plain `Dict` of data is accepted again
 
 - The nine-field `ParameterEstimationProblem` constructor accepts the data as
   a plain `Dict` keyed by `"t"` and the measured right-hand sides, as its
@@ -44,7 +52,7 @@
   `MethodError` unless the data was already an `OrderedDict` of the exact
   type.
 
-### Options that did nothing removed — 2026-10-14
+### Options that did nothing removed
 
 - Removed the options `debug_solver`, `debug_cas_diagnostics` and
   `debug_dimensional_analysis`, which nothing read, and `gp_s3_refinement`,
@@ -63,7 +71,7 @@
   others change only in a major release. `use_si_template`, which has no
   effect, is among them.
 
-### Fewer exported names, and clearer ones — 2026-10-14
+### Fewer exported names, and clearer ones
 
 - `using ODEParameterEstimation` now brings in 28 names instead of 190:
   - setting up: `ParameterEstimationProblem`, `create_ordered_ode_system`,
@@ -109,7 +117,7 @@
   `InterpolatorS3SExRQ`. They were marked deprecated and did what the
   `InterpolatorS3Adapt` values do.
 
-### Equation building trimmed — 2026-10-14
+### Equation building trimmed
 
 - `construct_equation_system_from_si_template` now requires `si_template`,
   `precomputed_interpolants` and `time_index_set`, and no longer takes
@@ -120,7 +128,7 @@
 - Removed the debugging output switched on by the environment variable
   `BIOH_MWE_CAPTURE`.
 
-### `diagnose` moved to the `research` branch — 2026-10-14
+### `diagnose` moved to the `research` branch
 
 - Removed `diagnose` and everything only it used: `diagnose_derivative_accuracy`,
   `diagnose_polynomial_system`, `diagnose_sensitivity`, the error budget
@@ -138,7 +146,7 @@
 - Removed the `point_hint` option. Estimation never read it.
 - Everything removed is in the history at commit `35d9a73`.
 
-### One Levenberg–Marquardt solver — 2026-10-14
+### One Levenberg–Marquardt solver
 
 - Removed `SolverNLOpt` and `solve_with_nlopt`. They did what
   `SolverFastNLOpt` does (Levenberg–Marquardt from one starting point) without
@@ -149,21 +157,20 @@
 - `solve_with_robust` returns the same shape of result when it finds nothing
   as when it finds something.
 
-### Small corrections found by new tests — 2026-10-14
+### Small corrections found by new tests
 
 - `polish_maxtime` of zero or less is now rejected. It used to draw a warning
   that promised the default of 3600 s, which was never applied, and the two
   refinement paths then read it differently. Use `Inf` for no limit.
 - `validate_options` returns `false` when `opt_lb` and `opt_ub` have
   different lengths. It used to throw a `DimensionMismatch`.
-- With `uneven_sampling = true`, `uneven_sampling_times` must have `datasize`
-  entries in increasing order, and `validate_options` says so before any
+- `uneven_sampling_times` must have `datasize` entries in increasing order, and `validate_options` says so before any
   sampling starts.
 - Files written by `save_system` are named without colons, so they can be
   stored on Windows, and a second file in the same millisecond no longer
   overwrites the first.
 
-### Unused code removed — 2026-10-14
+### Unused code removed
 
 - Removed functions that nothing in the package calls. Some were research
   tools, which remain on the `research` branch: the alternative ways of
@@ -192,7 +199,7 @@
   variable that controlled it had no effect.
 - Everything removed is in the history at commit `784d865`.
 
-### The final refinement works again — 2026-10-13
+### The final refinement works again
 
 - Since the precompile step was added on 2026-10-06, the final refinement of
   a default `estimate` did nothing: it ran, failed inside, and returned the
@@ -211,7 +218,7 @@
 - A test estimates a model in a newly started Julia process and checks that
   the refinement was applied.
 
-### The example models move to a submodule — 2026-10-13
+### The example models move to a submodule
 
 - The ready-made models are now in `ODEParameterEstimation.Examples`, and the
   package no longer exports them. Write `using ODEParameterEstimation.Examples`
@@ -273,7 +280,7 @@
   `crauste`, `sirsforced` and `receptor_subtypes`. Their docstrings say so.
 - Everything removed here is in the history at commit `fadccc6`.
 
-### One polynomial system for a model, whatever the data — 2026-10-06
+### One polynomial system for a model, whatever the data
 
 - Column scales now reach HomotopyContinuation as parameters of the polynomial
   system. They were numbers written into its coefficients, so every
@@ -286,10 +293,10 @@
   session is about 20 s shorter, and repeat runs are as fast as before.
 - The scale values and the equations are unchanged, and only unknowns that can
   be scaled get a scale parameter. A seeded run of the README example or of
-  `simple()` returns exactly the values it returned before. On the built-in
+  `harmonic_oscillator()` returns exactly the values it returned before. On the built-in
   `lotka_volterra()` the values differ in the 14th digit.
 
-### A default estimation runs while the package is precompiled — 2026-10-06
+### A default estimation runs while the package is precompiled
 
 - Precompiling the package now estimates a small model with default options,
   so that most of what `estimate` needs is compiled before the first call.
@@ -305,14 +312,14 @@
   package. Nothing is carried over now, and a test checks a freshly loaded
   package.
 
-### Small corrections — 2026-10-06
+### Small corrections
 
 - `?EstimationOptions` said that `opt_maxiters` limits the terminal fallback.
   It limits `FlowDirectOpt` only. The fallback is limited by `polish_maxiters`
   and `polish_maxtime`.
 - The direct optimizer is LBFGS. Two docstrings and a message said BFGS.
 
-### Citation files — 2026-10-06
+### Citation files
 
 - Add `CITATION.cff`, which GitHub reads for its "Cite this repository"
   button, and `CITATION.bib`, with BibTeX entries for the two papers and for
@@ -320,30 +327,14 @@
 - Add `.zenodo.json`, which describes the software to Zenodo when a release is
   archived there.
 
-## 1.0.0 — registration candidate, 2026-10-05
-
-This is the intended first registered release. Earlier source-install users
-should review the development-snapshot changes below. Registration and tagging
-are separate from preparing this candidate.
-
-### Release preparation
-
-- Check high derivatives of the optimized noiseless GP against its analytic
-  generating curve, with measured BLAS portability budgets. Retain strict
-  fixed-parameter upstream contracts and noisy-fit comparisons.
-- Record numerical-runtime metadata and preserve resolved CI manifests.
-- Build a split reference for the exported API with Documenter 1.19.
-- Prepare the `ODEParameterEstimation.jl` repository URL, user documentation,
-  and release workflows for Julia 1.12 and 1.13.
-
-### Uncertainty is marked experimental — 2026-10-06
+### Uncertainty is marked experimental
 
 - The manual, the option documentation and the docstrings of `estimate` and
   `analyze_parameter_estimation_problem` now say that uncertainty estimation
   is experimental, and the tutorial asks for reports of how it did. Its
   behavior is unchanged.
 
-### Estimates are refined by default — 2026-10-06
+### Estimates are refined by default
 
 - `polish_solutions` now defaults to `true`: each solution of the equations is
   fitted to the data by least squares before it is returned. On Lotka–Volterra
@@ -354,7 +345,7 @@ are separate from preparing this candidate.
 - With `compute_uncertainty = true`, the standard errors now describe the
   refined estimate, since that is the one returned.
 
-### One way to choose interpolators — 2026-10-06
+### One way to choose interpolators
 
 - Remove the `interpolator` and `custom_interpolator` options. Beside the
   default `interpolators` list they had no effect: a run that set
@@ -368,7 +359,7 @@ are separate from preparing this candidate.
   still do. The few that emptied the list to reach the single interpolator now
   name it in the list.
 
-### A short path from a model and data to estimates — 2026-10-06
+### A short path from a model and data to estimates
 
 - Add `ParameterEstimationProblem(system, measured_quantities; data, true_values, name, solver)`.
   It takes a ModelingToolkit `System` as it is, completed or compiled or
@@ -397,7 +388,7 @@ are separate from preparing this candidate.
   `ParameterEstimationResult`, `ObservationData` and `ObservationSeries`.
   Document `analyze_parameter_estimation_problem` and the package itself.
 
-### Two fixes found while writing the manual — 2026-10-06
+### Two fixes found while writing the manual
 
 - A `sin(c*t)` or `cos(c*t)` input gave a wrong coefficient when the data
   covered a stretch on which the input stayed small. Rescaling halved the
@@ -409,7 +400,7 @@ are separate from preparing this candidate.
   models with a quantity that cannot be determined, because names were cut by
   byte offset.
 
-### A manual — 2026-10-06
+### A manual
 
 - Replace the README and the Documenter site with documentation written for
   someone meeting the package for the first time: a getting-started page,
@@ -419,16 +410,16 @@ are separate from preparing this candidate.
   else. Every example runs when the site is built.
 - Publish the site from a new `Documentation` workflow.
 - Remove `examples/estimation_options_example.jl`, which no longer ran, rewrite
-  `src/examples/first_example.jl` for the short path, and move the
-  biohydrogenation benchmark script out of the repository root.
+  `src/examples/first_example.jl` for the short path, and move a
+  biohydrogenation script out of the repository root.
 
-### Quiet by default — 2026-10-06
+### Quiet by default
 
 - A run with default options now prints nothing, passes only errors to the
   logger, and writes no files. The defaults changed to `nooutput = true`,
   `diagnostics = false` and `save_system = false`. Estimates are unaffected:
   with a seed, all combinations of these flags gave identical candidate pools
-  on `simple` and Lotka–Volterra. Set `nooutput = false` or
+  on `harmonic_oscillator` and Lotka–Volterra. Set `nooutput = false` or
   `diagnostics = true` for the earlier output.
 - Add `progress = true`, which prints one timestamped line as each phase starts
   and finishes, and nothing else.
@@ -440,19 +431,19 @@ are separate from preparing this candidate.
   HomotopyContinuation's progress meter, which has no switch and showed on
   stderr for models slow enough to trigger it.
 
-### Reproducible runs — 2026-10-05
+### Reproducible runs
 
 - Add `EstimationOptions(seed = ...)`. With an integer, `sample_problem_data`
   and the estimation entry points each run on their own random stream and then
   restore Julia's default RNG. Repeated runs give identical results, and the
   caller's random stream is untouched. The default, `nothing`, keeps the
   earlier behavior of drawing from the caller's default RNG.
-- Without a seed, the candidate pool for `simple` and Lotka–Volterra differed
-  on every run and the selected `simple` estimate alternated between two
-  candidates. With a seed, fresh processes with one and four threads returned
+- Without a seed, the candidate pool for `harmonic_oscillator` and
+  Lotka–Volterra differed on every run and the selected `harmonic_oscillator`
+  estimate alternated between two candidates. With a seed, fresh processes with one and four threads returned
   identical pools.
 
-### Levenberg–Marquardt name clash — 2026-10-05
+### Levenberg–Marquardt name clash
 
 - `LevenbergMarquardt` is exported by both NonlinearSolve and LeastSquaresOptim,
   so the unqualified name had been undefined in the package since
@@ -467,7 +458,7 @@ are separate from preparing this candidate.
 - Add contracts: every remaining polish method yields a runnable optimizer,
   and no package method references a name that two imports both export.
 
-### Dependency cleanup — 2026-10-05
+### Dependency cleanup
 
 - Remove eight declared dependencies that the package did not use. `Plots`,
   `Zygote`, `BlackBoxOptim` and `MultivariatePolynomials` were never imported.
@@ -484,7 +475,7 @@ are separate from preparing this candidate.
   the graph. Median warm load time fell from 16.3 s to 12.5 s on the
   development machine.
 
-### GP workspace reuse — 2026-10-05
+### GP workspace reuse
 
 - Reuse covariance, factorization and gradient scratch buffers within each
   internal GP fit, preserving fitting arithmetic and independent posteriors.
@@ -493,72 +484,38 @@ are separate from preparing this candidate.
   Frozen fits still match upstream through derivative order six on Julia
   1.12 and 1.13. Add workspace recovery, ownership and allocation contracts.
 
-### Internal dependency backends — 2026-10-04
+### Internal dependency backends
 
-- Replace the used SIAN-Julia helpers and GaussianProcesses.jl dense SE fit
-  with private modules under `src/internal`, retaining upstream MIT notices
-  and documented replacement boundaries.
-- Preserve the GP interpolator option, fitting policy and higher derivatives;
-  retain AGP/AGPUQ as separate implementations. Remove GP, SIAN and the direct
-  PDMats dependency, including the GP-specific global method bridge.
-- Replace CI's dependency fork checkouts with registered default and modern
-  dependency profiles. Add frozen upstream contracts and optional paired
-  recovery/performance tools outside the standard test dependency graph.
-- Remove the wall-clock cap from the direct-optimizer UQ convergence canary;
-  retain its iteration limit and numerical assertions. Production timeouts and
-  their dedicated tests are unchanged.
-- Record equivalence results, performance costs and remaining release work in
+- The parts of SIAN-Julia and GaussianProcesses.jl the package used are now
+  internal modules under `src/internal`, with their upstream MIT notices.
+  Neither package, nor PDMats, is a dependency any more.
+- The Gaussian process interpolators fit and differentiate exactly as before.
+  How this was checked is in
   [the internalization record](docs/internal/2026-10-04_internal_backends.md).
 
-### Julia 1.13 stabilization
+### Julia 1.13
 
-- Normalize dictionary inputs in all `ParameterEstimationResult` constructors
-  explicitly for OrderedCollections 2, preserving already typed ordered maps.
-- Match states and parameters by symbolic key when clustering results.
-- Repair exported derivative utilities and clear equation denominators on both
-  sides; restore their tests to the unit and full gates.
-- Use `Symbolics.diff2term` at symbolic conversion sites and bound ForwardDiff
-  chunk size in the noise-frontier rank probe to reduce compilation cost.
-- Bridge the autonomous-model SI dispatch issue only on affected versions that
-  lack the upstream method; patched SI checkouts receive no redundant bridge.
-- Run isolated test files through `Pkg.test`, preserve active development
-  versions, declare test imports, and contain diagnostic sidecars. CI initially
-  checked registered dependencies and reproducible modern GP/SIAN/SI patches;
-  the October internalization supersedes that patched setup.
-- Update the quickstart, result contract, and review map. Verified environments,
-  gate results, and remaining release work are recorded in
-  [production readiness](docs/internal/2026-09-10_production_readiness.md).
+- Works with Julia 1.13 and OrderedCollections 2. `ParameterEstimationResult`
+  accepts plain dictionaries as before.
+- States and parameters are matched by their symbolic keys when results are
+  clustered.
+- Equation denominators are cleared on both sides.
+- Autonomous models work with StructuralIdentifiability versions that lack
+  the method they need.
 
-### Changes from earlier development snapshots
+### Earlier option and result changes
 
-- **`EstimationOptions`: 13 fields removed** (2026-08-12/13 dead-options
-  cleanup): `rtol`, `output_precision`, `imag_threshold`, `branch_resid_factor`,
-  `branch_min_size`, `max_deriv_level`, `trap_debug`, `display_system`,
-  `use_monodromy`, `si_infolevel`, `log_dir`, `polish_only`, `ideal`. None had a
-  live consumer (audit-verified; PEB sets none). Setting one now errors loudly
-  at construction. Four previously-dead fields were WIRED instead (defaults
-  preserve old behavior exactly): `clustering_threshold`, `si_probability`,
-  `point_hint`, `save_filepath`. New fields: `hc_threading`, `hc_compile_mode`,
-  `heartbeat`.
-- **`ResultProvenance`: `residual_fix_set` removed;
-  `template_status_before/after_residual_fix` collapsed to `template_status`**
-  (2026-08-12; the pair was identical by construction and the set always empty —
-  no residual-repair mechanism ever existed). Metadata writers should use the
-  new exported `provenance_metadata_dict`.
-- `solve_with_hc` lost its dead `use_monodromy`/`display_system` kwargs.
-
-### Added
-
-- `provenance_metadata_dict(::ResultProvenance)` — exported single source for
-  the `odepe_metadata.json` provenance block (consumed by PEB + experiments
-  templates).
-- Default-on `[HB]` phase heartbeats (`EstimationOptions.heartbeat`).
-- Scoped `RunContext` (auto-M hand-off, timing, per-analysis HC solver config).
-- `_rethrow_if_interrupt` cancellation discipline across all production catches.
-
-### Versioning note
-
-Oren selected **1.0.0** for the first registered release. The changes above are
-relative to earlier unregistered development snapshots; no previous registered
-release is being declared compatible. Subsequent registered releases should
-follow semantic versioning for the documented public API.
+- Removed 13 options that had no effect: `rtol`, `output_precision`,
+  `imag_threshold`, `branch_resid_factor`, `branch_min_size`,
+  `max_deriv_level`, `trap_debug`, `display_system`, `use_monodromy`,
+  `si_infolevel`, `log_dir`, `polish_only` and `ideal`. Setting one is an
+  error.
+- `clustering_threshold`, `si_probability` and `save_filepath` had no effect
+  and now do, with defaults that keep the earlier behaviour. New options:
+  `hc_threading` and `hc_compile_mode`.
+- `ResultProvenance` no longer has `residual_fix_set`, and its
+  `template_status_before_residual_fix` and
+  `template_status_after_residual_fix` are now one field, `template_status`.
+  The set was always empty and the two fields always equal.
+- Ctrl-C stops an estimation. It used to be caught, and the run went on to its
+  fallbacks.

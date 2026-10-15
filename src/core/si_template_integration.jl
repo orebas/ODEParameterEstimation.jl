@@ -14,7 +14,7 @@ function _numeric_residual_value(expr)
 	end
 end
 
-# Timing SINKS live on the scoped RunContext (run_context.jl) as of 2026-07-24.
+# Timing SINKS live on the scoped RunContext (run_context.jl).
 # The two context-label STACKS below remain module-global (worst case under
 # concurrent runs: mislabeled timing rows) — follow-up candidate.
 const _RESOLVE_TIMING_CONTEXT_STACK = Symbol[]
@@ -155,9 +155,7 @@ function instantiate_si_template_equations(
 				if isnan(val)
 					# The NaN propagates into the instantiated template, where the
 					# downstream nonfinite guards reject this shooting point —
-					# visible failure, never silent data. (One structured warn;
-					# the old triple-warn + nearby-point probe was debug leftover
-					# that fired 951× across PEB logs.)
+					# visible failure, never silent data.
 					@warn "NaN derivative from interpolator; this shooting point's instantiation will be rejected downstream" observable = obs_rhs deriv_order = i time_point = t_point
 				end
 				interpolated_values_dict[lhs_var] = val

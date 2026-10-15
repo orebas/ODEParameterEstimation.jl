@@ -1,4 +1,4 @@
-# EstimationOptions.seed (2026-10-05): seeded sampling and estimation repeat
+# EstimationOptions.seed: seeded sampling and estimation repeat
 # exactly and leave the caller's default RNG where it was; with no seed the
 # package draws from the caller's RNG, as it always has.
 

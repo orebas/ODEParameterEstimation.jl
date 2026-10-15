@@ -1,7 +1,5 @@
 # Residual-mode polish path: bounded LeastSquaresOptim LM and FastLevenbergMarquardt
-# in per-variable transformed coordinates. Promoted from
-# test/generate_residual_polish_ablation.jl after the April-2026 polish bake-off
-# (temp_plans/2026-05-01_local_polish_default_recommendation.md).
+# in per-variable transformed coordinates.
 #
 # This path shares PolishContext setup (observable funcs, data_targets, base ODEProblem,
 # coordinate transforms) with the legacy scalar polisher. The only difference is the

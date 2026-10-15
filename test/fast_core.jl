@@ -134,7 +134,7 @@ using Random
         public_names = names(ODEParameterEstimation; all = false, imported = false)
         @test :solve_with_monodromy ∉ public_names
         @test :aaad_in_testing ∉ public_names
-        # `estimate` was a third, until it became the short entry point (2026-10-06).
+        # `estimate` was a third, until it became the short entry point.
         @test :estimate in public_names
         @test ODEParameterEstimation.estimate isa Function
     end
@@ -879,8 +879,7 @@ using Random
         @test isempty(fallback_ident.all_unidentifiable)
         @test isempty(fallback_ident.good_DD.all_unidentifiable)
 
-        # Seeded: this was the only unseeded noisy sampling in CI (postcampaign
-        # review P1 / lane-4 flakiness audit).
+        # Seeded: this was the only unseeded noisy sampling in CI.
         Random.seed!(20260610)
         opts = EstimationOptions(
             datasize = 21,

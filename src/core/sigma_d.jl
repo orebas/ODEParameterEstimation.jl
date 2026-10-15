@@ -176,7 +176,7 @@ typically holds an `obs_name_to_idx::Dict{String, Int}` built from the measured
 quantities.
 """
 function parse_sensitivity_label(label::AbstractString)
-    # Thin adapter over the single shared parser (Phase D1); this caller's
+    # Thin adapter over the single shared parser; this caller's
     # failure contract is `nothing`.
     return parse_jet_label(label)
 end

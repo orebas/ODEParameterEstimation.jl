@@ -1,4 +1,4 @@
-# HC name sanitization contracts (2026-08-12 hardening): sanitize_vars is
+# HC name sanitization contracts: sanitize_vars is
 # injective per call, and the parameterized convert deduplicates the p_-prefixed
 # data names against the solve names — a duplicate HC name is NOT an HC error;
 # it silently dead-slots one variable and returns garbage positionally.
@@ -21,7 +21,7 @@ using Symbolics
 	# Clean input is untouched.
 	@test ODEParameterEstimation.sanitize_vars(["a", "b_1", "c"]) == ["a", "b_1", "c"]
 
-	# Cross-list collision (the audit's concrete case): solve var `p_y` and
+	# Cross-list collision: solve var `p_y` and
 	# data var `y` used to both become HC name p_y.
 	@variables p_y y q
 	sys = [p_y + y - 1.0, q * y - 2.0]

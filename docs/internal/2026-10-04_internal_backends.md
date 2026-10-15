@@ -1,8 +1,8 @@
 # Internal GP and symbolic construction backends
 
-The user chose to internalize the functionality used from GaussianProcesses.jl
-and SIAN-Julia, superseding the initial retain-for-release decision. The public
-estimator options, GP candidate and interpolation wrapper remain available.
+The functionality the package used from GaussianProcesses.jl and SIAN-Julia
+now lives in two internal modules, so neither package is a dependency. The
+public estimator options, GP candidate and interpolation wrapper are unchanged.
 
 ## Architecture and provenance
 
@@ -104,9 +104,8 @@ error and returned candidate count.
 
 Biohydrogenation remains a poor parameter-recovery case despite trajectory
 errors near `1.2e-10`. Preserving that result establishes compatibility, not
-estimator quality. These package-model checks are distinct from the audited
-PEB scientific campaign. The runs shared a machine with other validation jobs,
-so their elapsed times are not evidence of a performance change.
+estimator quality. The runs shared a machine with other validation jobs, so
+their elapsed times are not evidence of a performance change.
 
 ### Initial backend cost
 
@@ -178,8 +177,8 @@ in the table also include workspace construction and optimizer storage.
 ### Removing the old global packages
 
 The normal package and test dependency graphs no longer require `SIAN` or
-`GaussianProcesses`. Removal was checked in a copy of the user's Julia 1.13
-global environment. Its old manifest still listed them under the ODEPE path
+`GaussianProcesses`. Removal was checked in a copy of a Julia 1.13 global
+environment that had both installed. Its old manifest still listed them under the ODEPE path
 entry after `Pkg.rm`; resolving refreshed that entry and removed both packages
 from the complete dependency graph:
 
@@ -189,9 +188,8 @@ Pkg.rm(["SIAN", "GaussianProcesses"])
 Pkg.resolve()
 ```
 
-The actual global environment was not modified. The optional upstream
-comparison environment and older research checkouts may still need those
-packages; keep their source checkouts if using those workflows.
+The optional upstream comparison environment in `test/reference` still needs
+those packages.
 
 ### Reproduction
 

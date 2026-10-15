@@ -26,7 +26,7 @@ include("support/model_fixtures.jl")
     end
 
     @testset "underscore-digit names recover distinctly (k_1/k_2, x_1/x_2)" begin
-        # Regression for review P0#4 (fixed 2026-06-09): lookup_value's base-name
+        # Regression: lookup_value's base-name
         # fallback treated a parameter's own trailing _1 as a jet suffix, so k_1
         # and k_2 BOTH resolved to template variable k_2_0 — k_1 silently received
         # k_2's value. Underscore-digit names are common chemistry/biology naming.
@@ -66,7 +66,7 @@ include("support/model_fixtures.jl")
     end
 
     @testset "noisy data still recovers (1% additive homoskedastic noise)" begin
-        # Phase A canary: the rest of CI is ~uniformly zero-noise; this locks the
+        # The rest of CI is ~uniformly zero-noise; this locks the
         # noisy path through construction/solve/aggregation with loose thresholds.
         # Seeded: sampling noise uses the global RNG.
         Random.seed!(20260609)
@@ -198,10 +198,8 @@ include("support/model_fixtures.jl")
 
     @testset "direct optimization smoke test" begin
         # Seeded: the direct-opt flow draws unseeded randn starts, and Julia's
-        # default RNG is seeded randomly per session — this canary was a coin
-        # flip on every CI run (probe 2026-06-10: pass/pass/empty across three
-        # trials in one session; Phase C4's honest Inf made the failing face
-        # visible). Seed 20260610 verified converging; 42 verified NOT.
+        # default RNG is seeded randomly per session — unseeded, this canary
+        # was a coin flip on every CI run. Seed 20260610 converges; 42 does not.
         Random.seed!(20260610)
         _, raw_results, analysis, _ = run_canary(ODEParameterEstimation.Examples.oscillator_mixed_outputs, FAST_DIRECT_OPTS)
         best = best_cluster_solution(analysis)

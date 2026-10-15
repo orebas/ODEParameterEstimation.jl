@@ -9,10 +9,8 @@ using Statistics
 # Use functions from the current module
 using ..ODEParameterEstimation
 
-# Shared helper relocated from consensus_estimation.jl (2026-06-09) to sever the only
-# production -> research call hook. Builds a "candidate-as-truth" PEP from a result.
-# Production callers: branch_completion.jl, sensitivity_seeds.jl. Also used by the
-# research consensus cluster now living under src/research/.
+# Builds a "candidate-as-truth" PEP from a result.
+# Callers: branch_completion.jl, sensitivity_seeds.jl.
 function _consensus_candidate_pep(pep::ParameterEstimationProblem, candidate::ParameterEstimationResult)
 	return ParameterEstimationProblem(
 		pep.name,
@@ -522,8 +520,8 @@ length differs from `expected_len`, throw an ArgumentError naming the site, the
 expected layout, and the likely cause. Wrong-length bounds are always caller
 error or upstream transform drift — the old behavior (each consumer silently
 degrading differently: untransformed bounds into a scaled solve, fallback to
-the ±1e6 box, skipped backsolve clamp) shipped out-of-box polished results
-(docs/internal/2026-06-19_transform_bounds_mismatch.md, CSTR final_v2 evidence).
+the ±1e6 box, skipped backsolve clamp) returned refined results outside the
+requested bounds.
 No-op when bounds are unset or lengths match.
 """
 function _assert_bounds_length(opts, expected_len::Int, site::AbstractString, layout::AbstractString)
@@ -534,7 +532,7 @@ function _assert_bounds_length(opts, expected_len::Int, site::AbstractString, la
 			"$(site): user-supplied `$(name)` has length $(length(v)) but the current " *
 			"unknown vector needs $(expected_len) ($(layout)). A problem transform " *
 			"(transcendental handling, rescaling) likely changed the variable set after " *
-			"these bounds were written — see docs/internal/2026-06-19_transform_bounds_mismatch.md. " *
+			"these bounds were written. " *
 			"Supply bounds for the TRANSFORMED system, disable the transform " *
 			"(e.g. auto_handle_transcendentals=false), or unset opt_lb/opt_ub."))
 	end
@@ -631,7 +629,7 @@ function process_estimation_results(
 	trivial_dict = solution_data.trivial_dict
 	final_varlist = solution_data.final_varlist
 	trimmed_varlist = solution_data.trimmed_varlist
-	# Phase B: explicit MTK→jet-0 template map (absent on legacy/branch-completion
+	# Explicit MTK→jet-0 template map (absent on legacy/branch-completion
 	# fixtures — hasfield-guarded like the other optional solution_data fields).
 	template_var_map = hasfield(typeof(solution_data), :template_var_map) ?
 					   solution_data.template_var_map : OrderedDict{Num, Num}()
@@ -752,7 +750,7 @@ function process_estimation_results(
 			model_state_search = if !isempty(forward_subst_dict[1])
 				forward_subst_dict[1][(states[i])]
 			else
-				# SI workflow: prefer the explicit jet-0 template variable (Phase B).
+				# SI workflow: prefer the explicit jet-0 template variable.
 				get(template_var_map, states[i], states[i])
 			end
 			# Convert trivial_dict to Dict{Symbol, Any} to ensure type stability

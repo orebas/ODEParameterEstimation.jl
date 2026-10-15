@@ -1,7 +1,6 @@
 using ODEParameterEstimation
-# Multipoint UQ v1 step 2 (2026-08-13): stacked multi-time estimator-sampling
-# covariance Σ = W_stack Σ_y W_stackᵀ — the cross-time Σ_d machinery.
-# Validation subset from the design consult: fixed-hyperparameter Monte Carlo,
+# Stacked multi-time estimator-sampling covariance Σ = W_stack Σ_y W_stackᵀ:
+# the cross-time Σ_d machinery. Checked: fixed-hyperparameter Monte Carlo,
 # repeated-time singularity preservation, scalar-method consistency,
 # heteroscedastic Σ_y, cross-block orientation symmetry.
 

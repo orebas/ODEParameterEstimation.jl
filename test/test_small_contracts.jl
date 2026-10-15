@@ -1,7 +1,6 @@
 # Small, fast contracts: every option check, the interpolator names, how
 # results are ranked, the phase table, the point picker and error messages.
-# None of these runs an estimation. Added 2026-10-14, when a coverage review
-# found them untested.
+# None of these runs an estimation.
 
 using ODEParameterEstimation
 using ODEParameterEstimation: InterpolatorMethod, SystemSolverMethod, agp_gpr_robust,

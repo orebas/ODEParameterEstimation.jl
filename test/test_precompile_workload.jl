@@ -1,4 +1,4 @@
-# The estimation the package runs while it is precompiled (2026-10-06). It is a
+# The estimation the package runs while it is precompiled. It is a
 # default run like any other: quiet and accurate, and it leaves the caller's
 # random stream alone. A freshly loaded package carries nothing over from it.
 
@@ -58,8 +58,8 @@ end
 	# The polish differentiates an ODE solve whose solver differentiates too.
 	# ForwardDiff orders the two layers by a number fixed when each is first
 	# compiled, and the workload fixed ours at precompile time, ahead of the
-	# solver's. Every polish then failed quietly and returned its seed
-	# (2026-10-13). Only a new process starts from the precompiled state, and
+	# solver's. Every polish then failed quietly and returned its seed.
+	# Only a new process starts from the precompiled state, and
 	# this model is one whose answer before the polish is good to 1e-5 only.
 	script = """
 		using ODEParameterEstimation, ODEParameterEstimation.Examples, Random

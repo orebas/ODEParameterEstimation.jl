@@ -1,26 +1,25 @@
-# Benchmark-style smoke guard — added 2026-06-10 (maintainability campaign Phase G).
+# Recovery from noisy data on full-size models.
 #
-# WHY: the fast CI suite (runtests.jl, ~13 min) is canary-scale — small datasize,
-# mostly zero noise, mechanics-focused. The 2026-06-10 tire-kick showed it never
-# exercises noisy, benchmark-scale end-to-end recovery, which is exactly what the
-# benchmark (PEB) stresses. This file is that guard.
+# WHY: the fast CI suite (runtests.jl) is canary-scale — small datasize, mostly
+# zero noise, mechanics-focused. It never exercises noisy, full-scale end-to-end
+# recovery. This file is that guard.
 #
-# Separate from the default suite; measured timings are in the readiness note.
-# CI runs this group on Julia 1.13. Also run before a cluster handoff:
+# Separate from the default suite. CI runs this group on Julia 1.13. Run it
+# locally with:
 #
 #   julia --startup-file=no test/current.jl benchmark
 #
 # Design notes:
 # - Seeded (Julia's default RNG is seeded randomly per session; unseeded
-#   estimation tests are coin flips — see the direct-opt canary history, ddb06b4).
+#   estimation tests are coin flips).
 # - Metric = BEST-OF-BRANCH max relative parameter error (min over returned
-#   clusters), the benchmark's headline metric — NOT first-cluster-by-fit-error,
+#   clusters) — NOT first-cluster-by-fit-error,
 #   which mis-scores M>1 models whose lead cluster is a sibling branch.
 # - Models are IDENTIFIABLE ones: practical non-identifiability (e.g. seir's
 #   a↔nu/b ambiguity, fit 1e-14 with wrong params) is a model property no code
 #   change can affect, so such models cannot serve as regression guards.
 # - Thresholds are LOOSE on purpose (regression tripwires, not quality targets);
-#   calibrated 2026-06-10: LV at 1e-8 additive noise recovers ≲1e-3; bound 1e-2.
+#   for example, LV at 1e-8 additive noise recovers ≲1e-3; the bound is 1e-2.
 
 using ODEParameterEstimation
 using Test

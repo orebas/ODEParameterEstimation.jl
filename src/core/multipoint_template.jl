@@ -214,7 +214,7 @@ function _rank_aware_topdown_strip(equations::Vector, variables::Vector,
     f_combined = _compile_system_function(equations, variables)
     J_full = nothing
     best_full_rank = 0
-    # Seeded rank probes (postcampaign review P1): equation-stripping decisions
+    # Seeded rank probes: equation-stripping decisions
     # must be deterministic; the noise-frontier twin already seeds identically.
     probe_rng = MersenneTwister(0x9f4d0329)
     for _ in 1:n_rank_probes

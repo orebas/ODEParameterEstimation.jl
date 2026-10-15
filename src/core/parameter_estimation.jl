@@ -297,7 +297,7 @@ function _rank_based_fix_candidates(candidate_vars, symbolic_identifiable_funcs,
 	for f in funcs_filtered
 		union!(all_vars, Symbolics.get_variables(f))
 	end
-	# Seeded (postcampaign review P1): this Jacobian's pivoted-QR column order
+	# Seeded: this Jacobian's pivoted-QR column order
 	# decides WHICH unidentifiable parameter gets fixed to 1.0 — a structural
 	# decision that must not vary run-to-run with the global RNG.
 	fix_probe_rng = MersenneTwister(0x9f4d0329)
@@ -714,7 +714,7 @@ function process_raw_solution(raw_sol, model::OrderedODESystem, data_sample, ode
 
 
 	# (The former post-err second parameter pass was folded into the single pass
-	# above — postcampaign review P0#1: two passes with different ordering
+	# above: two passes with different ordering
 	# conventions meant the ODE solve/err and the returned dict could describe
 	# different parameter vectors whenever MTK order != declaration order.)
 
@@ -1162,7 +1162,7 @@ function lookup_value(var, var_search, soln_index::Int,
 	if isnothing(index)
 		# Convert x(t) -> x_0, k5 -> k5_0, k_1 -> k_1_0, xˍt -> x_1, xˍtt -> x_2, etc.
 		try
-			# Phase B: with the explicit template_var_map in place upstream, this
+			# With the explicit template_var_map in place upstream, this
 			# string-heuristic path should only fire for unmapped/legacy callers —
 			# make that observable.
 			@debug "lookup_value falling through to name heuristics" var_search
@@ -1584,8 +1584,8 @@ function _build_polish_context(
 	# pick up `opts.polish_coordinate_policy` (default `:auto` = per-variable);
 	# scalar polish methods default to `:linear` to preserve byte-equivalent legacy
 	# behavior. Explicit `coordinate_transform = :linear` / `:log_positive` keeps
-	# its meaning regardless of `polish_method` (used by tests and bounds-aware
-	# callers in benchmark scripts).
+	# its meaning regardless of `polish_method` (used by tests and by callers
+	# that pass bounds).
 	resolved_transform = if !isnothing(coordinate_transform)
 		coordinate_transform
 	elseif is_residual_polish_method(opts.polish_method)
@@ -1642,8 +1642,7 @@ function _build_polish_context(
 
 	# Bounds: use user-specified if set (length MISMATCH throws — fail-fast; the
 	# old silent fallback to the ±1e6 box let polished results escape the user's
-	# intended bounds, docs/internal/2026-06-19_transform_bounds_mismatch.md). Otherwise
-	# auto-compute from data scale.
+	# intended bounds). Otherwise auto-compute from data scale.
 	# Note: only BFGS/LBFGS support Fminbox bounds wrapping; Newton-family optimizers
 	# silently ignore bounds in _polish_single_from_context.
 	if !isnothing(opts.opt_lb) || !isnothing(opts.opt_ub)
@@ -2019,7 +2018,7 @@ function _polish_single_from_context(
 		p = Dict(ctx.param_syms .=> param_opt),
 		build_initializeprob = false,
 	)
-	# Guarded like the in-loss solves (postcampaign review P1): a throwing
+	# Guarded like the in-loss solves: a throwing
 	# integrator here (e.g. SingularException on a rank-deficient candidate) sits
 	# in the nothing-else-worked terminal paths and must not kill the estimation.
 	sol_final = try
@@ -2089,7 +2088,7 @@ function _polish_cluster_metadata(
 		clamped_p0s[i] = use_bounds ? clamp.(p0, ctx.lb, ctx.ub) : Float64.(p0)
 	end
 
-	# Phase B branch-detection path: pre-polish err filter + L-inf normalized
+	# Branch-detection path: pre-polish err filter + L-inf normalized
 	# clustering in identifiable-only variable space. When opts.branch_detection
 	# is false, fall through to the legacy uniform-max-rel-dist code below.
 	if opts.branch_detection && n_candidates >= 2

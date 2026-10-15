@@ -11,7 +11,7 @@ Symbolics style ("y1(t)", "Differential(t, 1)(y1(t))").
 Returns `("", 0)` if parsing fails.
 """
 function _parse_data_label(label::String)
-    # Thin adapter over the single shared parser (Phase D1); this caller's
+    # Thin adapter over the single shared parser; this caller's
     # failure contract is ("", 0).
     parsed = parse_jet_label(label)
     return isnothing(parsed) ? ("", 0) : parsed
@@ -22,7 +22,7 @@ const _UQ_IA_PHYSICAL_ROLES = Set([:parameter, :state_ic])
 """
     compute_practical_identifiability_index(param_covariance, labels, roles, values; scale_floor=1e-8)
 
-Compute the normalized paper index `I_A` from propagated parameter covariance.
+Compute the normalized practical-identifiability index `I_A` from propagated parameter covariance.
 Only physical recovered quantities (parameters and state initial conditions) are
 included in the default projection; helper derivatives and data variables are
 excluded.

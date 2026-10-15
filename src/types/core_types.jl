@@ -420,10 +420,9 @@ end
 """
     provenance_metadata_dict(prov::ResultProvenance) -> OrderedDict{String, Any}
 
-Single source of the provenance block written into `odepe_metadata.json` by the
-PEB / experiments benchmark templates. This block used to be copy-pasted into
-~8 template writers across two repos, which produced stragglers on every
-provenance-schema change (2026-08-12 dedup). Values are JSON-friendly (Symbols
+Single source of the provenance block that scripts write into
+`odepe_metadata.json` beside their results, so that every writer uses the same
+schema. Values are JSON-friendly (Symbols
 stringified, OrderedDicts re-keyed by string). Template-local extras
 (parameters, states, all_unidentifiable, …) are merged on top by the caller.
 """
@@ -503,7 +502,7 @@ mutable struct ParameterEstimationResult
     solution::Union{Nothing, SciMLBase.AbstractODESolution}
     interpolator_source::Union{Nothing, Symbol}   # Which interpolator produced this result
     provenance::ResultProvenance
-    branch_size::Int   # Phase B candidate-reduction: cluster size at output time (1 = singleton or undetected)
+    branch_size::Int   # Cluster size at output time (1 = singleton or undetected)
 
     function ParameterEstimationResult(
         parameters::AbstractDict, states::AbstractDict, at_time, err, return_code, datasize,

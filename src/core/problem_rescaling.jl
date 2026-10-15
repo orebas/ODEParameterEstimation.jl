@@ -10,8 +10,7 @@
 # WHY: the polynomial solve + local polish are conditioning-sensitive; an
 # ill-scaled model (e.g. raw hiv: beta=2e-5 … k=50, x(0)=1000 — ~8 orders) makes
 # them diverge, while an O(1) nondimensionalized version recovers. This makes the
-# problem O(1) up front. See docs/internal/2026-05-01_variable_scaling_investigation.md
-# (this is its "Level A") and docs/internal/2026-06-10_campaign_handoff.md (R1).
+# problem O(1) up front.
 #
 # SCOPE (MVP): states/params/observables/data only. TIME is NOT scaled (it would
 # touch the data grid, interpolant abscissae, and the derivative template where an

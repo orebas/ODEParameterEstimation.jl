@@ -1,9 +1,9 @@
 # Polynomial-solve mechanics: equation ordering, mixed volume, and parameter homotopy
 
 A system-agnostic reference for *how* ODEPE turns an ODE + observations into a polynomial system, *how*
-that system is trimmed and solved, and *where* the solve is fragile. The mechanics are general; receptor
-(`receptor_subtype_binding_branch`) is the worked example because it stresses every one of them. For the
-receptor-specific narrative see `docs/internal/2026-05-28_receptor_complete.md`.
+that system is trimmed and solved, and *where* the solve is fragile. The mechanics are general; the
+receptor model (`ODEParameterEstimation.Examples.receptor_subtypes()`) is the worked example because it
+stresses every one of them.
 
 Three things to understand, in order: (§2) the equation ordering + rank-trim decide *which* square
 system you solve; (§3) that choice sets the mixed volume (= how many paths you track); (§4) the
@@ -39,7 +39,7 @@ pick a **square** subset whose Jacobian is full-rank — a locally well-posed sy
 
 ## 2. Equation ordering + the rank-trim (the decisive, under-appreciated step)
 
-`algebraic_independence` (`src/core/si_equation_builder.jl:565`) trims the over-determined system to a
+`algebraic_independence` (`src/core/si_equation_builder.jl`) trims the over-determined system to a
 square one:
 
 1. Build the Jacobian `J = ∂F/∂z`, **evaluated at a generic (random rational) sample point** — so it's
@@ -199,8 +199,8 @@ lost. This is a **geometric** obstruction (a fold/collision on the variety), not
 ---
 
 ## Code map
-- `src/core/si_equation_builder.jl:565` — `algebraic_independence` (the rank-trim / matroid greedy).
-- `src/core/si_equation_builder.jl:860` — `get_polynomial_system_from_sian` (builds `Et`, returns
+- `src/core/si_equation_builder.jl` — `algebraic_independence` (the rank-trim / matroid greedy).
+- `src/core/si_equation_builder.jl` — `get_polynomial_system_from_sian` (builds `Et`, returns
   `full_polynomial_system` + `selected_equation_indices`).
 - `HomotopyContinuation/*/src/homotopies/parameter_homotopy.jl` — the straight-line parameter homotopy
   (no γ).
@@ -208,4 +208,3 @@ lost. This is a **geometric** obstruction (a fold/collision on the variety), not
 - `src/core/homotopy_continuation.jl` — `solve_with_hc_parameterized` (the per-point fresh + track +
   fresh-fallback loop), `compute_column_scales` / `scale_hc_system` (the scaling that leaves mixed
   volume invariant).
-- Worked-example diagnostics: `repro/receptor_breakdown_2026_05_27/` (see `docs/internal/2026-05-28_receptor_complete.md` §9).

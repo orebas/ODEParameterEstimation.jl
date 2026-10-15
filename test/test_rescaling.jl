@@ -182,9 +182,8 @@ const OPE = ODEParameterEstimation
 	@testset "bounds length mismatch FAILS FAST (silent-fallback trio canary)" begin
 		# The class this kills: a wrong-length opt_lb/opt_ub used to degrade
 		# silently at three separate sites (untransformed bounds into a scaled
-		# solve; fallback to the ±1e6 box; skipped backsolve clamp) — CSTR
-		# final_v2 shipped out-of-box polished results this way
-		# (docs/internal/2026-06-19_transform_bounds_mismatch.md).
+		# solve; fallback to the ±1e6 box; skipped backsolve clamp), which returned
+		# refined results outside the requested bounds.
 		pep = OPE.Examples.hiv()
 		opts0 = EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true)
 		Random.seed!(7)
@@ -219,7 +218,7 @@ const OPE = ODEParameterEstimation
 		# On [-0.5, 0.5] sin(0.5t) stays below 1/4, so the scale chooser used to
 		# halve the state that stands for it and double its coefficient. That
 		# state is later given its exact, unscaled values, so the estimated
-		# coefficient came back doubled (2026-10-06).
+		# coefficient came back doubled.
 		t = ModelingToolkit.t_nounits
 		sampled = sample_problem_data(forced_decay(), EstimationOptions(datasize = 101, time_interval = [-0.5, 0.5]))
 		lifted, _ = Logging.with_logger(Logging.NullLogger()) do

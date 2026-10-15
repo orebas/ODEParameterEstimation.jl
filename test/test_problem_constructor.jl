@@ -1,4 +1,4 @@
-# ParameterEstimationProblem(system, measured_quantities; ...) (2026-10-06):
+# ParameterEstimationProblem(system, measured_quantities; ...):
 # the short constructor takes a ModelingToolkit system and data under the names
 # of the measured quantities, and stores both in the form the estimator reads.
 # Also how a result prints. Nothing here runs an estimation.
@@ -139,8 +139,8 @@ using Test
 end
 
 @testset "The nine-field constructor takes a plain Dict of data" begin
-	# The paper's benchmark scripts pass a Dict keyed by the measured right-hand
-	# sides. A Union-typed field refused it from 2026-09-10 until this method.
+	# Older scripts pass a Dict keyed by the measured right-hand sides. A
+	# Union-typed field once refused it.
 	@parameters k
 	@variables x(t) y(t)
 	model, mq = create_ordered_ode_system("decay", [x], [k], [D(x) ~ -k * x], [y ~ x])
@@ -169,7 +169,7 @@ end
 
 @testset "State names need not be ASCII" begin
 	# These helpers cut "(t)" off by byte offset, which is not a character
-	# boundary after θ and raised StringIndexError (2026-10-06).
+	# boundary after θ and raised StringIndexError.
 	@parameters g
 	@variables θ(t) ω(t)
 	states = ModelingToolkit.unwrap.([θ, ω])

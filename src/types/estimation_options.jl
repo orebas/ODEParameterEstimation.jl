@@ -400,34 +400,30 @@ Base.@kwdef struct EstimationOptions
 	# Solution Filtering and Validation
 	clustering_threshold::Float64 = 1e-5
 
-	# Branch detection (Phase B candidate-reduction). When enabled, replaces the
-	# legacy "cluster threshold 0.001 + oracle sort" pipeline with two stages:
+	# Branch detection. When enabled, candidates are reduced in two stages:
 	#   pre-polish: drop candidates with err > branch_err_factor × min(err);
 	#               L-inf normalized clustering in identifiable-only variable space
 	#               at branch_cluster_eps; one rep per cluster polished.
 	#   post-polish: re-cluster polished reps in id-only space; each cluster
 	#                surfaces as one "algebraic branch", branch_size attached.
 	branch_detection::Bool = true
-	branch_cluster_eps::Float64 = 0.001            # Tightened 0.05→0.001 in 2026-05-13: read as a "target precision in MAD-normalized identifiable space." The 0.05 default was merging truth-near clusters with non-truth-near ones for low-noise cells; 0.001 preserves distinct basins (cost: roughly 2× more rows in nopolish result.csv, mitigated by branch_top_k).
+	branch_cluster_eps::Float64 = 0.001            # Target precision in MAD-normalized identifiable space. Larger values (0.05) merge distinct nearby basins on low-noise data; the extra rows this keeps are capped by branch_top_k.
 	branch_err_factor::Float64 = 100.0
-	branch_top_k::Int = 20                         # Maximum cluster reps to return at the output stage. Sorted by fit error before slicing. **Dropped 100→20 on 2026-05-17** after probe4c K-recall analysis on the full 2026-05-14 numbat benchmark (1136 cells): under S2 sort, K=20 already saturates the candidate-set ceiling at the ≤10% threshold (83.5% K-recall at K=20 = 83.5% set ceiling); K=100 buys nothing further. K=10 catches 99.4% of the ceiling; K=5 catches 98.8%. Earlier 2026-05-14 setting of 100 was based on the legacy "within 2× of 06" recovery metric (74% at K=20, 77% at K=100) which is more conservative than absolute K-recall. Set to 0 to disable (return all reps). **Acts as a safety cap** when `algebraic_multiplicity` is set: actual output is `min(algebraic_multiplicity, branch_top_k, length(cluster_reps))`.
+	branch_top_k::Int = 20                         # Maximum cluster reps to return at the output stage, sorted by fit error before slicing. Returning more than 20 was not found to recover more correct answers. Set to 0 to return all reps. Acts as a safety cap when `algebraic_multiplicity` is set: actual output is `min(algebraic_multiplicity, branch_top_k, length(cluster_reps))`.
 
 	# Algebraic solution count, including multiplicities, on the chosen
 	# representative slice. When set, the output is truncated to this many rows
 	# (capped above by `branch_top_k` as a safety net). When `nothing`, output is
 	# the full top-K candidate list (length up to `branch_top_k`).
 	#
-	# AUTO-COMPUTED since 2026-07: when this field is left `nothing`, ODEPE
+	# Computed automatically when this field is left `nothing`: ODEPE
 	# detects M during the SI template build (si_equation_builder.jl —
 	# `Groebner.quotient_basis` on the SIAN ideal; gauge/positive-dimensional
 	# systems via projection to finite-valued coordinates) and hands it off
 	# through the scoped RunContext (`_run_ctx_take_auto_m!`, consumed once in
 	# `analyze_parameter_estimation_problem`). A caller-supplied value always
-	# skips the automatic computation — PEB's per-cell template may still inject the
-	# hand-curated `config/systems.json[*].algebraic_multiplicity` (derived via
-	# HC root-counting, `repro/multiplicity_complete_2026_05_19/`). Detection
-	# failure leaves the field `nothing`: no truncation, no M≥2 full-space
-	# clustering protection.
+	# skips the automatic computation. Detection failure leaves the field
+	# `nothing`: no truncation, no M≥2 full-space clustering protection.
 	#
 	# Type: positive Int, or `nothing` (compute automatically unless disabled).
 	algebraic_multiplicity::Union{Int, Nothing} = nothing
@@ -435,10 +431,7 @@ Base.@kwdef struct EstimationOptions
 	# leave M unknown; ordinary branch_top_k filtering then remains in effect.
 	compute_algebraic_multiplicity::Bool = true
 
-	# Results are ranked by fit error (`err`, SSE). The alternative orderings
-	# (`rank_strategy`) were removed 2026-10-15; the 2026-06-12 ranking study
-	# (`repro/ranking_study_2026_06_12/`) found they made no difference once `err`
-	# was one consistent unit.
+	# Results are ranked by fit error (`err`, SSE).
 	#
 	# Output-stage clustering is two-stage: rough basin separation at a coarse
 	# threshold, then within-basin MAD-normalized L∞ merging at
@@ -466,12 +459,11 @@ Base.@kwdef struct EstimationOptions
 	branch_diversity_selection::Bool = true
 	branch_diversity_eps::Float64 = 0.01
 
-	# Algebraic branch completion (default-on as of 2026-05-27). When a system has
+	# Algebraic branch completion. When a system has
 	# algebraic_multiplicity > 1, ODEPE uses the normal candidate pool only to
 	# choose an anchor, then solves the SI-template equations with exact jets
 	# implied by that anchor and replaces the returned pool with the verified
-	# algebraic sibling set. Regression-clean with it on; generic-branch-coverage
-	# benefit is being confirmed by the Wallaby/Quoll M>1 ablations.
+	# algebraic sibling set.
 	branch_completion::Bool = true
 	branch_completion_max_anchors::Int = 1
 	branch_completion_residual_tol::Float64 = 1e-6
@@ -488,18 +480,16 @@ Base.@kwdef struct EstimationOptions
 	polish_solver_solutions::Bool = true
 	polish_solver_jacobian::Symbol = :forwarddiff
 	polish_solver_chunk_size::Int = 1
-	# Default chosen 2026-05 after the polish bake-off
-	# (see temp_plans/2026-05-01_local_polish_default_recommendation.md): bounded
-	# LeastSquaresOptim Levenberg-Marquardt in per-variable transformed coordinates.
-	# Switch to `PolishNewtonTrust` to restore the legacy scalar-loss polish path.
+	# Default: bounded LeastSquaresOptim Levenberg–Marquardt in per-variable
+	# transformed coordinates.
 	polish_method::PolishMethod = PolishLeastSquares
 	polish_maxiters::Int = 100
 	opt_maxiters::Int = 10000
 	opt_lb::Union{Nothing, Vector{Float64}} = nothing
 	opt_ub::Union{Nothing, Vector{Float64}} = nothing
 	opt_ad_backend::Symbol = :forward
-	polish_maxtime::Float64 = 3600.0         # Per-solution wall-clock timeout (seconds). Bumped 300→3600 in 2026-05-13: with bounded concurrency each polish sees a fair CPU share and converges in <100s on most cells, but stiff/multi-basin cases (flexible_arm, fhn) need substantially more wall-time to escape singular limits.
-	polish_max_concurrency::Int = Threads.nthreads()  # Maximum number of polish tasks running in parallel. Defaults to Threads.nthreads() so each polish gets a fair CPU share. Prevents thread contention from slowing each polish ~N/T× when many candidates are submitted at once (each polish does heavy ForwardDiff Jacobian assembly via ODE integration; competing for cores left every polish stuck at maxtime in the 2026-05 numbat benchmark).
+	polish_maxtime::Float64 = 3600.0         # Per-solution wall-clock timeout (seconds). With bounded concurrency most polishes finish in well under 100 s, but stiff or multi-basin models can need much longer to escape singular limits.
+	polish_max_concurrency::Int = Threads.nthreads()  # Maximum number of polish tasks running in parallel. Defaults to Threads.nthreads() so each polish gets a fair CPU share. Prevents thread contention from slowing each polish ~N/T× when many candidates are submitted at once (each polish assembles ForwardDiff Jacobians through ODE integration; when they compete for cores, every polish can run into polish_maxtime).
 	polish_divergence_factor::Float64 = 10.0 # Stop if loss > initial_loss * this
 	polish_stagnation_window::Int = 50       # Stop if no improvement in N iters
 	polish_ode_maxiters::Int = 5000          # ODE solver maxiters inside polish loss (DiffEq default: 100000)
@@ -521,23 +511,18 @@ Base.@kwdef struct EstimationOptions
 	# Soft-wall penalty near bounds for residual-mode polish. When
 	# `polish_softwall_lambda > 0`, augments the residual with one row per parameter:
 	# zero in the interior of the bound interval, growing quadratically as the
-	# parameter approaches either bound. Targets bound-saturation pathologies
-	# (e.g. biohydrogenation k10 hitting upper bound) without biasing interior
-	# solutions. Default ON after 2026-05-15 fresh-look investigation showed:
-	# (1) on bioh_6_1em6, eliminates k10 saturation 97/100 → 0/100 and lifts
-	#     rank-1 oracle 9.18 → 4.19 (2.2× improvement);
-	# (2) λ is essentially on/off — any nonzero value past ~1e-4 gives the same
-	#     effect; ε is the dominant knob;
-	# (3) the penalty zone (at ε=0.10 with bounds [1e-5, 10]) is values outside
-	#     roughly [3e-5, 5] — well outside typical benchmark truth values, so
-	#     this is a no-op on cells without saturation pathology.
+	# parameter approaches either bound. Targets parameters that run onto a bound
+	# during refinement (e.g. biohydrogenation's k10), without biasing interior
+	# solutions. λ acts almost as an on/off switch: any value past about 1e-4 has
+	# the same effect, and ε sets the width of the penalty zone. With ε = 0.10 and
+	# bounds [1e-5, 10], the penalty applies only outside roughly [3e-5, 5].
 	# Set both to 0.0 to disable. See polish_residual.jl for the exact form.
 	polish_softwall_lambda::Float64 = 1e-2
 	polish_softwall_epsilon::Float64 = 0.10
 
 	# LSO (LeastSquaresOptim.LevenbergMarquardt) trust-region & tolerance knobs.
 	# Negative tolerances mean "use `reltol`/`abstol`". `polish_lso_delta` is the
-	# initial trust-region radius (LSO default is 1.0; the bake-off used 10.0).
+	# initial trust-region radius (LeastSquaresOptim's own default is 1.0).
 	polish_lso_delta::Float64 = 10.0
 	polish_lso_x_tol::Float64 = -1.0
 	polish_lso_f_tol::Float64 = -1.0
@@ -546,8 +531,7 @@ Base.@kwdef struct EstimationOptions
 	terminal_fallback::Symbol = :direct_opt   # :none | :direct_opt
 	backsolve_recovery::Symbol = :algebraic_resolve  # :none | :algebraic_resolve
 
-	# Sensitivity-based seed generation (σ_d-aware probing). Off by default until
-	# validation sweep confirms it captures the existing synthesized_finalizer wins.
+	# Sensitivity-based seed generation (σ_d-aware probing). Off by default.
 	# When enabled, computes per-candidate Σ_x = S · diag(σ_d²) · S' and emits
 	# additional polish seeds along significant eigenvectors (sloppy directions),
 	# plus pairwise Mahalanobis-gated blends between candidates.
@@ -595,14 +579,13 @@ Base.@kwdef struct EstimationOptions
 	auto_handle_transcendentals::Bool = true  # Automatically detect and handle sin/cos/exp in equations
 	auto_rescale::Bool = true  # Power-of-2 rescale states/params/observables/data to O(1) before estimation, un-rescale results after (see core/problem_rescaling.jl). Near-identity (mild powers of 2) on already-O(1) models; rescues ill-scaled ones (e.g. raw hiv 43.7→1.2e-3). Set false to disable.
 	auto_filter_interpolators::Bool = true  # Filter AAA-family interpolators (S2/AAAD/AAADOld) by data-driven σ̂ before the SP loop
-	synthesize_aggregate_candidates::Bool = true  # Inject per-component median/mean/trim25 aggregates of SP, MP, SP∪MP candidates as extra polish seeds before clustering. Sidecar at artifacts/diagnostics/<model>/synthesis_log.csv.
+	synthesize_aggregate_candidates::Bool = true  # Inject per-component median/mean/trim25 aggregates of SP, MP, SP∪MP candidates as extra polish seeds before clustering. Logged to artifacts/diagnostics/<model>/synthesis_log.csv when diagnostics = true.
 	s3_adapt_k::Float64 = 10.0     # Noise multiplier for S3 adaptive tolerance (higher = fewer support points)
 
 	# HomotopyContinuation Specific
 	use_parameter_homotopy::Bool = true  # Use parameter homotopy for multi-shot (track solutions between points)
 	use_column_scaling::Bool = true  # Data-driven per-order column (variable) rescaling for the parameterized HC
-	# solve. ON by default (validated: regression 446/446 unchanged, no recovery regression on the 9-system
-	# benchmark; see docs/internal/2026-05-27_column_scaling_and_backsolve_resolve.md). Rescales each unknown x = s.*x̂ using per-derivative-order observable-derivative
+	# solve. Rescales each unknown x = s.*x̂ using per-derivative-order observable-derivative
 	# magnitudes (order-0 vars left at 1.0), solves the rescaled system (Newton polytopes / mixed volume unchanged),
 	# and unscales solutions by s. Benign (~identity) when observable-derivative magnitudes are ~O(1). Tames the
 	# ~1e7 jet-coordinate dynamic range that defeats unscaled polyhedral tracking on stiff/transient systems.
@@ -617,14 +600,15 @@ Base.@kwdef struct EstimationOptions
 	# Multi-shot parameter-transition tracking mode (points i>1). :gamma_straight tracks
 	# F(·;p_start)→F(·;p_target) via HC.jl's fixed-system StraightLineHomotopy WITH the γ-trick
 	# (H = γ·t·F(·;p_start) + (1−t)·F(·;p_target)) — a discriminant-avoiding path that lands EXACTLY at
-	# the real target; robust where the old straight parameter path collapses (receptor: truth+swap
-	# 10/10 vs 4/16). :parameter = HC.jl ParameterHomotopy (old straight real parameter path, no γ — for
-	# A/B + escape). :gamma_straight_fallback = :parameter first, then γ-straight instead of a fresh
-	# solve on path loss (strictly dominates :parameter). :generic_start (NOW DEFAULT, aggressive quoll build) seeds from a
+	# the real target; robust where the old straight parameter path collapses (on the receptor model
+	# it lands 10 of 10 paths where that path lands 4 of 16). :parameter = HC.jl ParameterHomotopy (old
+	# straight real parameter path, no γ, kept for comparison). :gamma_straight_fallback = :parameter first,
+	# then γ-straight instead of a fresh solve on path loss (strictly dominates :parameter).
+	# :generic_start (the default) seeds from a
 	# generic COMPLEX parameter point p0 (off the discriminant ⇒ full generic root count N, well-conditioned)
 	# then fans out by tracking p0→each real point — robust to a deficient point-1 solve, and makes the count
 	# target the true N (fixing the initial_solution_count anchor). Falls back to per-point fresh+γ chain.
-	homotopy_tracking_mode::Symbol = :generic_start  # DEFAULT flipped gamma_straight→generic_start for the aggressive quoll build; generic solve is hoisted to run ONCE over all interpolators (single-point + multipoint)
+	homotopy_tracking_mode::Symbol = :generic_start  # The generic solve runs once and serves every interpolator (single-point and multipoint)
 	gamma_max_seeds::Int = 5  # γ-straight: try up to this many random γ seeds, keep the most-complete result
 	gamma_seed::Int = 0       # γ RNG seed: 0 ⇒ deterministic per-problem auto-seed (reproducible); >0 ⇒ that exact seed; <0 ⇒ entropy
 
@@ -644,10 +628,9 @@ end
 
 # Single source of truth for option-bridge fallbacks: internal solver paths that
 # receive a plain options Dict must default missing keys to THESE struct
-# defaults, never to hardcoded literals (which silently drift — the 2026-07
-# review found `use_column_scaling` falling back to false and
-# `homotopy_tracking_mode` to :gamma_straight while the struct defaults are
-# true / :generic_start). Constructed once at load; read-only.
+# defaults, never to hardcoded literals, which silently drift: `use_column_scaling`
+# once fell back to false and `homotopy_tracking_mode` to :gamma_straight while
+# the struct defaults are true / :generic_start. Constructed once at load; read-only.
 const _OPT_STRUCT_DEFAULTS = EstimationOptions()
 
 """
@@ -818,8 +801,7 @@ above their respective noise thresholds. Logs a `@warn` for each method
 dropped. Returns the filtered list (possibly empty — caller is responsible
 for fallback).
 
-Thresholds (empirically calibrated on `forced_lotka_volterra_0_1em2`,
-2026-05-05):
+Thresholds (calibrated empirically on a forced Lotka–Volterra model):
 - `InterpolatorS2AAAMLE`: drop when σ̂ > 1e-4
 - `InterpolatorAAA`, `InterpolatorAAADOld`: drop when σ̂ > 1e-5
 """
@@ -1098,7 +1080,7 @@ function _options_from_keywords(keywords)
 	if !isempty(unknown)
 		names = join(("`$name`" for name in unknown), ", ", " and ")
 		verb = length(unknown) == 1 ? "is not an estimation option" : "are not estimation options"
-		# The single-interpolator options were removed on 2026-10-06.
+		# `interpolator` and `custom_interpolator` were options before 1.0.
 		hint = any(in(unknown), (:interpolator, :custom_interpolator)) ?
 			" Interpolators are given as a list, as in `interpolators = [InterpolatorAAA]`." : ""
 		throw(ArgumentError("$names $verb.$hint `?EstimationOptions` lists the options."))
@@ -1440,7 +1422,3 @@ end
 
 # Define show method for pretty printing
 Base.show(io::IO, opts::EstimationOptions) = print_options(io, opts; compact = true)
-
-# get_solver_options_dict (the legacy options::Dict bridge) was removed 2026-06-10;
-# its orphaned fields were deleted in the 2026-08-12 dead-options cleanup
-# (save_filepath survived and is now wired as the saved-systems base directory).

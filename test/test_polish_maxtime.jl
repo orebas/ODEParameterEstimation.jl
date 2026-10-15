@@ -2,7 +2,7 @@
 # PolishFastLMBoundedLog). Pre-fix this was a no-op; post-fix the polish wall-
 # clock is bounded by `maxtime + small slack`.
 #
-# Run: julia --startup-file=no /home/orebas/.julia/dev/ODEParameterEstimation/repro/test_polish_maxtime.jl
+# Run: julia --startup-file=no test/current.jl test_polish_maxtime.jl
 
 using ODEParameterEstimation
 using ODEParameterEstimation: merge_options, PolishFastLMBoundedLog

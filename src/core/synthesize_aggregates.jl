@@ -21,8 +21,8 @@
 # Cache for the resolve calls (Category A + most of D) lives below as
 # `_SYNTH_RESOLVE_CACHE`; degenerate-value fallback bypasses it (Phase 4).
 #
-# Sidecar: artifacts/diagnostics/<model>/synthesis_log.csv records all
-# synthesized candidates' lineage for post-hoc inspection.
+# With `diagnostics = true`, artifacts/diagnostics/<model>/synthesis_log.csv
+# records all synthesized candidates' lineage for post-hoc inspection.
 
 # ─── Per-component aggregation primitives ──────────────────────────────────────
 
@@ -157,11 +157,9 @@ function _build_synth_candidate(
 		all_unidentifiable,
 		nothing,                          # ode_solution
 	)
-	# Note: interpolator_source is intentionally `nothing` for synthesized candidates.
-	# Downstream consumers (consensus_estimation, synthesized_finalizer) use
-	# `_consensus_source_symbol` which falls back to `default_source` when this is nil
-	# — synthesized candidates aren't tied to any single interpolator's interpolant
-	# cache. The :synthesized_aggregate marker lives on `source_type` instead.
+	# Note: interpolator_source is intentionally `nothing` for synthesized candidates:
+	# they aren't tied to any single interpolator's interpolant cache. The
+	# :synthesized_aggregate marker lives on `source_type` instead.
 	result.provenance = ResultProvenance(
 		primary_method = :algebraic,
 		interpolator_source = nothing,
@@ -869,9 +867,8 @@ function _maybe_synthesize_aggregate_candidates(
 	end
 
 	# Evaluate each new candidate's err via polish-context loss closure.
-	# This mirrors sensitivity_seeds.jl and ensures downstream consumers
-	# (branch consensus, tryhard finalists) see a finite Float64 err rather
-	# than the candidate's initial `nothing`.
+	# This mirrors sensitivity_seeds.jl and ensures downstream consumers see a
+	# finite Float64 err rather than the candidate's initial `nothing`.
 	if !isempty(new_candidates)
 		try
 			polish_ctx = _build_polish_context(PEP; opts = opts)

@@ -3,7 +3,7 @@
 # Adapted from ParameterEstimation.jl (GPL-3.0), examples/all-global/crauste.jl;
 # a preserved source is revision 9e7adc33a4a11954acde0214f482cffea9551170. These
 # are the corrected equations, called `crauste_corrected` before 1.0. See
-# docs/internal/registry_preparation.md.
+# docs/internal/provenance.md.
 """
 	crauste()
 

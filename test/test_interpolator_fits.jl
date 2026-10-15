@@ -1,6 +1,5 @@
 # Every built-in interpolator fits a smooth curve from exact samples and gives
-# its value and first derivative. Added 2026-10-14: several had never been
-# called by a test.
+# its value and first derivative.
 
 using ODEParameterEstimation
 using ODEParameterEstimation: InterpolatorMethod, get_interpolator_function, nth_deriv_at

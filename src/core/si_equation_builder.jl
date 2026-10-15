@@ -764,7 +764,7 @@ function get_si_equation_system(
 	# Create mapping from Nemo to MTK types
 	nemo2mtk = Dict(gens .=> symbol_map)
 
-	# Explicit MTK → jet-0 template-variable map (maintainability campaign Phase B).
+	# Explicit MTK → jet-0 template-variable map.
 	# `symbol_map` (MTK symbols) and `gens` (clean ring names) are aligned by
 	# construction in convert_to_si_ode, and the SI template names every jet as
 	# "<clean name>_<order>" — so the jet-0 Symbolics variable for each state/param
@@ -1457,8 +1457,8 @@ end
 """
 	parse_jet_label(label::AbstractString) -> Union{Nothing, Tuple{String, Int}}
 
-THE single shared parser for observable/derivative labels (maintainability
-campaign Phase D1). Previously three near-identical copies lived in
+The single shared parser for observable/derivative labels. Previously three
+near-identical copies lived in
 diagnostics.jl, sigma_d.jl and multipoint_template.jl and had to agree for
 Σ_d↔sensitivity column alignment; they now delegate here.
 
@@ -1550,7 +1550,7 @@ function nemo_to_symbolics(nemo_expr, var_map::Dict)
 			else
 				# Fail fast: substituting a placeholder 1 for an unknown
 				# coefficient silently corrupts the polynomial — strictly worse
-				# than any crash. (Zero occurrences across all repro/PEB logs.)
+				# than any crash.
 				error("Unknown Nemo coefficient type $(typeof(c)) in nemo_to_symbolics — refusing to substitute 1. Value: $c")
 			end
 

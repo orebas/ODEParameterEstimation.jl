@@ -1,4 +1,4 @@
-# EstimationOptions surface contracts (2026-08-12 dead-options cleanup):
+# EstimationOptions surface contracts:
 # deleted fields error LOUDLY at construction (the rtol-vs-reltol typo class),
 # and the newly wired fields actually reach their consumers.
 
@@ -15,7 +15,7 @@ using OrderedCollections
 	@test_throws MethodError EstimationOptions(max_deriv_level = 12)
 	@test_throws MethodError EstimationOptions(use_monodromy = true)
 	# The single-interpolator options, which had no effect beside the default
-	# `interpolators` list (removed 2026-10-06).
+	# `interpolators` list (removed before 1.0).
 	@test_throws MethodError EstimationOptions(interpolator = InterpolatorAAA)
 	@test_throws MethodError EstimationOptions(custom_interpolator = identity)
 
@@ -25,8 +25,7 @@ using OrderedCollections
 	documentation = string(@doc EstimationOptions)
 	@test all(name -> occursin("`$name`", documentation), fieldnames(EstimationOptions))
 
-	# Solutions are refined against the data unless that is turned off (default
-	# since 2026-10-06).
+	# Solutions are refined against the data unless that is turned off.
 	@test o.polish_solutions
 
 	# Output is opt-in: a default run prints nothing and writes no files.
@@ -91,8 +90,7 @@ using OrderedCollections
 	@test length(ODEParameterEstimation.cluster_solutions(rows; threshold = 1e-12)) == 3
 
 	# The ordinary DISPLAY paths must never reference deleted fields
-	# (2026-08-13 regression: show() FieldError'd on a stale print group that
-	# the full gate never exercised).
+	# (show() once threw a FieldError on a stale print group).
 	@test !isempty(sprint(show, EstimationOptions()))
 	@test !isempty(sprint(io -> print_options(io, EstimationOptions())))
 	@test !isempty(sprint(io -> print_options(io, EstimationOptions(); compact = true)))

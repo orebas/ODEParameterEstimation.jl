@@ -56,9 +56,9 @@ end
 
 function add_synthetic_noise(data::OrderedDict, noise_level::Float64, noise_model::Symbol)
 	noise_level <= 0 && return data
-	if noise_model in (:relative, :multiplicative)
+	if noise_model == :relative
 		return add_relative_noise(data, noise_level)
-	elseif noise_model in (:additive, :homoskedastic, :additive_homoskedastic)
+	elseif noise_model == :additive
 		return add_additive_noise(data, noise_level)
 	elseif noise_model == :none
 		return data
@@ -191,8 +191,10 @@ The options that matter here are:
 - `uneven_sampling` and `uneven_sampling_times`: use these time points instead.
 - `noise_level` and `noise_model`: add Gaussian noise. `:additive` uses a
   standard deviation of `noise_level` times the mean absolute value of each
-  series; `:relative` scales each value by `1 + noise_level * randn()`.
-- `ode_solver`: the ODE solver for the simulation.
+  series; `:relative` scales each value by `1 + noise_level * randn()`;
+  `:none` adds none.
+- `ode_solver`, `abstol`, `reltol`: the ODE solver and tolerances for the
+  simulation.
 - `seed`: with an integer, the noise is the same on every call and the caller's
   default RNG is left untouched. With `nothing` (the default), noise is drawn
   from the caller's default RNG, so `Random.seed!` controls it.
@@ -237,7 +239,9 @@ function _sample_problem_data(problem::ParameterEstimationProblem, opts::Estimat
 		opts.datasize,
 		solver = opts.ode_solver,
 		uneven_sampling = opts.uneven_sampling,
-		uneven_sampling_times = opts.uneven_sampling_times)
+		uneven_sampling_times = opts.uneven_sampling_times,
+		abstol = opts.abstol,
+		reltol = opts.reltol)
 
 	# Add noise if requested
 	data = add_synthetic_noise(clean_data, opts.noise_level, opts.noise_model)

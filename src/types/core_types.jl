@@ -791,7 +791,7 @@ end
 """
     UncertaintyError
 
-Thrown instead of returning a [`UncertaintyUnavailable`](@ref) when the uncertainty
+Thrown instead of returning an [`UncertaintyUnavailable`](@ref) when the uncertainty
 cannot be worked out and the options say `uq_failure_policy = :throw`. Its
 `outcome` field is that `UncertaintyUnavailable`.
 """

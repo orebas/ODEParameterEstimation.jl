@@ -1229,8 +1229,6 @@ using Random
         @test uq_result.reason == :no_selected_result
         @test isnothing(ODEParameterEstimation._compute_uq_result(
             pep, analysis, EstimationOptions(compute_uncertainty = false, nooutput = true)))
-
-        @test_throws ArgumentError ODEParameterEstimation.solve_parameter_estimation(pep, (;))
     end
 
     @testset "Branch-diverse M selection" begin

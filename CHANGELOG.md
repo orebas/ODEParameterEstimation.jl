@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Options that did nothing removed — 2026-10-14
+
+- Removed the options `debug_solver`, `debug_cas_diagnostics` and
+  `debug_dimensional_analysis`, which nothing read, and `gp_s3_refinement`,
+  which was deprecated.
+- `noise_model` accepts `:additive`, `:relative` and `:none`. Four synonyms
+  for the first two are no longer accepted.
+- `sample_problem_data` uses `abstol` and `reltol` when it simulates the
+  model. It used 1e-14, the default of both, whatever they were set to.
+- The docstring of `analyze_parameter_estimation_problem` says which fields of
+  its `analysis` value are supported.
+
 ### Fewer exported names, and clearer ones — 2026-10-14
 
 - `using ODEParameterEstimation` now brings in 29 names instead of 190:

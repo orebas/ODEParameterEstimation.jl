@@ -26,8 +26,8 @@ nothing # hide
 ```
 
 Two options turn it on. `compute_uncertainty = true` asks for it.
-`InterpolatorGPUncertainty` is the curve fit that makes it possible: a Gaussian process
-that estimates the noise in the data along with the curve. The uncertainty
+`InterpolatorGPUncertainty` is the curve fit that makes it possible: a Gaussian
+process that estimates the noise in the data along with the curve. The uncertainty
 comes back as the third value of [`analyze_parameter_estimation_problem`](@ref):
 
 ```@example uq
@@ -64,8 +64,8 @@ Keep three things in mind:
 
 ## When it cannot be computed
 
-If the uncertainty cannot be worked out, the third value is a `UncertaintyUnavailable`
-in place of a report, and its `message` says why:
+If the uncertainty cannot be worked out, the third value is an
+`UncertaintyUnavailable` in place of a report, and its `message` says why:
 
 ```julia
 if uncertainty isa UncertaintyReport

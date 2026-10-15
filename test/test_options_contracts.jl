@@ -90,9 +90,6 @@ using OrderedCollections
 	@test length(ODEParameterEstimation.cluster_solutions(rows; threshold = 10.0)) == 1
 	@test length(ODEParameterEstimation.cluster_solutions(rows; threshold = 1e-12)) == 3
 
-	# gp_s3_refinement shim survives (deprecation warning path, not deleted).
-	@test EstimationOptions(gp_s3_refinement = false).gp_s3_refinement === false
-
 	# The ordinary DISPLAY paths must never reference deleted fields
 	# (2026-08-13 regression: show() FieldError'd on a stale print group that
 	# the full gate never exercised).

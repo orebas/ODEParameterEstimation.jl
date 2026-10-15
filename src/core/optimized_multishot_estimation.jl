@@ -1477,12 +1477,7 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 				end
 
 				# Solve for this point
-				solver_options = Dict(
-					:debug_solver => opts.debug_solver,
-					:debug_cas_diagnostics => opts.debug_cas_diagnostics,
-					:debug_dimensional_analysis => opts.debug_dimensional_analysis,
-				)
-				solutions, hc_vars, trivial_dict, trimmed_vars = system_solver(final_target, final_varlist_point; options = solver_options)
+				solutions, hc_vars, trivial_dict, trimmed_vars = system_solver(final_target, final_varlist_point)
 				_t_standard_point_elapsed = time() - _t_standard_point_start
 				_accumulate_timing!(single_point_system_seconds_by_source, interp_sym, _t_standard_point_elapsed)
 

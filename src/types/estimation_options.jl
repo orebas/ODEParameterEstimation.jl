@@ -5,18 +5,35 @@
 """
 	SystemSolverMethod
 
-Enum for selecting the polynomial system solver method.
+How the polynomial systems are solved, chosen with the `system_solver` option.
+
+- `SolverHC` (default): homotopy continuation, which finds every solution.
+- `SolverTrustRegion`: a trust-region method started from several points.
+- `SolverLevenbergMarquardt`: Levenberg–Marquardt from one point.
+
+The last two are local solvers and can miss solutions.
 """
 @enum SystemSolverMethod begin
-	SolverHC           # solve_with_hc - HomotopyContinuation solver (default)
-	SolverLevenbergMarquardt    # solve_with_fast_nlopt - Fast compiled NLOpt
-	SolverTrustRegion       # solve_with_robust - Robust solver with multiple fallbacks
+	SolverHC                  # solve_with_hc
+	SolverLevenbergMarquardt  # solve_with_fast_nlopt
+	SolverTrustRegion         # solve_with_robust
 end
 
 """
 	InterpolatorMethod
 
-Enum for selecting the data interpolation method.
+The curve fits that estimate the derivatives of the data, listed in the
+`interpolators` option.
+
+- `InterpolatorAAA`: a rational approximation. Suits exact or nearly exact
+  data.
+- `InterpolatorGP`: a Gaussian process. Suits noisy data.
+- `InterpolatorGPUncertainty`: a Gaussian process that also estimates the noise
+  in the data. Needed for `compute_uncertainty`.
+- `InterpolatorCustom`: a function of your own, from `custom_interpolators`.
+
+The default list runs nine curve fits. The values not named here are internal
+and may change in any release.
 """
 @enum InterpolatorMethod begin
 	InterpolatorAAA           # aaad - Basic AAA rational interpolation
@@ -45,8 +62,12 @@ end
 """
 	PolishMethod
 
-Enum for selecting the optimization method for solution polishing.
-Note: The scalar methods are Optim.jl optimizers run through Optimization.jl.
+The optimizer that refines each solution against the data, chosen with the
+`polish_method` option.
+
+- `PolishLeastSquares` (default): Levenberg–Marquardt on the residuals.
+- `PolishNewtonTrust`, `PolishBFGS`, `PolishLBFGS`: minimize the sum of
+  squares directly, with the Optim.jl method of that name.
 """
 @enum PolishMethod begin
 	PolishNewtonTrust      # NewtonTrustRegion from Optim.jl (legacy default)
@@ -73,10 +94,10 @@ end
 """
 	EstimationFlow
 
-Enum selecting the high-level workflow used during estimation.
+How the estimate is made, chosen with the `flow` option.
 
-- `FlowStandard`: New optimized multishot workflow (default)
-- `FlowDirectOpt`: Direct local optimization workflow (LBFGS from random start)
+- `FlowStandard` (default): the algebraic method.
+- `FlowDirectOpt`: local optimization alone, from a random start.
 """
 @enum EstimationFlow begin
 	FlowStandard     # optimized_multishot_parameter_estimation
@@ -155,18 +176,22 @@ method each, and are grouped by stage.
   and finishes.
 - `shooting_points` (default `12`): how many time points the equations are
   solved at. Fewer is faster.
-- `abstol`, `reltol` (default `1e-14`): tolerances for simulating the model.
+- `abstol`, `reltol` (default `1e-14`): tolerances for solving the model's
+  ODEs, both when simulating data and during refinement and the other steps
+  that integrate the model.
 
 # Simulated data
 
-These are read only by [`sample_problem_data`](@ref).
+These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
+`reltol` and `seed`.
 
 - `datasize` (default `21`): the number of time points.
 - `time_interval` (default `[-0.5, 0.5]`): the first and last time.
 - `noise_level` (default `0.0`): the size of the Gaussian noise added.
 - `noise_model` (default `:additive`): with `:additive`, the noise has standard
   deviation `noise_level` times the mean absolute value of the series. With
-  `:relative`, each value is multiplied by `1 + noise_level * randn()`.
+  `:relative`, each value is multiplied by `1 + noise_level * randn()`. `:none`
+  adds no noise.
 - `uneven_sampling` (default `false`), `uneven_sampling_times`: sample at these
   times, of which there must be `datasize`, instead of on an even grid.
 - `ode_solver` (default `AutoVern9(Rodas5P())`): the ODE solver for the
@@ -184,8 +209,6 @@ These are read only by [`sample_problem_data`](@ref).
   lines that `progress` prints.
 - `profile_phases` (default `false`): print the time and memory each stage
   took.
-- `debug_solver`, `debug_cas_diagnostics`, `debug_dimensional_analysis`
-  (default `false`): extra output from the solver and the equation builder.
 - `hc_show_progress` (default `false`): show HomotopyContinuation's progress
   bar.
 - `dump_raw_candidates_path`, `dump_polished_path` (default `nothing`): write
@@ -203,8 +226,6 @@ These are read only by [`sample_problem_data`](@ref).
   approximation. Higher keeps fewer support points.
 - `gp_derivative_lengthscale_factor` (default `1.0`): multiplies the fitted
   length scale of `InterpolatorGPUncertainty`. Values below one smooth less.
-- `gp_s3_refinement` (default `false`): deprecated. List the
-  `InterpolatorS3Adapt` methods in `interpolators` instead.
 
 # Building and solving the equations
 
@@ -352,7 +373,7 @@ Uncertainty estimation is experimental.
 - `compute_uncertainty` (default `false`): also estimate standard errors for
   the best solution. Needs `InterpolatorGPUncertainty` in `interpolators`.
 - `uq_failure_policy` (default `:return_failed`): when standard errors cannot
-  be computed, `:return_failed` returns a [`UncertaintyUnavailable`](@ref) that says
+  be computed, `:return_failed` returns an [`UncertaintyUnavailable`](@ref) that says
   why, and `:throw` raises an error.
 - `uq_noise_source` (default `:learned_gp_homoscedastic`): where the noise
   level comes from: the Gaussian process fit, or with `:smoother_residual_edf`
@@ -389,10 +410,8 @@ Base.@kwdef struct EstimationOptions
 	#   pre-polish: drop candidates with err > branch_err_factor × min(err);
 	#               L-inf normalized clustering in identifiable-only variable space
 	#               at branch_cluster_eps; one rep per cluster polished.
-	#   post-polish: re-cluster polished reps in id-only space; drop clusters with
-	#                median_err > branch_resid_factor × best_cluster_median_err;
-	#                drop clusters with size < branch_min_size; each surviving
-	#                cluster surfaces as one "algebraic branch", branch_size attached.
+	#   post-polish: re-cluster polished reps in id-only space; each cluster
+	#                surfaces as one "algebraic branch", branch_size attached.
 	branch_detection::Bool = true
 	branch_cluster_eps::Float64 = 0.001            # Tightened 0.05→0.001 in 2026-05-13: read as a "target precision in MAD-normalized identifiable space." The 0.05 default was merging truth-near clusters with non-truth-near ones for low-noise cells; 0.001 preserves distinct basins (cost: roughly 2× more rows in nopolish result.csv, mitigated by branch_top_k).
 	branch_err_factor::Float64 = 100.0
@@ -612,9 +631,6 @@ Base.@kwdef struct EstimationOptions
 	# Debug and Output Flags
 	nooutput::Bool = true
 	diagnostics::Bool = false
-	debug_solver::Bool = false
-	debug_cas_diagnostics::Bool = false
-	debug_dimensional_analysis::Bool = false
 	profile_phases::Bool = false  # Print per-phase timing/allocation breakdown
 	heartbeat::Bool = true        # Live flushed [HB] phase markers (suppressed by nooutput)
 	progress::Bool = false        # The same phase markers on their own, for a quiet run
@@ -636,7 +652,6 @@ Base.@kwdef struct EstimationOptions
 	auto_rescale::Bool = true  # Power-of-2 rescale states/params/observables/data to O(1) before estimation, un-rescale results after (see core/problem_rescaling.jl). Near-identity (mild powers of 2) on already-O(1) models; rescues ill-scaled ones (e.g. raw hiv 43.7→1.2e-3). Set false to disable.
 	auto_filter_interpolators::Bool = true  # Filter AAA-family interpolators (S2/AAAD/AAADOld) by data-driven σ̂ before the SP loop
 	synthesize_aggregate_candidates::Bool = true  # Inject per-component median/mean/trim25 aggregates of SP, MP, SP∪MP candidates as extra polish seeds before clustering. Sidecar at artifacts/diagnostics/<model>/synthesis_log.csv.
-	gp_s3_refinement::Bool = false  # If true, each GP interpolator also produces an S3 (GP→AAA→MLE) barycentric
 	s3_adapt_k::Float64 = 10.0     # Noise multiplier for S3 adaptive tolerance (higher = fewer support points)
 
 	# HomotopyContinuation Specific
@@ -825,20 +840,6 @@ function resolve_interpolator_list(opts::EstimationOptions)
 			push!(result, (method, func))
 		else
 			push!(result, (method, nothing))
-		end
-	end
-
-	# Backward compat: auto-expand GP methods when gp_s3_refinement=true
-	if opts.gp_s3_refinement
-		@warn "gp_s3_refinement is deprecated. Add InterpolatorS3AdaptSE etc. to your interpolators list directly." maxlog=1
-		gp_to_s3 = Dict(
-			InterpolatorGP => InterpolatorS3AdaptSE,
-			InterpolatorAGPRobustRQ => InterpolatorS3AdaptRQ,
-			InterpolatorAGPRobustSEpRQ => InterpolatorS3AdaptSEpRQ,
-			InterpolatorAGPRobustSExRQ => InterpolatorS3AdaptSExRQ,
-		)
-		for (m, _) in copy(result)
-			haskey(gp_to_s3, m) && push!(result, (gp_to_s3[m], nothing))
 		end
 	end
 
@@ -1121,7 +1122,7 @@ This is useful for temporarily overriding specific options.
 # Examples
 ```julia
 base_opts = EstimationOptions()
-new_opts = merge_options(base_opts; abstol=1e-10, debug_solver=true)
+new_opts = merge_options(base_opts; abstol=1e-10, diagnostics=true)
 ```
 """
 function merge_options(base::EstimationOptions; kwargs...)
@@ -1358,8 +1359,8 @@ function validate_options(opts::EstimationOptions)
 			valid = false
 		end
 	end
-	if !(opts.noise_model in (:relative, :multiplicative, :additive, :homoskedastic, :additive_homoskedastic, :none))
-		@error "noise_model must be :relative, :multiplicative, :additive, :homoskedastic, :additive_homoskedastic, or :none"
+	if !(opts.noise_model in (:additive, :relative, :none))
+		@error "noise_model must be :additive, :relative or :none"
 		valid = false
 	end
 
@@ -1478,12 +1479,11 @@ function print_options(io::IO, opts::EstimationOptions; compact = false)
 		("Data Sampling", [:datasize, :time_interval, :noise_level, :uneven_sampling,
 			:uneven_sampling_times]),
 		("Reproducibility", [:seed]),
-		("Debug Flags", [:nooutput, :diagnostics, :progress, :debug_solver, :debug_cas_diagnostics,
-			:debug_dimensional_analysis, :profile_phases]),
+		("Debug Flags", [:nooutput, :diagnostics, :progress, :profile_phases]),
 		("Feature Flags", [:flow, :use_si_template, :save_system,
 			:compute_uncertainty, :uq_failure_policy, :uq_noise_source,
 			:gp_derivative_lengthscale_factor, :si_placeholder_fail_categories,
-			:auto_handle_transcendentals, :gp_s3_refinement]),
+			:auto_handle_transcendentals]),
 		("System Construction", [:system_construction_policy, :construction_candidate_limit,
 			:construction_beam_width, :construction_compute_mixed_volume]),
 		("HomotopyContinuation", [:use_parameter_homotopy, :hc_real_tol, :hc_show_progress, :homotopy_tracking_mode, :gamma_max_seeds, :gamma_seed, :use_multipoint, :multipoint_n_points, :multipoint_max_pairs, :multipoint_pair_strategy]),

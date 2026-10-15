@@ -498,40 +498,6 @@ function si_template_lineage_kwargs(si_template)
 end
 
 """
-	solve_parameter_estimation(PEP, setup_data; system_solver, diagnostics, diagnostic_data)
-
-Solution phase for parameter estimation. Using the settings from the setup phase,
-this constructs and solves the system of equations to estimate parameters.
-
-# Arguments
-- `PEP`: Parameter estimation problem
-- `setup_data`: Data from the setup phase
-- `system_solver`: Legacy solver hook (unsupported)
-- `diagnostics`: Whether to output diagnostic information
-- `diagnostic_data`: Additional diagnostic data
-
-# Returns
-- Results from the solver (system solutions and metadata)
-"""
-function solve_parameter_estimation(
-	PEP::ParameterEstimationProblem,
-	setup_data;
-	system_solver = nothing,
-	interpolator = nothing,
-	diagnostics = false,
-	diagnostic_data = nothing,
-	save_system = true,
-	max_reconstruction_attempts = 10,  # TODO: magic number - should be moved to config options
-	max_deriv_level = 10,  # TODO: magic number - should be moved to config options
-	debug_solver = false,
-	debug_cas_diagnostics = false,
-	debug_dimensional_analysis = false,
-	polish_solver_solutions::Bool = false,
-)
-	throw(ArgumentError("solve_parameter_estimation is no longer supported. Use analyze_parameter_estimation_problem or optimized_multishot_parameter_estimation with EstimationOptions."))
-end
-
-"""
 	process_estimation_results(PEP, solution_data, lowest_time_index; polish_solutions, polish_maxiters, polish_method)
 
 Process the raw results from the solver into a format suitable for analysis.

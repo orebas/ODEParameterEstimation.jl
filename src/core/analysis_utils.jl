@@ -926,18 +926,18 @@ the run produced, as `(raw_results, analysis, uq)`.
 # Returns
 - `raw_results`: every candidate solution the solver found, before ranking, with
   the identifiability findings. Mostly useful for debugging.
-- `analysis`: a named tuple.
-  - `returned_results` holds the solutions, best fit first, as
+- `analysis`: a named tuple with these fields, in this order, so it can also be
+  unpacked by position:
+  - `returned_results`: the solutions, best fit first, as
     [`ParameterEstimationResult`](@ref)s.
-  - `best_approximation_error` is the fit error of the best one.
-  - `best_max_error`, `best_mean_error`, `best_median_error`, `best_min_error`
-    and `best_rms_error` are relative errors against the problem's true values,
-    each taken as the best over all candidates. They are `Inf` when the true
-    values are not known.
-  - `algebraic_multiplicity` is the number of solutions the equations admit,
+  - `besterror`, `best_min_error`, `best_mean_error`, `best_median_error`,
+    `best_max_error`: relative errors against the problem's true values, each
+    the best over all candidates; `besterror` is the same as `best_max_error`.
+    They are `Inf` when the true values are not known.
+  - `best_approximation_error`: the fit error of the best solution.
+  - `best_rms_error`: the root-mean-square relative error, as above.
+  - `algebraic_multiplicity`: the number of solutions the equations admit,
     when it was determined.
-  Use these fields by name; any other field, and the order of the fields, may
-  change.
 - `uq`: with `compute_uncertainty = true`, an [`UncertaintyReport`](@ref), or
   an [`UncertaintyUnavailable`](@ref) that says why there is none; otherwise
   `nothing`. Uncertainty estimation is experimental.

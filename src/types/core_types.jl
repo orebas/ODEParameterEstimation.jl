@@ -86,6 +86,21 @@ struct ParameterEstimationProblem
     unident_count::Int
 end
 
+# The docstring promises "a dictionary" for `data_sample`. A plain `Dict`, with
+# the measured right-hand sides as keys, is converted here; the field's `Union`
+# type would otherwise refuse it. `"t"` is put first.
+function ParameterEstimationProblem(name, model, measured_quantities, data_sample::Dict,
+        recommended_time_interval, solver, p_true, ic, unident_count)
+    ordered = OrderedDict{Union{String, Num}, Vector{Float64}}()
+    haskey(data_sample, "t") && (ordered["t"] = Vector{Float64}(data_sample["t"]))
+    for (key, values) in data_sample
+        key isa AbstractString && key == "t" && continue
+        ordered[key isa AbstractString ? String(key) : Num(key)] = Vector{Float64}(values)
+    end
+    return ParameterEstimationProblem(name, model, measured_quantities, ordered,
+        recommended_time_interval, solver, p_true, ic, unident_count)
+end
+
 # Constants for analysis and clustering
 const CLUSTERING_THRESHOLD = 0.00001  # 0.001% relative difference threshold
 const MAX_ERROR_THRESHOLD = 0.5       # Maximum acceptable error

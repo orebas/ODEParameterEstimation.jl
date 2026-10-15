@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### A plain `Dict` of data is accepted again — 2026-10-15
+
+- The nine-field `ParameterEstimationProblem` constructor accepts the data as
+  a plain `Dict` keyed by `"t"` and the measured right-hand sides, as its
+  docstring says. Since the `ObservationData` change of 2026-09-10 it raised a
+  `MethodError` unless the data was already an `OrderedDict` of the exact
+  type.
+
 ### Options that did nothing removed — 2026-10-14
 
 - Removed the options `debug_solver`, `debug_cas_diagnostics` and
@@ -17,7 +25,7 @@
   of equation construction, homotopy tracking, clustering, ranking and
   refinement, the sensitivity seeds, and everything to do with uncertainty.
   These may change or be removed in a minor release; the others change only
-  in a major release.
+  in a major release. `use_si_template`, which has no effect, is among them.
 
 ### Fewer exported names, and clearer ones — 2026-10-14
 

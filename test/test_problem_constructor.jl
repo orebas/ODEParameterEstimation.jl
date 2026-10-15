@@ -138,6 +138,22 @@ using Test
 	end
 end
 
+@testset "The nine-field constructor takes a plain Dict of data" begin
+	# The paper's benchmark scripts pass a Dict keyed by the measured right-hand
+	# sides. A Union-typed field refused it from 2026-09-10 until this method.
+	@parameters k
+	@variables x(t) y(t)
+	model, mq = create_ordered_ode_system("decay", [x], [k], [D(x) ~ -k * x], [y ~ x])
+	times = collect(range(0.0, 1.0, length = 5))
+	data = Dict(mq[1].rhs => 2.0 .* exp.(-0.7 .* times), "t" => times)
+	pep = ParameterEstimationProblem("decay", model, mq, data, [0.0, 1.0], nothing,
+		OrderedDict(k => 0.7), OrderedDict(x => 2.0), 0)
+	@test pep.data_sample isa OrderedDict{Union{String, Num}, Vector{Float64}}
+	@test first(keys(pep.data_sample)) == "t"
+	@test pep.data_sample["t"] == times
+	@test pep.data_sample[mq[1].rhs] ≈ 2.0 .* exp.(-0.7 .* times)
+end
+
 @testset "State names need not be ASCII" begin
 	# These helpers cut "(t)" off by byte offset, which is not a character
 	# boundary after θ and raised StringIndexError (2026-10-06).

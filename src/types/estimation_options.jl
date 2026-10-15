@@ -195,8 +195,9 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   deviation `noise_level` times the mean absolute value of the series. With
   `:relative`, each value is multiplied by `1 + noise_level * randn()`. `:none`
   adds no noise.
-- `uneven_sampling` (default `false`), `uneven_sampling_times`: sample at these
-  times, of which there must be `datasize`, instead of on an even grid.
+- `uneven_sampling` (default `false`), `uneven_sampling_times`, experimental:
+  sample at these times, of which there must be `datasize`, instead of on an
+  even grid.
 - `ode_solver` (default `AutoVern9(Rodas5P())`): the ODE solver for the
   simulation.
 
@@ -208,8 +209,8 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   candidate-synthesis log under `artifacts/diagnostics/`.
 - `save_system` (default `false`), `save_filepath` (default `""`): save the
   polynomial systems to files, under `save_filepath` or else `saved_systems/`.
-- `heartbeat` (default `true`): with `nooutput = false`, include the stage
-  lines that `progress` prints.
+- `heartbeat` (default `true`, experimental): with `nooutput = false`, include
+  the stage lines that `progress` prints.
 - `profile_phases` (default `false`, experimental): print the time and memory
   each stage took.
 - `hc_show_progress` (default `false`): show HomotopyContinuation's progress
@@ -241,8 +242,9 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   are local solvers and can miss solutions: `SolverTrustRegion` is a
   trust-region method started from several points, and
   `SolverLevenbergMarquardt` is Levenberg–Marquardt from one point.
-- `use_si_template` (default `true`): build the equations with
-  StructuralIdentifiability.jl.
+- `use_si_template` (default `true`, experimental): has no effect. The
+  equations are always built with StructuralIdentifiability.jl, and `false` is
+  refused.
 - `si_probability` (default `0.99`): the probability with which the
   identifiability analysis is correct.
 - `si_fix_strategy` (default `:local_basis`): how values are chosen for

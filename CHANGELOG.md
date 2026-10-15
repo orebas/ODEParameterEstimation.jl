@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Documentation checked against the changes above — 2026-10-15
+
+- `print_options`, and so the way `EstimationOptions` values print, covers
+  every option. It left out about a third of them, so a changed
+  `branch_top_k`, for example, did not show.
+- The docstrings of the uncertainty types and functions, and of
+  `ResultProvenance`, say in plain words what their fields mean.
+- The manual and docstrings now say that `sample_problem_data` makes its
+  `ode_solver` the problem's solver; that `estimate` leaves out the states the
+  package adds for inputs such as `sin(c * t)`, which
+  `analyze_parameter_estimation_problem` keeps; that the error statistics
+  leave out the quantities the data cannot determine; that the fit error is
+  measured on rescaled data; and that bounds cannot yet be used with inputs
+  such as `sin(c * t)`.
+
 ### Options for old or research-only behaviour removed — 2026-10-15
 
 - Removed `rank_strategy` and `cluster_method`. Results are ranked by fit
@@ -40,11 +55,13 @@
   model. It used 1e-14, the default of both, whatever they were set to.
 - The docstring of `analyze_parameter_estimation_problem` says which fields of
   its `analysis` value are supported.
-- `?EstimationOptions` marks the options that are experimental: the tuning
-  of equation construction, homotopy tracking, clustering, ranking and
-  refinement, the sensitivity seeds, and everything to do with uncertainty.
-  These may change or be removed in a minor release; the others change only
-  in a major release. `use_si_template`, which has no effect, is among them.
+- `?EstimationOptions` marks each option that is experimental. They are
+  mostly the tuning of equation construction, homotopy tracking, clustering,
+  ranking and refinement, the sensitivity seeds, and everything to do with
+  uncertainty, along with a few others such as `uneven_sampling_times` and
+  `profile_phases`. These may change or be removed in a minor release; the
+  others change only in a major release. `use_si_template`, which has no
+  effect, is among them.
 
 ### Fewer exported names, and clearer ones — 2026-10-14
 

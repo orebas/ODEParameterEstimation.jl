@@ -187,14 +187,15 @@ The options that matter here are:
 - `time_interval`: `[start, stop]`; the points are evenly spaced over it. An
   example model from `ODEParameterEstimation.Examples` has an interval of its
   own, which the keyword form uses when you give none.
-- `uneven_sampling_times`: if not empty, use these time points instead of
-  `time_interval`. The initial conditions are the values at the first of them.
+- `uneven_sampling_times` (experimental): if not empty, use these time points
+  instead of `time_interval`. There must be `datasize` of them, in increasing
+  order. The initial conditions are the values at the first of them.
 - `noise_level` and `noise_model`: add Gaussian noise. `:additive` uses a
   standard deviation of `noise_level` times the mean absolute value of each
   series; `:relative` scales each value by `1 + noise_level * randn()`;
   `:none` adds none.
 - `ode_solver`, `abstol`, `reltol`: the ODE solver and tolerances for the
-  simulation.
+  simulation. The returned problem keeps `ode_solver` as its solver.
 - `seed`: with an integer, the noise is the same on every call and the caller's
   default RNG is left untouched. With `nothing` (the default), noise is drawn
   from the caller's default RNG, so `Random.seed!` controls it.

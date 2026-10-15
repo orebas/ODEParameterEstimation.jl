@@ -200,24 +200,39 @@ end
 """
     ResultProvenance
 
-Structured lineage metadata for a parameter-estimation result.
+How a [`ParameterEstimationResult`](@ref) was produced, in its `provenance`
+field.
 
 # Fields
-- `primary_method::Symbol`: `:algebraic` or `:direct_opt`
-- `interpolator_source::Union{Nothing, Symbol}`: Which interpolator produced the candidate
-- `rescue_path::Symbol`: `:none`, `:algebraic_resolve_t0`, `:algebraic_resolve_shoot`, `:direct_opt_fallback`
-- `source_shooting_index::Union{Nothing, Int}`: Shooting-point index that produced the candidate
-- `source_candidate_index::Union{Nothing, Int}`: Stable candidate index within the producing phase
-- `pre_polish_error::Union{Nothing, Float64}`: Error before polishing, when applicable
-- `post_polish_error::Union{Nothing, Float64}`: Error after polishing, when applicable
-- `polish_applied::Bool`: Whether a polishing stage was applied
-- `representative_assignments::OrderedDict{Num, Float64}`: Values assigned only because variables were already known structurally unidentifiable
-- `structural_fix_set::OrderedDict{Num, Float64}`: Representative structural fix set derived from SI structural outputs
-- `template_status::Union{Nothing, Symbol}`: Template dimension status after structural fixing (2026-08: replaced the vestigial residual_fix_set + before/after status pair — no residual-repair mechanism ever existed, so the pair was identical by construction)
-- `equations_dropped_by_rank_trimming::Vector{Int}`: Equation indices removed by rank-based template trimming
-- `practical_identifiability_status::Symbol`: Practical/numerical identifiability assessment status for this flow
-- `numerical_advisory::Union{Nothing, NumericalIdentifiabilityAdvisory}`: Best-effort advisory numerical diagnostics and heuristic recommendations
-- `notes::Vector{Symbol}`: Additional lineage/debug notes
+- `primary_method`: `:algebraic` when the result came from solving the
+  polynomial equations, `:direct_opt` when it came from fitting the model
+  directly.
+- `interpolator_source`: the curve fit whose derivative estimates led to it,
+  as a short label, or `nothing`.
+- `rescue_path`: `:none`, or the recovery that produced it:
+  `:algebraic_resolve_t0`, `:algebraic_resolve_shoot` or
+  `:direct_opt_fallback`.
+- `source_shooting_index`: which of the time points chosen by `shooting_points`
+  the equations were solved at.
+- `source_candidate_index`: its position among the candidates of that stage.
+- `pre_polish_error`, `post_polish_error`: the fit error before and after
+  refinement, when it was refined.
+- `polish_applied`: whether it was refined.
+- `representative_assignments`: values given to quantities only because the
+  data cannot determine them.
+- `structural_fix_set`: the values the undeterminable quantities were fixed at
+  to make the equations solvable.
+- `template_status`: whether, after that, the equations had as many unknowns
+  as equations.
+- `equations_dropped_by_rank_trimming`: equations left out because they were
+  dependent on the others.
+- `practical_identifiability_status`: a numerical check of how well the data
+  determine the values.
+- `numerical_advisory`: further numerical diagnostics, or `nothing`. Its type
+  is internal.
+- `notes`: short labels for anything else that happened along the way.
+
+The remaining fields are internal bookkeeping and may change.
 """
 mutable struct ResultProvenance
     primary_method::Symbol
@@ -456,7 +471,8 @@ look one up.
 - `report_time`: the time those states belong to: the first time point of the
   data, or the `initial_time` of an [`ObservationData`](@ref).
 - `err`: the fit error, the sum of squared differences between the data and the
-  simulated model over all series and time points. Results are ranked by it.
+  simulated model over all series and time points, after each series is scaled
+  by a power of two to be of order one (unless `auto_rescale = false`). Results are ranked by it.
 - `all_unidentifiable`: the parameters and initial conditions that the measured
   quantities cannot determine. Their reported values are arbitrary.
 - `unident_dict`: the values those were fixed at while solving.
@@ -701,16 +717,33 @@ struct UQBacksolveTransform
     warnings::Vector{String}
 end
 
-"""Common supertype for requested uncertainty-quantification outcomes."""
+"""
+    AbstractUQOutcome
+
+What [`analyze_parameter_estimation_problem`](@ref) returns as its third value
+when `compute_uncertainty = true`: an [`UncertaintyReport`](@ref), or an
+[`UncertaintyUnavailable`](@ref) that says why there is none. Experimental.
+"""
 abstract type AbstractUQOutcome end
 
 """
     UQReliabilityAssessment
 
-Orthogonal reliability axes for a UQ outcome.  These deliberately do not
-collapse software availability, local numerical validity, interval width,
-selection conditioning, and empirical calibration into a single status flag.
-`UncertaintyReport.status` remains as a backward-compatible summary.
+The separate checks on an uncertainty estimate, as returned by
+[`uq_reliability`](@ref). Experimental. Each field is a symbol:
+
+- `availability`: `:available`, `:unavailable`, or `:not_requested`.
+- `numerical_linearization`: `:accepted` when the linear approximation passed
+  its numerical checks, `:degraded` when it did not.
+- `interval_width`: `:narrow` when every standard error is under half its
+  estimate, `:wide` when under twice, `:extreme` beyond that; `:invalid` or
+  `:undefined_scale` when they cannot be compared.
+- `selection_scope`: which estimate the standard errors belong to.
+- `empirical_calibration`: always `:not_assessed_by_single_run` for a report.
+  Whether the intervals cover the truth as often as they should can only be
+  judged over many runs.
+
+`UncertaintyReport`'s `status` sums these up in one value.
 """
 struct UQReliabilityAssessment
     availability::Symbol
@@ -793,7 +826,14 @@ UQLinearizationDiagnostics() = UQLinearizationDiagnostics(
     :not_recorded, NaN, NaN, NaN, NaN, Int[], false,
 )
 
-"""Typed outcome returned when UQ was requested but cannot be computed honestly."""
+"""
+    UncertaintyUnavailable
+
+Returned in place of an [`UncertaintyReport`](@ref) when the uncertainty was
+asked for but cannot be worked out. Experimental. `message` says why, `reason`
+says it as a symbol, and `warnings` lists anything else that went wrong. The
+other fields are internal.
+"""
 struct UncertaintyUnavailable <: AbstractUQOutcome
     model_name::String
     target::Union{Nothing, UQTargetSnapshot}
@@ -820,13 +860,24 @@ end
 """
     UncertaintyReport
 
-Propagated parameter uncertainty through the implicit function theorem
-sensitivity matrix.
+Standard errors for the best result, the third value of
+[`analyze_parameter_estimation_problem`](@ref) when `compute_uncertainty = true`.
+Experimental; see [Uncertainty](@ref). The noise that the Gaussian-process curve
+fit finds in the data is carried through to the estimates by a linear
+approximation around them.
 
-Σ_x = S · Σ_d · S' where S = -(∂F/∂x)⁻¹·(∂F/∂d).  For the default package UQ,
-Σ_d is the estimator sampling covariance of the observable jet, conditional on
-learned GP hyperparameters.  Legacy latent GP posterior covariance is kept as a
-separate diagnostic concept.
+# Fields
+- `param_labels`: the names of the parameters and initial conditions, in order.
+- `estimate_values`: their estimated values.
+- `param_std`: their standard errors.
+- `param_covariance`: the covariance matrix, in the same order.
+- `correlation_matrix`: the same, as correlations.
+- `status`: `:ok` when every standard error is under half its estimate,
+  `:wide_ci` when under twice, `:degenerate` beyond that or when the numerical
+  checks failed. [`uq_reliability`](@ref) gives the checks separately.
+- `warnings`: the assumptions behind the numbers, and anything that went wrong.
+
+The other fields record how the numbers were computed and may change.
 """
 struct UncertaintyReport <: AbstractUQOutcome
     model_name::String
@@ -890,10 +941,12 @@ _uq_selection_scope(target::UQTargetSnapshot) = target.estimand
 """
     uq_reliability(outcome) -> UQReliabilityAssessment
 
-Return the independent reliability axes for a requested UQ outcome.  A single
-run can establish availability and pass local numerical gates, but it cannot
-certify repeated-sampling coverage; empirical calibration therefore remains
-`:not_assessed_by_single_run` for every individual report.
+The separate checks on an uncertainty estimate: whether it was computed, whether
+its linear approximation passed the numerical checks, and how wide the
+intervals are. `outcome` is the third value of
+[`analyze_parameter_estimation_problem`](@ref). Experimental. A single run
+cannot show whether the intervals cover the truth as often as they should, so
+that check always reads as not assessed.
 """
 function uq_reliability(::Nothing)
     return UQReliabilityAssessment(

@@ -65,7 +65,7 @@ ParameterEstimationResult
   Initial conditions (t = 0)
     prey(t) = 1
     predators(t) = 0.5
-  Fit error: 7.41e-26
+  Fit error: ...
 ```
 
 With your own measurements, pass them instead of simulating:

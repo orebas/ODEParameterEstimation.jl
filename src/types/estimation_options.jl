@@ -163,6 +163,7 @@ be removed in a minor release. The others change only in a major release.
   against the data. `false` returns the algebraic estimates as they are.
 - `opt_lb`, `opt_ub` (default `nothing`): lower and upper bounds, as vectors
   with the states first and then the parameters. Refinement stays inside them.
+  They cannot yet be used with a model that has an input such as `sin(c * t)`.
 - `seed` (default `nothing`): with an integer, repeated runs give identical
   results and Julia's default random number generator is left as it was. With
   `nothing`, random draws come from the default generator, so results vary a
@@ -191,7 +192,8 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   at these times, of which there must be `datasize`, instead of evenly over
   `time_interval`. The initial conditions are the values at the first of them.
 - `ode_solver` (default `AutoVern9(Rodas5P())`): the ODE solver for the
-  simulation.
+  simulation. The problem `sample_problem_data` returns keeps it as its
+  solver for the estimation.
 
 # Output
 
@@ -367,7 +369,7 @@ All of these are experimental.
   the best solution. Needs `InterpolatorGPUncertainty` in `interpolators`.
 - `uq_failure_policy` (default `:return_failed`): when standard errors cannot be
   computed, `:return_failed` returns an [`UncertaintyUnavailable`](@ref) that
-  says why, and `:throw` raises an error.
+  says why, and `:throw` throws an `ODEParameterEstimation.UncertaintyError`.
 - `uq_noise_source` (default `:learned_gp_homoscedastic`): where the noise
   level comes from: the Gaussian process fit, or with `:smoother_residual_edf`
   the residuals of that fit.
@@ -1064,7 +1066,7 @@ This is useful for temporarily overriding specific options.
 # Examples
 ```julia
 base_opts = EstimationOptions()
-new_opts = merge_options(base_opts; abstol=1e-10, diagnostics=true)
+new_opts = ODEParameterEstimation.merge_options(base_opts; abstol = 1e-10, diagnostics = true)
 ```
 """
 function merge_options(base::EstimationOptions; kwargs...)
@@ -1107,12 +1109,12 @@ end
 """
 	validate_options(opts::EstimationOptions) -> Bool
 
-Validate that the options struct has sensible values.
-Throws warnings for potentially problematic configurations.
+Check the options. Each problem is logged: as an error when the options cannot
+work, as a warning when they work but are unwise.
 
 # Returns
-- `true` if options are valid
-- `false` if there are critical issues
+- `true` if the options can be used
+- `false` if any of them cannot
 """
 function validate_options(opts::EstimationOptions)
 	valid = true
@@ -1373,12 +1375,9 @@ end
 """
 	print_options(io::IO, opts::EstimationOptions; compact=false)
 
-Pretty-print the options struct.
-
-# Arguments
-- `io::IO`: Output stream
-- `opts::EstimationOptions`: Options to print
-- `compact::Bool`: If true, only print non-default values
+Print every option and its value, grouped by topic. With `compact = true`, print
+only the options that differ from their defaults, and the defaults beside them;
+this is how `EstimationOptions` values show themselves.
 """
 function print_options(io::IO, opts::EstimationOptions; compact = false)
 	defaults = EstimationOptions()
@@ -1407,6 +1406,8 @@ function print_options(io::IO, opts::EstimationOptions; compact = false)
 		("StructuralIdentifiability", [:si_probability, :si_fix_strategy]),
 		("File I/O", [:save_filepath]),
 	]
+	grouped = Set(Iterators.flatten(last.(categories)))
+	push!(categories, ("Other", [f for f in fieldnames(EstimationOptions) if !(f in grouped)]))
 
 	for (category, fields) in categories
 		printed_header = false

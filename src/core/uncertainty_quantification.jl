@@ -900,9 +900,8 @@ end
 """
 	print_uncertainty_results(uq::UncertaintyReport; io = stdout)
 
-Terminal summary of the parameter uncertainty report. Public reports are in
-physical coordinates `[parameters, initial_conditions]`; local IFT coordinates
-are printed separately when available.
+Print the standard errors of an [`UncertaintyReport`](@ref), with its status
+and warnings. Experimental.
 """
 function print_uncertainty_results(uq::UncertaintyReport; io = stdout)
 	title = uq.coordinate_system == :physical_initial_conditions ?

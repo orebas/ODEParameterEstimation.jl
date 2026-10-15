@@ -9,6 +9,9 @@ functions meant for everyday use are on [Main functions and types](@ref). A
 name that is not exported is written with the module name, as in
 `ODEParameterEstimation.merge_options`.
 
+`print_uncertainty_results` and `uq_reliability` belong to the experimental
+uncertainty estimates. See [Uncertainty](@ref).
+
 ```@autodocs
 Modules = [ODEParameterEstimation]
 Order = [:function]

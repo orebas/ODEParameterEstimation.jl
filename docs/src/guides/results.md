@@ -42,8 +42,9 @@ best.states
 ```
 
 `best.err` is the fit error: the sum of squared differences between the data
-and the model simulated with these values. It is what results are ranked by.
-Use it to compare the results of one run with each other.
+and the model simulated with these values, after each series is scaled by a
+power of two to be of order one (unless `auto_rescale = false`). It is what results are ranked by. Use it to
+compare the results of one run with each other.
 
 ## Using the estimates
 
@@ -77,14 +78,17 @@ raw, analysis, uq = analyze_parameter_estimation_problem(problem, EstimationOpti
 analysis.best_max_error
 ```
 
-`analysis.returned_results` is what `estimate` returns. `best_max_error` is the
-largest relative error over the parameters and initial conditions, for the
-candidate solution that came closest to the truth. That candidate is usually
+`analysis.returned_results` is what `estimate` returns, except that `estimate`
+leaves out the states the package adds for inputs such as `sin(c * t)`.
+`best_max_error` is the largest relative error over the parameters and initial
+conditions the data can determine, for the candidate solution that came
+closest to the truth. That candidate is usually
 the first result, but it does not have to be, so to score the first result
 itself, compare its values with the truth directly.
 
 ## Where a result came from
 
 Each result records how it was produced. `best.interpolator_source` names the
-curve fit whose derivative estimates led to it, and `best.provenance` holds the
-rest: which time point it was solved at and whether it was refined afterwards.
+curve fit whose derivative estimates led to it, by a short internal label such
+as `:agp_robust` for `InterpolatorGP`, and `best.provenance` holds the rest:
+which time point it was solved at and whether it was refined afterwards.

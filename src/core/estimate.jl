@@ -132,7 +132,8 @@ measures in terms of the model's states and parameters.
   anything not listed.
 - `name`: a label for the problem. Defaults to the system's name.
 - `solver`: the ODE solver used to simulate the model while estimating.
-  Defaults to `package_wide_default_ode_solver`.
+  Defaults to `AutoVern9(Rodas5P())`. [`sample_problem_data`](@ref) replaces
+  it with its `ode_solver` option.
 
 # Example
 ```julia
@@ -199,7 +200,8 @@ Keyword arguments are the fields of [`EstimationOptions`](@ref), for example
 `estimate(problem; seed = 1, progress = true)`.
 
 These are the `returned_results` of
-[`analyze_parameter_estimation_problem`](@ref). Call that function instead when
+[`analyze_parameter_estimation_problem`](@ref), without the states the package
+adds for inputs such as `sin(c * t)`. Call that function instead when
 you also want the error statistics against known true values or the
 uncertainty report, which is experimental.
 

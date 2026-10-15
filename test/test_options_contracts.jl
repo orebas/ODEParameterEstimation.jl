@@ -96,6 +96,10 @@ using OrderedCollections
 	@test !isempty(sprint(show, EstimationOptions()))
 	@test !isempty(sprint(io -> print_options(io, EstimationOptions())))
 	@test !isempty(sprint(io -> print_options(io, EstimationOptions(); compact = true)))
+	# Every option is printed, and a changed one shows in the compact form.
+	full = sprint(io -> print_options(io, EstimationOptions()))
+	@test all(f -> occursin("    $f: ", full), fieldnames(EstimationOptions))
+	@test occursin("branch_top_k: 5 (default: 20)", sprint(show, EstimationOptions(branch_top_k = 5)))
 end
 
 @testset "provenance_metadata_dict (single-source metadata block)" begin

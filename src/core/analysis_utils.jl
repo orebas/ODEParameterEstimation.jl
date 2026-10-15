@@ -774,7 +774,8 @@ end
 Estimate the parameters and initial conditions of `problem` and return everything
 the run produced, as `(raw_results, analysis, uq)`.
 
-[`estimate`](@ref) is the short form: it returns `analysis.returned_results`.
+[`estimate`](@ref) is the short form: it returns `analysis.returned_results`,
+without the states the package adds for inputs such as `sin(c * t)`.
 
 # Returns
 - `raw_results`: every candidate solution the solver found, before ranking, with
@@ -784,8 +785,9 @@ the run produced, as `(raw_results, analysis, uq)`.
   - `returned_results`: the solutions, best fit first, as
     [`ParameterEstimationResult`](@ref)s.
   - `besterror`, `best_min_error`, `best_mean_error`, `best_median_error`,
-    `best_max_error`: relative errors against the problem's true values, each
-    the best over all candidates; `besterror` is the same as `best_max_error`.
+    `best_max_error`: relative errors against the problem's true values,
+    leaving out the quantities the data cannot determine, each the best over
+    all candidates; `besterror` is the same as `best_max_error`.
     They are `Inf` when the true values are not known.
   - `best_approximation_error`: the fit error of the best solution.
   - `best_rms_error`: the root-mean-square relative error, as above.

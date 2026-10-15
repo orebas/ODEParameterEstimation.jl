@@ -69,6 +69,8 @@ If you know the range the values must lie in, `opt_lb` and `opt_ub` keep the
 refinement inside it. Each is a vector with the states first and the parameters
 after them, in the order ModelingToolkit lists them:
 `unknowns(problem.model.system)`, then `parameters(problem.model.system)`.
+Bounds cannot yet be used with a model that has an input such as `sin(c * t)`:
+the package adds states to such a model, and the vectors no longer line up.
 
 ## Repeatable results
 
@@ -102,6 +104,10 @@ problem = ParameterEstimationProblem(model, measured; data, solver = Rodas5P())
 
 The default, `AutoVern9(Rodas5P())`, switches to a stiff method when it needs
 to. `abstol` and `reltol`, both `1e-14` by default, are its tolerances.
+
+When the data come from `sample_problem_data`, its `ode_solver` option (same
+default) simulates them and becomes the problem's solver, replacing any given
+to the constructor.
 
 ## Seeing what the package is doing
 

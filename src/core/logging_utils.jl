@@ -23,13 +23,12 @@ otherwise do nothing. Use as the first statement of broad `catch` blocks.
     _heartbeat(opts, phase; kind=:start, extra="")
 
 Emit a flushed, timestamped `[HH:MM:SS] ▶/✓ phase` marker. Printed when
-`opts.progress` is true, or when `opts.heartbeat` is true and `opts.nooutput`
-is false. In the second case the line starts with `[HB HH:MM:SS]`, so that it
+`opts.progress` is true or `opts.nooutput` is false. In the second case the line starts with `[HB HH:MM:SS]`, so that it
 can be found among the rest of the development output. `kind` is `:start`,
 `:done`, or `:note`; `extra` is appended verbatim.
 """
 function _heartbeat(opts, phase::AbstractString; kind::Symbol = :start, extra::AbstractString = "")
-    among_other_output = opts.heartbeat && !opts.nooutput
+    among_other_output = !opts.nooutput
     (opts.progress || among_other_output) || return nothing
     mark = kind === :start ? "▶" : kind === :done ? "✓" : "•"
     stamp = Dates.format(Dates.now(), "HH:MM:SS")
@@ -51,7 +50,7 @@ One-line self-identifying run header (model, pid, julia/ODEPE/HC versions,
 thread counts) so any log fragment is attributable without external context.
 """
 function _heartbeat_run_header(opts, model_name::AbstractString)
-    (opts.heartbeat && !opts.nooutput) || return nothing
+    opts.nooutput && return nothing
     hc_ver = try
         string(pkgversion(HomotopyContinuation))
     catch

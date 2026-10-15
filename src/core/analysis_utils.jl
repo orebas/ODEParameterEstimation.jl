@@ -249,63 +249,6 @@ function oracle_sort_key(problem::ParameterEstimationProblem, candidate)
 end
 
 """
-	saturation_count(candidate, opt_lb, opt_ub; eps_sat = 0.02) → Int
-
-Count parameters within `eps_sat * log10(ub/lb)` of either log-bound in log
-space. Rows with several parameters pegged at the bounds are typically
-artifacts of an unbounded numerical ridge (probe 2 evidence on
-biohydrogenation_6_1em6: k10 hit upper bound in 97/100 rows under the legacy
-polish). Returns 0 if bounds are missing or the candidate has no positive
-parameter values.
-
-For uniform bounds (the common benchmark case where `opt_lb = fill(1e-5, N)`,
-`opt_ub = fill(10.0, N)`), the scalar comparison is exact. For per-parameter
-heterogeneous bounds, falls back to `[min(opt_lb), max(opt_ub)]` — a
-conservative envelope that never under-counts saturation but may include
-parameters that are only saturated against the *tightest* bound. Aligning by
-position is intentionally not done because `candidate.parameters` ordering
-(user-facing) differs from `opt_lb` ordering (MTK).
-"""
-function saturation_count(candidate, opt_lb, opt_ub; eps_sat::Float64 = 0.02)
-	(opt_lb === nothing || opt_ub === nothing) && return 0
-	(isempty(opt_lb) || isempty(opt_ub)) && return 0
-	lb_min = minimum(opt_lb)
-	ub_max = maximum(opt_ub)
-	(lb_min <= 0 || ub_max <= 0 || ub_max <= lb_min) && return 0
-	log_lb = log10(lb_min)
-	log_ub = log10(ub_max)
-	threshold = eps_sat * (log_ub - log_lb)
-	count = 0
-	for (_, value) in candidate.parameters
-		(isfinite(value) && value > 0) || continue
-		lv = log10(value)
-		if (lv - log_lb) < threshold || (log_ub - lv) < threshold
-			count += 1
-		end
-	end
-	return count
-end
-
-"""
-	s2_sort_key(candidate, opt_lb, opt_ub) → Tuple{Int, Int, Float64}
-
-Scheme S2 sort: primary = saturation_count (fewer is better), secondary =
-is_neg1/is_untagged (rows with provenance `-1` or `nothing` sorted after real
-HC-tagged rows), tertiary = err (lower is better).
-"""
-function s2_sort_key(candidate, opt_lb, opt_ub)
-	sat = saturation_count(candidate, opt_lb, opt_ub)
-	provenance_idx = if hasproperty(candidate, :provenance)
-		candidate.provenance.polish_source_hc_idx
-	else
-		nothing
-	end
-	is_untagged = (provenance_idx === nothing || provenance_idx == -1) ? 1 : 0
-	err = (candidate.err === nothing || !isfinite(candidate.err)) ? Inf : candidate.err
-	return (sat, is_untagged, err)
-end
-
-"""
 	select_branch_diverse_reps(sorted_reps, M_eff, opts) → Vector
 
 Select up to `M_eff` representatives from an already-ranked candidate list.
@@ -346,32 +289,13 @@ function select_branch_diverse_reps(sorted_reps, M_eff::Int, opts::EstimationOpt
 end
 
 """
-	rank_cluster_representatives(cluster_reps, opts) -> Vector
+	rank_cluster_representatives(cluster_reps) -> Vector
 
-Apply the output-stage rank strategy to already-clustered representatives. This
-is shared by final result selection and branch-completion anchor selection so
-experimental branch completion chooses the same anchor the normal output path
-would put first.
+Order already-clustered representatives by fit error, best first. Shared by
+final result selection and branch-completion anchor selection, so branch
+completion chooses the same anchor the normal output path would put first.
 """
-function rank_cluster_representatives(cluster_reps, opts::EstimationOptions)
-	if opts.rank_strategy === :err_only
-		# DEFAULT: rank purely by data residual (SSE) ascending. Explicit (not the `else`
-		# pass-through) so it does not depend on cluster_reps arriving in err order.
-		return sort(cluster_reps, by = _result_err_key)
-	elseif opts.rank_strategy === :sat_neg1_err
-		return sort(cluster_reps, by = c -> s2_sort_key(c, opts.opt_lb, opts.opt_ub))
-	elseif opts.rank_strategy === :sat_err
-		return sort(cluster_reps,
-			by = c -> (saturation_count(c, opts.opt_lb, opts.opt_ub),
-			          (c.err === nothing || !isfinite(c.err)) ? Inf : c.err))
-	elseif opts.rank_strategy === :lognorm_err
-		return sort(cluster_reps, by = lognorm_sort_key)
-	elseif opts.rank_strategy === :lognorm_neg1_err
-		return sort(cluster_reps, by = lognorm_neg1_sort_key)
-	else
-		return cluster_reps
-	end
-end
+rank_cluster_representatives(cluster_reps) = sort(cluster_reps, by = _result_err_key)
 
 """
 	ranked_candidate_representatives(candidates, opts) -> Vector
@@ -384,18 +308,14 @@ function ranked_candidate_representatives(candidates, opts::EstimationOptions)
 	scored = _scored_results(candidates)
 	isempty(scored) && return Any[]
 	sorted_results = sort(scored, by = _result_err_key)
-	clusters = if opts.cluster_method === :identifiable_subspace
-		cluster_solutions_identifiable_subspace(sorted_results;
-			rough_eps = opts.rough_cluster_eps,
-			subspace_eps = opts.subspace_cluster_eps)
-	else
-		cluster_solutions(sorted_results)
-	end
+	clusters = cluster_solutions_identifiable_subspace(sorted_results;
+		rough_eps = opts.rough_cluster_eps,
+		subspace_eps = opts.subspace_cluster_eps)
 	cluster_reps = [first(cluster) for cluster in clusters]
 	for (i, c) in enumerate(clusters)
 		cluster_reps[i].branch_size = length(c)
 	end
-	return opts.branch_detection ? rank_cluster_representatives(cluster_reps, opts) : cluster_reps
+	return opts.branch_detection ? rank_cluster_representatives(cluster_reps) : cluster_reps
 end
 
 """
@@ -415,7 +335,7 @@ function ranked_full_space_representatives(candidates, opts::EstimationOptions)
 	for (i, c) in enumerate(clusters)
 		cluster_reps[i].branch_size = length(c)
 	end
-	return opts.branch_detection ? rank_cluster_representatives(cluster_reps, opts) : cluster_reps
+	return opts.branch_detection ? rank_cluster_representatives(cluster_reps) : cluster_reps
 end
 
 """
@@ -448,13 +368,14 @@ replaced by branch completion, OR a pool whose detected/declared
 `algebraic_multiplicity` is ≥ 2 (siblings can sit in a RAW pool too: the solver
 finds both branches organically, and completion can be inactive or fail with a
 single anchor — the protection follows the math, not the feature's bookkeeping).
-Otherwise the user-selected `cluster_method` is honored independently of whether
+Otherwise candidates are clustered in the identifiable subspace, whether or not
 the `branch_completion` feature flag is enabled. Note the M≥2 arm only fires on
-an affirmative detection: undetected M degrades to the honored `cluster_method`.
+an affirmative detection: undetected M degrades to identifiable-subspace
+clustering.
 
 # Arguments
 - `sorted_results`: Finite-error candidates sorted by ascending fit error.
-- `opts`: Estimation configuration selecting the clustering method.
+- `opts`: Estimation configuration (multiplicity and clustering tolerances).
 
 # Returns
 - Candidate clusters in input rank order.
@@ -463,73 +384,10 @@ function _cluster_output_candidates(sorted_results, opts::EstimationOptions)::Ve
 	if _pool_was_branch_completed(sorted_results) ||
 	   (opts.algebraic_multiplicity !== nothing && opts.algebraic_multiplicity >= 2)
 		return cluster_solutions(sorted_results; threshold = opts.clustering_threshold)
-	elseif opts.cluster_method === :identifiable_subspace
-		return cluster_solutions_identifiable_subspace(sorted_results;
-			rough_eps = opts.rough_cluster_eps,
-			subspace_eps = opts.subspace_cluster_eps)
-	else
-		return cluster_solutions(sorted_results; threshold = opts.clustering_threshold)
 	end
-end
-
-"""
-	lognorm_score(candidate) → Float64
-
-Sum of squared log10-magnitudes of the candidate's positive parameters:
-`Σ_i (log10 p_i)²`. Acts as a smooth, bound-free proxy for "how far from
-p_i=1 is this candidate, in log space?". Rows with parameters pegged near
-either bound (k_i ≈ 10 or k_i ≈ 1e-5) score high; rows with all parameters
-near O(1) score low. Symmetric to upper- and lower-bound saturation —
-no `opt_lb`/`opt_ub` required.
-
-Same prior as `polish_regularization_lambda` (L2 toward x=1 in log-coords)
-but applied at output-sort time rather than inside the polish loss, so it
-doesn't bias well-conditioned cells (polish still converges to the data
-optimum); it only tiebreaks among data-equivalent rows toward typical-
-magnitude parameters.
-
-Returns `Inf` if the candidate has no positive parameters.
-"""
-function lognorm_score(candidate)
-	total = 0.0
-	n = 0
-	for (_, value) in candidate.parameters
-		(isfinite(value) && value > 0) || continue
-		total += log10(value)^2
-		n += 1
-	end
-	return n == 0 ? Inf : total
-end
-
-"""
-	lognorm_sort_key(candidate) → Tuple{Float64, Float64}
-
-Two-key sort: primary = `lognorm_score` (lower better, i.e., parameters
-near O(1) preferred), secondary = err (lower better).
-"""
-function lognorm_sort_key(candidate)
-	err = (candidate.err === nothing || !isfinite(candidate.err)) ? Inf : candidate.err
-	return (lognorm_score(candidate), err)
-end
-
-"""
-	lognorm_neg1_sort_key(candidate) → Tuple{Float64, Int, Float64}
-
-Three-key sort: primary = `lognorm_score`, secondary = `is_neg1`
-(provenance `-1` or `nothing` sorted after HC-tagged rows), tertiary = err.
-Mirrors S2's three-key structure but with `lognorm_score` replacing
-`saturation_count` as the primary signal.
-"""
-function lognorm_neg1_sort_key(candidate)
-	score = lognorm_score(candidate)
-	provenance_idx = if hasproperty(candidate, :provenance)
-		candidate.provenance.polish_source_hc_idx
-	else
-		nothing
-	end
-	is_untagged = (provenance_idx === nothing || provenance_idx == -1) ? 1 : 0
-	err = (candidate.err === nothing || !isfinite(candidate.err)) ? Inf : candidate.err
-	return (score, is_untagged, err)
+	return cluster_solutions_identifiable_subspace(sorted_results;
+		rough_eps = opts.rough_cluster_eps,
+		subspace_eps = opts.subspace_cluster_eps)
 end
 
 
@@ -658,11 +516,9 @@ function analyze_estimation_result(problem::ParameterEstimationProblem, result;
 	# err<0.5). Capping clusters too aggressively drops truth-near reps when the
 	# natural cluster count exceeds the cap (flex_arm has 83 natural clusters).
 	#
-	# `cluster_method` selects between two-stage rough/within-basin clustering
-	# (default `:identifiable_subspace`, collapses near-duplicates along
-	# practical-non-identifiability axes; see RECOMMENDATIONS.md Tier 3.2) and
-	# the legacy 1e-5 bit-identical dedup (`:bit_identical`). Successful branch
-	# completion is the one exception: its observationally equivalent sibling
+	# Two-stage rough/within-basin clustering collapses near-duplicates along
+	# practical-non-identifiability axes (see RECOMMENDATIONS.md Tier 3.2).
+	# Successful branch completion is the one exception: its observationally equivalent sibling
 	# branches must remain distinct in full coordinate space. Key this exception
 	# off result provenance, not the default-on feature flag, because completion
 	# is a no-op for M <= 1 and may fail while retaining the original pool.
@@ -826,10 +682,10 @@ function analyze_estimation_result(problem::ParameterEstimationProblem, result;
 	# - Best RMS relative error across all results
 	#
 	# When opts.branch_detection is true (default), the returned representatives
-	# are cluster reps ranked by rank_strategy and capped at min(M, branch_top_k).
+	# are cluster reps ranked by fit error and capped at min(M, branch_top_k).
 	# cluster_reps comes from _cluster_output_candidates (full-space when the pool
-	# is branch-completed or M≥2; otherwise the configured cluster_method — by
-	# default cluster_solutions_identifiable_subspace). Each method preserves err
+	# is branch-completed or M≥2; otherwise
+	# cluster_solutions_identifiable_subspace). Each method preserves err
 	# order within clusters (first member = err-best). branch_size is annotated below.
 	#
 	# Historically this stage called _detect_branches to do additional L∞-MAD
@@ -849,12 +705,9 @@ function analyze_estimation_result(problem::ParameterEstimationProblem, result;
 		cluster_reps[i].branch_size = length(c)
 	end
 	returned_results = if opts.branch_detection
-		# Apply rank_strategy before top-K slicing. Default `:err_only` preserves
-		# the upstream err order verbatim (the 2026-06-14 selection study found
-		# err_only near-optimal; the earlier `:sat_neg1_err` default — sorting by
-		# (saturation_count, is_neg1, err) to demote bound-saturated rows — was
-		# retired but remains selectable).
-		sorted_reps = rank_cluster_representatives(cluster_reps, opts)
+		# Rank by fit error before top-K slicing (the 2026-06-14 selection study
+		# found it near-optimal; the alternative orderings were removed 2026-10-15).
+		sorted_reps = rank_cluster_representatives(cluster_reps)
 		# Truncation policy:
 		#   - `opts.algebraic_multiplicity = nothing` (default) → keep up to
 		#     `branch_top_k` rows. Legacy K=20 behavior.

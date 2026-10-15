@@ -416,8 +416,7 @@ function _legacy_estimator_kind(prov::ResultProvenance)::Symbol
 	prov.source_type == :synthesized_aggregate && return :synthesized_aggregate
 	prov.source_type == :sensitivity_seed && return :sensitivity_seed
 	prov.source_type == :branch_completed && return :branch_completed
-	prov.rescue_path in (:algebraic_resolve_t0, :algebraic_resolve_shoot,
-		:algebraic_resolve_seeded) && return :state_resolve
+	prov.rescue_path in (:algebraic_resolve_t0, :algebraic_resolve_shoot) && return :state_resolve
 	prov.source_type == :multipoint && return :multipoint_algebraic
 	# `ResultProvenance()` historically defaulted to `:single_point`. Require a
 	# concrete production locator before accepting that legacy classification;

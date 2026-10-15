@@ -42,8 +42,6 @@ _has_record(logs, level, pattern) =
 		(sensitivity_seed_probe_scale = 0.0,) => "sensitivity_seed_probe_scale",
 		(sensitivity_seed_eigenvalue_threshold = 2.0,) => "sensitivity_seed_eigenvalue_threshold",
 		(terminal_fallback = :retry,) => "terminal_fallback",
-		(rank_strategy = :random,) => "rank_strategy",
-		(cluster_method = :kmeans,) => "cluster_method",
 		(homotopy_tracking_mode = :fast,) => "homotopy_tracking_mode",
 		(gamma_max_seeds = 0,) => "gamma_max_seeds",
 		(algebraic_multiplicity = 0,) => "algebraic_multiplicity",
@@ -53,7 +51,6 @@ _has_record(logs, level, pattern) =
 		(branch_completion_max_anchors = 0,) => "branch_completion_max_anchors",
 		(branch_completion_residual_tol = -1.0,) => "branch_completion_residual_tol",
 		(backsolve_recovery = :retry,) => "backsolve_recovery",
-		(t0_state_completion = :guess,) => "t0_state_completion",
 		(time_interval = [1.0, 0.0],) => "time_interval",
 		(time_interval = [0.0, 1.0, 2.0],) => "time_interval",
 		(noise_level = -0.1,) => "noise_level",
@@ -65,10 +62,8 @@ _has_record(logs, level, pattern) =
 		(construction_beam_width = 0,) => "construction_beam_width",
 		(uq_failure_policy = :ignore,) => "uq_failure_policy",
 		(uq_noise_source = :guess,) => "uq_noise_source",
-		(si_placeholder_fail_categories = [:not_a_category],) => "si_placeholder_fail_categories",
-		(uneven_sampling = true,) => "uneven_sampling_times",
-		(uneven_sampling = true, datasize = 3, uneven_sampling_times = [0.0, 1.0]) => "uneven_sampling_times",
-		(uneven_sampling = true, datasize = 3, uneven_sampling_times = [0.0, 2.0, 1.0]) => "uneven_sampling_times",
+		(datasize = 3, uneven_sampling_times = [0.0, 1.0]) => "uneven_sampling_times",
+		(datasize = 3, uneven_sampling_times = [0.0, 2.0, 1.0]) => "uneven_sampling_times",
 	]
 	for (options, message) in cases
 		valid, logs = _checked(; options...)
@@ -79,7 +74,7 @@ _has_record(logs, level, pattern) =
 	valid, logs = _checked()
 	@test valid
 	@test isempty(logs)
-	@test first(_checked(uneven_sampling = true, datasize = 3, uneven_sampling_times = [0.0, 0.5, 2.0]))
+	@test first(_checked(datasize = 3, uneven_sampling_times = [0.0, 0.5, 2.0]))
 end
 
 @testset "Options that work but are unwise draw a warning" begin
@@ -90,7 +85,6 @@ end
 		(sensitivity_sigma_d_kappa = 0.5,) => "sensitivity_sigma_d_kappa",
 		(datasize = 2,) => "Very small datasize",
 		(flow = FlowDirectOpt,) => "terminal_fallback is ignored",
-		(t0_state_completion = :seed_for_polish, polish_solutions = false) => "requires polish_solutions",
 		(compute_uncertainty = true,) => "InterpolatorGPUncertainty",
 	]
 	for (options, message) in warnings
@@ -101,8 +95,6 @@ end
 	notes = [
 		(diagnostics = true,) => "diagnostics=true with nooutput=true",
 		(flow = FlowDirectOpt, terminal_fallback = :none) => "backsolve_recovery is ignored",
-		(flow = FlowDirectOpt, terminal_fallback = :none, backsolve_recovery = :none, t0_state_completion = :seed_for_polish) =>
-			"t0_state_completion is ignored",
 	]
 	for (options, message) in notes
 		valid, logs = _checked(; options...)
@@ -131,31 +123,10 @@ end
 	end
 end
 
-@testset "Results are ranked as rank_strategy says" begin
-	result(err, parameters; source = 1) =
-		(err = err, parameters = OrderedDict(parameters), provenance = (polish_source_hc_idx = source,))
-	lb, ub = [1e-5], [10.0]
-
-	# Two parameters pinned at the bounds, one comfortably inside them.
-	pinned = result(1e-12, [:a => 9.99, :b => 1.0e-5])
-	typical = result(1e-8, [:a => 0.7, :b => 1.3])
-	untagged = result(1e-10, [:a => 0.8, :b => 1.1]; source = -1)
-	@test _SMALL.saturation_count(pinned, lb, ub) == 2
-	@test _SMALL.saturation_count(typical, lb, ub) == 0
-	@test _SMALL.saturation_count(typical, nothing, ub) == 0
-	@test _SMALL.saturation_count(typical, [-1.0], ub) == 0
-
-	ranked(strategy; options...) = _SMALL.rank_cluster_representatives(
-		[pinned, typical, untagged], EstimationOptions(; rank_strategy = strategy, options...))
-	@test ranked(:err_only) == [pinned, untagged, typical]
-	@test ranked(:sat_err; opt_lb = lb, opt_ub = ub) == [untagged, typical, pinned]
-	@test ranked(:sat_neg1_err; opt_lb = lb, opt_ub = ub) == [typical, untagged, pinned]
-	@test ranked(:lognorm_err) == [untagged, typical, pinned]
-	@test ranked(:lognorm_neg1_err) == [untagged, typical, pinned]
-	# With equal parameter sizes, a row from the algebraic solve beats an untagged one.
-	twin = result(1e-10, [:a => 0.8, :b => 1.1]; source = 3)
-	@test _SMALL.rank_cluster_representatives([untagged, twin], EstimationOptions(rank_strategy = :lognorm_neg1_err)) == [twin, untagged]
-	@test _SMALL.lognorm_score(result(0.0, [:a => -1.0])) == Inf
+@testset "Results are ranked by fit error" begin
+	result(err) = (err = err,)
+	worst, best, unknown, middle = result(1e-8), result(1e-12), result(nothing), result(1e-10)
+	@test _SMALL.rank_cluster_representatives([worst, best, unknown, middle]) == [best, middle, worst, unknown]
 end
 
 @testset "The phase table" begin

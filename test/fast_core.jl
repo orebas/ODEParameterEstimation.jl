@@ -51,7 +51,6 @@ using Random
             interpolators = [InterpolatorGP, InterpolatorS3AdaptSE],
             terminal_fallback = :direct_opt,
             backsolve_recovery = :algebraic_resolve,
-            t0_state_completion = :strict,
         )
 
         @test merged.flow == FlowStandard
@@ -90,7 +89,6 @@ using Random
         @test ODEParameterEstimation.compute_shooting_indices(3, 21; warp = false) == [1, 11, 21]
         @test merged.terminal_fallback == :direct_opt
         @test merged.backsolve_recovery == :algebraic_resolve
-        @test merged.t0_state_completion == :strict
         branch_completion_opts = EstimationOptions(
             branch_completion = true,
             branch_completion_max_anchors = 2,
@@ -113,14 +111,9 @@ using Random
         )
         @test ODEParameterEstimation.validate_options(redundant_terminal_fallback)
 
-        invalid_seed_policy = EstimationOptions(t0_state_completion = :maybe)
-        @test !ODEParameterEstimation.validate_options(invalid_seed_policy)
-
         invalid_uq_policy = EstimationOptions(uq_failure_policy = :maybe)
         @test !ODEParameterEstimation.validate_options(invalid_uq_policy)
 
-        invalid_placeholder_policy = EstimationOptions(si_placeholder_fail_categories = [:not_a_real_category])
-        @test !ODEParameterEstimation.validate_options(invalid_placeholder_policy)
         @test !ODEParameterEstimation.validate_options(EstimationOptions(branch_completion_max_anchors = 0))
         @test !ODEParameterEstimation.validate_options(EstimationOptions(branch_completion_residual_tol = -1.0))
         @test EstimationOptions().system_construction_policy == :noise_frontier
@@ -404,7 +397,6 @@ using Random
             states = ident.states,
             params = ident.params,
             infolevel = 0,
-            placeholder_fail_categories = opts.si_placeholder_fail_categories,
         )
         interp_func = ODEParameterEstimation.get_interpolator_function(only(opts.interpolators))
         interpolants = ODEParameterEstimation.create_interpolants(
@@ -828,13 +820,7 @@ using Random
 		@test ODEParameterEstimation.apply_uq_failure_policy(nothing, throw_opts) === nothing
 	end
 
-    @testset "SI placeholder policy helpers" begin
-        @test !ODEParameterEstimation.should_fail_si_placeholder(:dd_observable_index_oob, Symbol[])
-        @test ODEParameterEstimation.should_fail_si_placeholder(:dd_observable_index_oob, [:dd_observable_index_oob])
-        @test ODEParameterEstimation.should_fail_si_placeholder(:observable_derivative_overflow, [:dd_derivative_unmapped])
-        @test ODEParameterEstimation.should_fail_si_placeholder(:support_jet, [:state_or_input_jet])
-        @test ODEParameterEstimation.should_fail_si_placeholder(:true_unknown_variable, [:unknown_variable])
-
+    @testset "SI placeholder helpers" begin
         z_aux_classification = ODEParameterEstimation.classify_si_ring_variable("z_aux", Dict{String, Int}(), nothing)
         @test z_aux_classification.category == :sian_auxiliary
 
@@ -868,25 +854,6 @@ using Random
             Dict(:fake_y => 3),
         )
         @test length(extended_dd.obs_lhs) >= 4
-
-        placeholder_stats = Dict{Symbol, Vector{String}}()
-        placeholder_map = Dict{Any, Any}()
-        @test_throws ErrorException ODEParameterEstimation._create_si_symbolic_placeholder!(
-            placeholder_map,
-            :fake_var,
-            "fake_var",
-            placeholder_stats,
-            :dd_observable_index_oob;
-            fail_categories = [:dd_observable_index_oob],
-        )
-
-        R, gens = ODEParameterEstimation.Nemo.polynomial_ring(ODEParameterEstimation.Nemo.QQ, ["late_x"])
-        late_poly = gens[1]
-        @test_throws ErrorException ODEParameterEstimation.nemo_to_symbolics(
-            late_poly,
-            Dict();
-            fail_categories = [:late_map_miss],
-        )
 
         R_aux, gens_aux = ODEParameterEstimation.Nemo.polynomial_ring(ODEParameterEstimation.Nemo.QQ, ["z_aux"])
         aux_poly = gens_aux[1]
@@ -942,7 +909,6 @@ using Random
             states = ident.states,
             params = ident.params,
             infolevel = 0,
-            placeholder_fail_categories = opts.si_placeholder_fail_categories,
         )
         interp_spec = first(ODEParameterEstimation.resolve_interpolator_list(opts))
         interp_func = ODEParameterEstimation.get_interpolator_function(interp_spec[1], interp_spec[2])
@@ -966,7 +932,6 @@ using Random
             si_template = si_template,
             time_index = 1,
             diagnostics = false,
-            placeholder_fail_categories = opts.si_placeholder_fail_categories,
         )
         resolve_shoot = ODEParameterEstimation.resolve_states_with_fixed_params(
             pep.model.system,
@@ -981,7 +946,6 @@ using Random
             si_template = si_template,
             time_index = 2,
             diagnostics = false,
-            placeholder_fail_categories = opts.si_placeholder_fail_categories,
         )
 
         # SEIR's t0 resolve now completes (0 missing states); it previously left
@@ -1003,7 +967,6 @@ using Random
             2,
             :aaad,
             1,
-            1.0,
             opts;
             rescue_path = :algebraic_resolve_shoot,
         )
@@ -1292,8 +1255,8 @@ using Random
         @test length(multiplicity_one) == 1
         @test multiplicity_one[1] === best
 
-        # The default-on branch_completion flag must not silently override the
-        # configured output clustering method when completion was a no-op.
+        # The default-on branch_completion flag must not switch the output
+        # to full-space clustering when completion was a no-op.
         ordinary_candidates = [
             branch_result(10.0, 10.0, 1.0),
             branch_result(10.01, 10.01, 1.1),
@@ -1301,7 +1264,6 @@ using Random
         ]
         identifiable_opts = EstimationOptions(
             branch_completion = true,
-            cluster_method = :identifiable_subspace,
             rough_cluster_eps = 1.0,
             subspace_cluster_eps = 0.05,
         )
@@ -1311,12 +1273,6 @@ using Random
         )
         @test length(identifiable_clusters) == 1
         @test length(only(identifiable_clusters)) == 3
-
-        bit_identical_clusters = ODEParameterEstimation._cluster_output_candidates(
-            ordinary_candidates,
-            EstimationOptions(branch_completion = true, cluster_method = :bit_identical),
-        )
-        @test length(bit_identical_clusters) == 3
 
         # A pool genuinely replaced by branch completion is the sole exception:
         # keep its observationally equivalent algebraic siblings distinct in
@@ -1342,7 +1298,6 @@ using Random
         # completion feature's bookkeeping.
         m2_raw_opts = EstimationOptions(
             branch_completion = true,
-            cluster_method = :identifiable_subspace,
             rough_cluster_eps = 1.0,
             subspace_cluster_eps = 0.05,
             algebraic_multiplicity = 2,
@@ -1353,10 +1308,9 @@ using Random
         )
         @test length(m2_raw_clusters) == 3
 
-        # ...and M = 1 (globally identifiable) keeps the honored cluster_method.
+        # ...and M = 1 (globally identifiable) keeps identifiable-subspace clustering.
         m1_opts = EstimationOptions(
             branch_completion = true,
-            cluster_method = :identifiable_subspace,
             rough_cluster_eps = 1.0,
             subspace_cluster_eps = 0.05,
             algebraic_multiplicity = 1,

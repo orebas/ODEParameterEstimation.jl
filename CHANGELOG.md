@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Options for old or research-only behaviour removed — 2026-10-15
+
+- Removed `rank_strategy` and `cluster_method`. Results are ranked by fit
+  error and clustered as before by default; the alternatives were kept only
+  to reproduce older runs.
+- Removed `t0_state_completion`. Its `:seed_for_polish` value filled in
+  states with random starting values when recovering them failed; it was
+  never tested. The default behaviour is unchanged.
+- Removed `dump_raw_candidates_path`, `dump_polished_path` and
+  `si_placeholder_fail_categories`, which were tools for studying the method.
+- Removed `heartbeat`. With `nooutput = false` the stage lines are printed as
+  before; `progress = true` prints them on their own.
+- Removed `uneven_sampling`. A non-empty `uneven_sampling_times` now selects
+  uneven sampling by itself.
+
 ### A plain `Dict` of data is accepted again — 2026-10-15
 
 - The nine-field `ParameterEstimationProblem` constructor accepts the data as

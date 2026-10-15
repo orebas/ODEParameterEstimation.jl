@@ -65,7 +65,6 @@ end
 				params = ident.params,
 				infolevel = 0,
 				si_probability = options.si_probability,
-				placeholder_fail_categories = options.si_placeholder_fail_categories,
 			)
 			interpolants = ODEParameterEstimation.create_interpolants(
 				problem.measured_quantities,

@@ -154,6 +154,17 @@ end
 	@test pep.data_sample[mq[1].rhs] ≈ 2.0 .* exp.(-0.7 .* times)
 end
 
+@testset "Simulated data can be sampled at uneven times" begin
+	@parameters k
+	@variables x(t) y(t)
+	@named decay = System([D(x) ~ -k * x], t)
+	problem = ParameterEstimationProblem(decay, [y ~ x]; true_values = [k => 0.7, x => 2.0])
+	times = [0.0, 0.1, 0.5, 2.0]
+	sampled = sample_problem_data(problem; datasize = 4, uneven_sampling_times = times)
+	@test sampled.data_sample["t"] == times
+	@test sampled.data_sample[Num(x)] ≈ 2.0 .* exp.(-0.7 .* times) rtol = 1e-8
+end
+
 @testset "State names need not be ASCII" begin
 	# These helpers cut "(t)" off by byte offset, which is not a character
 	# boundary after θ and raised StringIndexError (2026-10-06).

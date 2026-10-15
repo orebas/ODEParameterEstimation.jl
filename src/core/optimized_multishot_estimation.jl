@@ -431,7 +431,6 @@ function _build_algebraic_resolve_candidate(
 	source_shoot_idx,
 	source_interp,
 	source_candidate_index::Int,
-	state_seed_scale::Float64,
 	opts::EstimationOptions;
 	rescue_path::Symbol,
 	parent_candidate_id::Int = 0,
@@ -503,14 +502,7 @@ function _build_algebraic_resolve_candidate(
 				end
 				resolved_from_measurement && continue
 
-				if opts.polish_solutions && opts.t0_state_completion == :seed_for_polish
-					rng = MersenneTwister(UInt(abs(hash((PEP.name, sname, resolve_time_index, collect(values(params_dict)))))))
-					seed_val = (2 * rand(rng) - 1) * state_seed_scale
-					@warn "[RESOLVE-MAP] State $sname missing from the SIAN re-solve output; seeding with $seed_val for polish-assisted rescue"
-					push!(raw_ic, seed_val)
-				else
-					error("State $sname is missing from the SIAN re-solve output and is not directly reconstructible. Refusing to fabricate a fallback value without polish.")
-				end
+				error("State $sname is missing from the SIAN re-solve output and is not directly reconstructible.")
 			end
 		end
 	end
@@ -800,7 +792,6 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 			infolevel = opts.diagnostics ? 1 : 0,
 			si_probability = opts.si_probability,
 			si_fix_strategy = opts.si_fix_strategy,
-			placeholder_fail_categories = opts.si_placeholder_fail_categories,
 			compute_multiplicity = opts.compute_algebraic_multiplicity && isnothing(opts.algebraic_multiplicity),
 		)
 
@@ -1915,12 +1906,6 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 				end
 
 				resolved_candidates = ParameterEstimationResult[]
-				data_scale_vals = Float64[]
-				for (k, v) in PEP.data_sample
-					k == "t" && continue
-					append!(data_scale_vals, abs.(Float64.(v)))
-				end
-				state_seed_scale = isempty(data_scale_vals) ? 1.0 : max(1.0, maximum(data_scale_vals))
 				for (params_dict, indices) in values(unique_param_sets)
 					# Build known_param_dict for parameter substitution
 					known_param_dict = OrderedDict{Any, Float64}(k => Float64(v) for (k, v) in params_dict)
@@ -1945,7 +1930,6 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 								si_template = si_template,
 								time_index = 1,
 								diagnostics = opts.diagnostics,
-								placeholder_fail_categories = opts.si_placeholder_fail_categories,
 								compute_multiplicity = opts.compute_algebraic_multiplicity && isnothing(opts.algebraic_multiplicity),
 							)
 						end
@@ -1978,7 +1962,6 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 										si_template = si_template,
 										time_index = source_shoot_idx,
 										diagnostics = opts.diagnostics,
-										placeholder_fail_categories = opts.si_placeholder_fail_categories,
 										compute_multiplicity = opts.compute_algebraic_multiplicity && isnothing(opts.algebraic_multiplicity),
 									)
 								end
@@ -2000,8 +1983,8 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 
 					if !isempty(state_solutions)
 						for (state_sol_idx, state_sol) in enumerate(state_solutions)
-							# Skip-on-failure: when t0_state_completion=:strict and the
-							# resolve template doesn't include some MTK unknown (typically
+							# Skip-on-failure: when the resolve template doesn't
+							# include some MTK unknown (typically
 							# because a candidate's parameters make a state unobservable —
 							# e.g. a coupling parameter near zero), _build_algebraic_resolve_candidate
 							# throws "missing from the SIAN re-solve output". Skip that candidate
@@ -2020,7 +2003,6 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 									source_shoot_idx,
 									source_interp,
 									first(indices),
-									state_seed_scale,
 									opts;
 									rescue_path = resolve_time_index == 1 ? :algebraic_resolve_t0 : :algebraic_resolve_shoot,
 									parent_candidate_id = base_identity.candidate_id,
@@ -2041,108 +2023,8 @@ function optimized_multishot_parameter_estimation(PEP::ParameterEstimationProble
 							push!(resolved_candidates, candidate)
 						end
 					else
-						if opts.polish_solutions && opts.t0_state_completion == :seed_for_polish
-							if !opts.nooutput
-								println("  HC re-solve found no solutions; generating polish seed from fixed parameters plus explicit/seeded ICs")
-							end
-							unknown_syms = ModelingToolkit.unknowns(PEP.model.system)
-							raw_ic = Float64[]
-							representative_assignments = OrderedDict{Num, Float64}()
-							provenance_notes = Symbol[:partial_algebraic_resolve]
-							append!(provenance_notes, resolve_result.notes)
-							resolve_result.used_cascading && push!(provenance_notes, :cascading_substitution)
-							for s in unknown_syms
-								sname = replace(string(s), "(t)" => "")
-								if startswith(sname, "_trfn_")
-									t0 = Float64(_initial_time(PEP.data_sample))
-									trfn_val = evaluate_trfn_template_variable(sname, t0)
-									isnothing(trfn_val) && error("Failed to reconstruct analytical _trfn_ state $sname at t=$t0")
-									push!(raw_ic, trfn_val)
-									continue
-								end
-
-								resolved_from_measurement = false
-								for mq in PEP.measured_quantities
-									mq_rhs = Symbolics.diff2term(mq.rhs)
-									if isequal(mq_rhs, s)
-										mq_key = replace(string(mq.lhs), "(t)" => "")
-										if haskey(PEP.data_sample, mq_key)
-											push!(raw_ic, Float64(PEP.data_sample[mq_key][1]))
-											resolved_from_measurement = true
-											break
-										end
-									end
-								end
-								if resolved_from_measurement
-									continue
-								end
-
-								representative_value = apply_representative_assignment!(
-									representative_assignments,
-									provenance_notes,
-									s,
-									:state,
-									setup_data.all_unidentifiable,
-								)
-								if !isnothing(representative_value)
-									push!(raw_ic, representative_value)
-									continue
-								end
-
-								rng = MersenneTwister(UInt(abs(hash((PEP.name, sname, collect(values(params_dict)), :hc_resolve_seed)))))
-								seed_val = (2 * rand(rng) - 1) * state_seed_scale
-								@warn "[RESOLVE-SEED] State $sname unresolved after failed HC re-solve; seeding with $seed_val for polish-assisted rescue"
-								push!(raw_ic, seed_val)
-							end
-
-							raw_sol = raw_ic
-							# Parameter block in CURRENT (MTK) order — the convention
-							# process_raw_solution decodes; the states above (raw_ic)
-							# are already MTK-ordered (unknown_syms). Was
-							# original_parameters: a MIXED-convention vector
-							# (postcampaign review P0#1).
-							append!(raw_sol, Float64[params_dict[p] for p in ModelingToolkit.parameters(PEP.model.system)])
-
-							ordered_s, ordered_p, ode_solution, err = _with_detailed_timing_context(:algebraic_resolve_seeded_candidate) do
-								process_raw_solution(
-									raw_sol, PEP.model, PEP.data_sample, PEP.solver,
-									abstol = opts.abstol, reltol = opts.reltol,
-								)
-							end
-
-							candidate = ParameterEstimationResult(
-								ordered_p, ordered_s,
-								Float64(_initial_time(PEP.data_sample)),
-								err, nothing,
-								length(PEP.data_sample["t"]),
-								Float64(_initial_time(PEP.data_sample)),
-								OrderedDict{Num, Float64}(k => Float64(v) for (k, v) in good_udict),
-								setup_data.all_unidentifiable, ode_solution,
-							)
-							candidate.return_code = :algebraic_resolve_seeded
-							candidate.provenance = ResultProvenance(
-								primary_method = :algebraic,
-								interpolator_source = source_interp,
-								rescue_path = :algebraic_resolve_seeded,
-								source_shooting_index = source_shoot_idx,
-								source_candidate_index = first(indices),
-								post_polish_error = err,
-								representative_assignments = representative_assignments,
-								; si_template_lineage_kwargs(setup_data.si_template)...,
-								notes = unique(provenance_notes),
-							)
-							set_result_estimator_identity!(candidate;
-								estimator_kind = :state_resolve,
-								data_scope = :derived,
-								time_indices = Int[1],
-								time_values = Float64[_initial_time(PEP.data_sample)],
-								interpolator_source = source_interp,
-								parent_candidate_ids = Int[base_identity.candidate_id],
-							)
-							sync_result_contract!(candidate)
-							push!(resolved_candidates, candidate)
-						elseif opts.diagnostics
-							@warn "[RESOLVE] HC re-solve with fixed parameters found no state solutions at t0; leaving blown candidates unchanged because polish-assisted rescue is disabled."
+						if opts.diagnostics
+							@warn "[RESOLVE] HC re-solve with fixed parameters found no state solutions at t0; leaving blown candidates unchanged."
 						end
 					end
 				end

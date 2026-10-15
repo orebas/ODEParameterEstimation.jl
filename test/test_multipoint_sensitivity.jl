@@ -54,8 +54,7 @@ end
 		si_template, _ = ODEParameterEstimation.prepare_si_template_with_structural_fix(
 			pep_mps.model, pep_mps.measured_quantities, pep_mps.data_sample,
 			ident.good_DD, false;
-			states = ident.states, params = ident.params, infolevel = 0,
-			placeholder_fail_categories = opts_mps.si_placeholder_fail_categories)
+			states = ident.states, params = ident.params, infolevel = 0)
 		interp_func = ODEParameterEstimation.get_interpolator_function(only(opts_mps.interpolators))
 		interpolants = ODEParameterEstimation.create_interpolants(
 			pep_mps.measured_quantities, pep_mps.data_sample, ident.t_vector, interp_func)

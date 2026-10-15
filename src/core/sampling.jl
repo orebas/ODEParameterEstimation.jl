@@ -114,14 +114,10 @@ function sample_data(model::ModelingToolkit.AbstractSystem,
 	p_true,
 	u0,
 	num_points::Int;
-	uneven_sampling = false,
 	uneven_sampling_times = Vector{T}(),
 	solver = package_wide_default_ode_solver, inject_noise = false, mean_noise = 0,
 	stddev_noise = 1, abstol = 1e-14, reltol = 1e-14) where {T <: Number}
-	if uneven_sampling
-		if length(uneven_sampling_times) == 0
-			error("No uneven sampling times provided")
-		end
+	if !isempty(uneven_sampling_times)
 		if length(uneven_sampling_times) != num_points
 			error("Uneven sampling times must be of length num_points")
 		end
@@ -188,7 +184,7 @@ The options that matter here are:
 - `time_interval`: `[start, stop]`; the points are evenly spaced over it. An
   example model from `ODEParameterEstimation.Examples` has an interval of its
   own, which the keyword form uses when you give none.
-- `uneven_sampling` and `uneven_sampling_times`: use these time points instead.
+- `uneven_sampling_times`: use these time points instead, if not empty.
 - `noise_level` and `noise_model`: add Gaussian noise. `:additive` uses a
   standard deviation of `noise_level` times the mean absolute value of each
   series; `:relative` scales each value by `1 + noise_level * randn()`;
@@ -238,7 +234,6 @@ function _sample_problem_data(problem::ParameterEstimationProblem, opts::Estimat
 		problem.ic,
 		opts.datasize,
 		solver = opts.ode_solver,
-		uneven_sampling = opts.uneven_sampling,
 		uneven_sampling_times = opts.uneven_sampling_times,
 		abstol = opts.abstol,
 		reltol = opts.reltol)

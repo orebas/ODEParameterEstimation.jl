@@ -496,7 +496,6 @@ function build_si_template_for_fixed_params(
 	si_fix_strategy::Symbol = _OPT_STRUCT_DEFAULTS.si_fix_strategy,
 	structural_analysis::Union{Nothing, SIStructuralAnalysis} = nothing,
 	pre_fixed_params = OrderedDict{Num, Float64}(),
-	placeholder_fail_categories = Symbol[],
 	compute_multiplicity = true,
 )
 	template_equations, derivative_dict, unidentifiable, identifiable_funcs, si_variable_role_summary, si_template_metadata = get_si_equation_system(
@@ -509,7 +508,6 @@ function build_si_template_for_fixed_params(
 		si_fix_strategy = si_fix_strategy,
 		structural_analysis = structural_analysis,
 		pre_fixed_params = pre_fixed_params,
-		placeholder_fail_categories = placeholder_fail_categories,
 		compute_multiplicity = compute_multiplicity,
 	)
 	template_DD = ensure_si_template_dd_support(ordered_model, measured_quantities, base_DD, derivative_dict)
@@ -538,7 +536,6 @@ function prepare_si_template_with_structural_fix(
 	infolevel = diagnostics ? 1 : 0,
 	si_probability = 0.99,
 	si_fix_strategy::Symbol = _OPT_STRUCT_DEFAULTS.si_fix_strategy,
-	placeholder_fail_categories = Symbol[],
 	compute_multiplicity::Bool = true,
 )
 	initial_template = build_si_template_for_fixed_params(
@@ -550,7 +547,6 @@ function prepare_si_template_with_structural_fix(
 		si_probability = si_probability,
 		si_fix_strategy = si_fix_strategy,
 		pre_fixed_params = OrderedDict{Num, Float64}(),
-		placeholder_fail_categories = placeholder_fail_categories,
 		# Detection pass: discovers what is unidentifiable on the raw model, so a
 		# partially identifiable system is positive-dimensional here by design.
 		# M is computed only on the final fixed template below.
@@ -571,7 +567,6 @@ function prepare_si_template_with_structural_fix(
 		si_fix_strategy = si_fix_strategy,
 		structural_analysis = initial_template.structural_analysis,
 		pre_fixed_params = OrderedDict{Num, Float64}(k => v for (k, v) in structural_fix_set),
-		placeholder_fail_categories = placeholder_fail_categories,
 		compute_multiplicity = compute_multiplicity,
 	)
 	structure = analyze_si_template_structure(final_template)
@@ -2277,30 +2272,6 @@ function _polish_batch_from_context(
 	maxiters = opts.polish_maxiters
 	n_candidates = length(candidates)
 
-	# Optional instrumentation: dump the raw HC candidate list (input to clustering)
-	# to a CSV. Idempotent overwrite per call. Used for offline branch-clustering analysis.
-	if !isnothing(opts.dump_raw_candidates_path) && n_candidates > 0
-		try
-			state_keys = collect(keys(candidates[1].states))
-			param_keys = collect(keys(candidates[1].parameters))
-			open(opts.dump_raw_candidates_path, "w") do io
-				header_state = join(["s::$(string(k))" for k in state_keys], ",")
-				header_param = join(["p::$(string(k))" for k in param_keys], ",")
-				println(io, "hc_idx,$(header_state),$(header_param),err,all_unidentifiable")
-				for (i, c) in enumerate(candidates)
-					sv = join((string(get(c.states, k, NaN)) for k in state_keys), ",")
-					pv = join((string(get(c.parameters, k, NaN)) for k in param_keys), ",")
-					ev = isnothing(c.err) ? "" : string(c.err)
-					unid = join((string(u) for u in c.all_unidentifiable), ";")
-					println(io, "$(i),$(sv),$(pv),$(ev),$(unid)")
-				end
-			end
-		catch e
-			_rethrow_if_interrupt(e)
-			@warn "dump_raw_candidates_path write failed: $e"
-		end
-	end
-
 	cluster_meta = _timed_detail_stage!(batch_stages, :cluster_metadata) do
 		_polish_cluster_metadata(ctx, candidates; opts = opts)
 	end
@@ -2439,31 +2410,6 @@ function _polish_batch_from_context(
 		for slot in task_results
 			append!(polished_results, slot)
 			append!(polished_only, slot)
-		end
-	end
-
-	# Optional instrumentation: dump the polished-only outputs (one per cluster rep,
-	# before any downstream clustering steps). Each row carries polish_source_hc_idx.
-	if !isnothing(opts.dump_polished_path) && !isempty(polished_only)
-		try
-			state_keys = collect(keys(polished_only[1].states))
-			param_keys = collect(keys(polished_only[1].parameters))
-			open(opts.dump_polished_path, "w") do io
-				header_state = join(["s::$(string(k))" for k in state_keys], ",")
-				header_param = join(["p::$(string(k))" for k in param_keys], ",")
-				println(io, "polish_idx,polish_source_hc_idx,$(header_state),$(header_param),err,post_polish_error")
-				for (i, c) in enumerate(polished_only)
-					sv = join((string(get(c.states, k, NaN)) for k in state_keys), ",")
-					pv = join((string(get(c.parameters, k, NaN)) for k in param_keys), ",")
-					ev = isnothing(c.err) ? "" : string(c.err)
-					ppe = (hasproperty(c, :provenance) && !isnothing(c.provenance.post_polish_error)) ? string(c.provenance.post_polish_error) : ""
-					psh = (hasproperty(c, :provenance) && !isnothing(c.provenance.polish_source_hc_idx)) ? string(c.provenance.polish_source_hc_idx) : ""
-					println(io, "$(i),$(psh),$(sv),$(pv),$(ev),$(ppe)")
-				end
-			end
-		catch e
-			_rethrow_if_interrupt(e)
-			@warn "dump_polished_path write failed: $e"
 		end
 	end
 

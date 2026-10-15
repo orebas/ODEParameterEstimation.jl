@@ -205,7 +205,7 @@ Structured lineage metadata for a parameter-estimation result.
 # Fields
 - `primary_method::Symbol`: `:algebraic` or `:direct_opt`
 - `interpolator_source::Union{Nothing, Symbol}`: Which interpolator produced the candidate
-- `rescue_path::Symbol`: `:none`, `:algebraic_resolve_t0`, `:algebraic_resolve_seeded`, `:direct_opt_fallback`
+- `rescue_path::Symbol`: `:none`, `:algebraic_resolve_t0`, `:algebraic_resolve_shoot`, `:direct_opt_fallback`
 - `source_shooting_index::Union{Nothing, Int}`: Shooting-point index that produced the candidate
 - `source_candidate_index::Union{Nothing, Int}`: Stable candidate index within the producing phase
 - `pre_polish_error::Union{Nothing, Float64}`: Error before polishing, when applicable
@@ -244,7 +244,6 @@ mutable struct ResultProvenance
     aggregation_source_indices::Vector{Int}                # indices into the upstream candidate pool that were aggregated
     # Polish-stage HC source index (set by _polish_batch_from_context after polish);
     # 1-based index into the raw HC candidate list passed to _polish_cluster_metadata.
-    # Used for offline branch-clustering analysis (paired with EstimationOptions.dump_raw_candidates_path).
     polish_source_hc_idx::Union{Nothing, Int}
     # Canonical identity of the estimator that produced the current values.
     # Appended for positional-constructor compatibility.

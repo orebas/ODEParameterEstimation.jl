@@ -125,15 +125,7 @@ const SI_PLACEHOLDER_CANONICAL_CATEGORIES = Set((
 	:late_map_miss,
 ))
 
-const SI_PLACEHOLDER_VALID_CATEGORIES = union(
-	SI_PLACEHOLDER_CANONICAL_CATEGORIES,
-	Set(keys(SI_PLACEHOLDER_CATEGORY_ALIASES)),
-)
-
 canonicalize_si_placeholder_category(category::Symbol) = get(SI_PLACEHOLDER_CATEGORY_ALIASES, category, category)
-
-normalize_si_placeholder_fail_categories(categories) =
-	unique(Symbol[canonicalize_si_placeholder_category(cat) for cat in categories])
 
 """
 	EstimationOptions(; options...)
@@ -195,9 +187,9 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   deviation `noise_level` times the mean absolute value of the series. With
   `:relative`, each value is multiplied by `1 + noise_level * randn()`. `:none`
   adds no noise.
-- `uneven_sampling` (default `false`), `uneven_sampling_times`, experimental:
-  sample at these times, of which there must be `datasize`, instead of on an
-  even grid.
+- `uneven_sampling_times` (default empty, experimental): if not empty, sample
+  at these times, of which there must be `datasize`, instead of on an even
+  grid.
 - `ode_solver` (default `AutoVern9(Rodas5P())`): the ODE solver for the
   simulation.
 
@@ -209,15 +201,10 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   candidate-synthesis log under `artifacts/diagnostics/`.
 - `save_system` (default `false`), `save_filepath` (default `""`): save the
   polynomial systems to files, under `save_filepath` or else `saved_systems/`.
-- `heartbeat` (default `true`, experimental): with `nooutput = false`, include
-  the stage lines that `progress` prints.
 - `profile_phases` (default `false`, experimental): print the time and memory
   each stage took.
 - `hc_show_progress` (default `false`): show HomotopyContinuation's progress
   bar.
-- `dump_raw_candidates_path`, `dump_polished_path` (default `nothing`,
-  experimental): write the candidate solutions to these CSV files, before and
-  after refinement.
 
 # Estimating derivatives
 
@@ -250,8 +237,6 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
 - `si_fix_strategy` (default `:local_basis`): how values are chosen for
   quantities that cannot be determined: `:local_basis` or
   `:identifiable_functions`.
-- `si_placeholder_fail_categories` (default `Symbol[]`, experimental): kinds of
-  unresolved variable in the equations that should raise an error.
 - `system_construction_policy` (default `:noise_frontier`, experimental): which
   equations are used. `:noise_frontier` prefers systems that need lower
   derivatives of the data and have fewer solutions. `:legacy` is the earlier
@@ -299,20 +284,15 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   skips working it out.
 - `branch_top_k` (default `20`): the most results returned when that number is
   not known. `0` returns all of them.
-- `rank_strategy` (default `:err_only`, experimental): the order of the results.
-  `:err_only` is by fit error. `:sat_neg1_err`, `:sat_err`, `:lognorm_err` and
-  `:lognorm_neg1_err` are experimental alternatives.
 - `branch_detection` (default `true`, experimental): rank without using the true
   values. `false` ranks by distance to them, which is only meaningful in a
   benchmark.
 - `clustering_threshold` (default `1e-5`, experimental): the relative distance
   below which two candidates are the same solution.
-- `cluster_method` (default `:identifiable_subspace`), `rough_cluster_eps`
-  (default `1.0`), `subspace_cluster_eps` (default `0.05`), experimental: how
-  near-duplicates
-  are merged. `:identifiable_subspace` first separates candidates that are far
-  apart, then merges close ones within each group, at these two distances.
-  `:bit_identical` merges only at `clustering_threshold`.
+- `rough_cluster_eps` (default `1.0`), `subspace_cluster_eps` (default `0.05`),
+  experimental: how near-duplicate results are merged. Candidates that are far
+  apart are separated first, then close ones within each group are merged, at
+  these two distances.
 - `branch_cluster_eps` (default `0.001`), `branch_err_factor` (default `100.0`),
   experimental: before refinement, drop candidates whose fit error is more than
   `branch_err_factor` times the best, and merge the rest at this distance.
@@ -373,9 +353,6 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   solution blows up as it is integrated back to the first time point.
   `:algebraic_resolve` keeps its parameters and solves for the states at that
   time again. `:none` does nothing.
-- `t0_state_completion` (default `:strict`, experimental): with
-  `:seed_for_polish`, when that recovery finds no states it supplies starting
-  values for `polish_solutions` instead. With `:strict` it does not.
 - `use_sensitivity_seeds` (default `false`), `sensitivity_seed_probe_scale`
   (default `1.0`), `sensitivity_seed_eigenvalue_threshold` (default `0.01`),
   `sensitivity_seed_mahalanobis_threshold` (default `-1.0`),
@@ -432,7 +409,7 @@ Base.@kwdef struct EstimationOptions
 	branch_detection::Bool = true
 	branch_cluster_eps::Float64 = 0.001            # Tightened 0.05→0.001 in 2026-05-13: read as a "target precision in MAD-normalized identifiable space." The 0.05 default was merging truth-near clusters with non-truth-near ones for low-noise cells; 0.001 preserves distinct basins (cost: roughly 2× more rows in nopolish result.csv, mitigated by branch_top_k).
 	branch_err_factor::Float64 = 100.0
-	branch_top_k::Int = 20                         # Maximum cluster reps to return at the output stage. Sorted by `rank_strategy` (default `:err_only`; the retired S2 = (saturation_count, is_neg1, err) remains selectable) before slicing. **Dropped 100→20 on 2026-05-17** after probe4c K-recall analysis on the full 2026-05-14 numbat benchmark (1136 cells): under S2 sort, K=20 already saturates the candidate-set ceiling at the ≤10% threshold (83.5% K-recall at K=20 = 83.5% set ceiling); K=100 buys nothing further. K=10 catches 99.4% of the ceiling; K=5 catches 98.8%. Earlier 2026-05-14 setting of 100 was based on the legacy "within 2× of 06" recovery metric (74% at K=20, 77% at K=100) which is more conservative than absolute K-recall. Set to 0 to disable (return all reps). **Acts as a safety cap** when `algebraic_multiplicity` is set: actual output is `min(algebraic_multiplicity, branch_top_k, length(cluster_reps))`.
+	branch_top_k::Int = 20                         # Maximum cluster reps to return at the output stage. Sorted by fit error before slicing. **Dropped 100→20 on 2026-05-17** after probe4c K-recall analysis on the full 2026-05-14 numbat benchmark (1136 cells): under S2 sort, K=20 already saturates the candidate-set ceiling at the ≤10% threshold (83.5% K-recall at K=20 = 83.5% set ceiling); K=100 buys nothing further. K=10 catches 99.4% of the ceiling; K=5 catches 98.8%. Earlier 2026-05-14 setting of 100 was based on the legacy "within 2× of 06" recovery metric (74% at K=20, 77% at K=100) which is more conservative than absolute K-recall. Set to 0 to disable (return all reps). **Acts as a safety cap** when `algebraic_multiplicity` is set: actual output is `min(algebraic_multiplicity, branch_top_k, length(cluster_reps))`.
 
 	# Algebraic solution count, including multiplicities, on the chosen
 	# representative slice. When set, the output is truncated to this many rows
@@ -457,55 +434,19 @@ Base.@kwdef struct EstimationOptions
 	# leave M unknown; ordinary branch_top_k filtering then remains in effect.
 	compute_algebraic_multiplicity::Bool = true
 
-	# Ranking strategy for the top-K cluster reps returned in result.csv.
+	# Results are ranked by fit error (`err`, SSE). The alternative orderings
+	# (`rank_strategy`) were removed 2026-10-15; the 2026-06-12 ranking study
+	# (`repro/ranking_study_2026_06_12/`) found they made no difference once `err`
+	# was one consistent unit.
 	#
-	# DEFAULT `:err_only` (2026-06-12) — rank candidates by data residual `err` (SSE)
-	# ascending. Lowest residual wins.
-	#
-	# WHY (and why NOT the old `:sat_neg1_err` "S2"): the older S2 default and the whole
-	# threshold trade-off it was tuned on (wallaby 2026-05-17) were measured on a BROKEN
-	# `err` metric — candidate `err` was computed in two incompatible units
-	# (`process_raw_solution` used ‖resid‖/N while polish/synth/seed/optimizer used Σresid²),
-	# so cross-source comparisons were apples-vs-oranges and the `saturation`/`is_untagged`
-	# keys were a band-aid for an untrustworthy residual. That was unified to SSE in 2026-06
-	# (commit b543946). With `err` now ONE consistent unit, the 2026-06-12 ranking study
-	# (`repro/ranking_study_2026_06_12/`) found the lowest-`err` candidate is the truth-near
-	# one in EVERY M1 "matter" cell at 1em6 — `:err_only`, the full production
-	# `:sat_neg1_err` path, and every other scheme give IDENTICAL 10/10 top-1 capture (even
-	# when truth-near rows are only 3/244 of the pool). So the simplest honest scheme is the
-	# default; the S2 cleverness is unnecessary on a correct residual.
-	# (Pre-fix trade-off, retained for context only — reflects the broken err: ≤1e-4
-	#  `:err_only` 69.7% vs `:sat_neg1_err` 60.2%; ≤1e-2 `:err_only` ~83.6% vs ~86.6%.
-	#  See repro/polish_regression_2026_05_19/FINDINGS.md.)
-	#
-	# Options:
-	#   :err_only         — DEFAULT. Sort by data residual `err` (SSE) ascending. Correct +
-	#                       simplest now that `err` is one consistent unit across all sources.
-	#   :sat_neg1_err     — (saturation_count, is_untagged, err). Legacy "S2": demote
-	#                       bound-pegged rows first, then untagged provenance
-	#                       (`polish_source_hc_idx == -1`/nothing), then residual. Built for
-	#                       the broken-err candidate distribution; kept selectable. Requires
-	#                       user-provided opt_lb/opt_ub to fully activate.
-	#   :sat_err          — (saturation_count, err). Saturation-demotion without is_untagged.
-	#   :lognorm_err      — (Σ log²(p), err). Bound-free experimental. Falsified in probe4b
-	#                       (truth values genuinely far from 1 get penalized).
-	#   :lognorm_neg1_err — (Σ log²(p), is_untagged, err).
-	rank_strategy::Symbol = :err_only
-
-	# Output-stage clustering method. `:identifiable_subspace` (default) does
-	# two-stage clustering: rough basin separation at a coarse threshold, then
-	# within-basin MAD-normalized L∞ merging at `subspace_cluster_eps`. This
-	# collapses 50+ near-duplicate rows along practical-non-identifiability axes
-	# (e.g. slow_fast's 50 mirror-basin rows that differ only on xA/xB/eB) while
-	# preserving algebraically-distinct basins. `:bit_identical` restores the
-	# legacy 1e-5 relative-distance dedup. Full-space dedup ALWAYS applies when
-	# algebraic siblings may be present — pools produced by successful branch
-	# completion AND any pool with detected/declared algebraic_multiplicity ≥ 2
-	# (raw M≥2 pools carry siblings too; completion can fail on its single
-	# default anchor). Merely enabling `branch_completion` does not override
-	# this option. See `cluster_solutions_identifiable_subspace` and
-	# `_cluster_output_candidates`.
-	cluster_method::Symbol = :identifiable_subspace
+	# Output-stage clustering is two-stage: rough basin separation at a coarse
+	# threshold, then within-basin MAD-normalized L∞ merging at
+	# `subspace_cluster_eps`. This collapses near-duplicate rows along
+	# practical-non-identifiability axes while preserving algebraically distinct
+	# basins. Full-space dedup at `clustering_threshold` applies instead when
+	# algebraic siblings may be present (successful branch completion, or a
+	# detected/declared algebraic_multiplicity ≥ 2). See
+	# `cluster_solutions_identifiable_subspace` and `_cluster_output_candidates`.
 	# Rough-cluster threshold for stage-1 (basin identification). 1.0 = parameters
 	# differ by more than the mean magnitude (i.e. different basins). Tight
 	# enough that distinct algebraic solutions stay separate.
@@ -533,17 +474,6 @@ Base.@kwdef struct EstimationOptions
 	branch_completion::Bool = true
 	branch_completion_max_anchors::Int = 1
 	branch_completion_residual_tol::Float64 = 1e-6
-
-	# Instrumentation (opt-in): if non-nothing, dump the raw HC candidate list
-	# (after process_raw_solution err computation, before pre-polish clustering)
-	# as a CSV to this path. Used for offline branch-clustering analysis.
-	dump_raw_candidates_path::Union{Nothing, String} = nothing
-
-	# Instrumentation (opt-in): if non-nothing, dump the full polished candidate
-	# list from `_polish_batch_from_context` (one row per polished cluster rep)
-	# BEFORE any downstream clustering (cluster_solutions / _detect_branches).
-	# Each row carries `polish_source_hc_idx` linking back to a raw_candidates.csv row.
-	dump_polished_path::Union{Nothing, String} = nothing
 
 	# Multi-shot Parameters
 	shooting_points::Int = 12
@@ -614,7 +544,6 @@ Base.@kwdef struct EstimationOptions
 
 	terminal_fallback::Symbol = :direct_opt   # :none | :direct_opt
 	backsolve_recovery::Symbol = :algebraic_resolve  # :none | :algebraic_resolve
-	t0_state_completion::Symbol = :strict    # :strict | :seed_for_polish
 
 	# Sensitivity-based seed generation (σ_d-aware probing). Off by default until
 	# validation sweep confirms it captures the existing synthesized_finalizer wins.
@@ -639,7 +568,6 @@ Base.@kwdef struct EstimationOptions
 	time_interval::Vector{Float64} = [-0.5, 0.5]
 	noise_level::Float64 = 0.0
 	noise_model::Symbol = :additive
-	uneven_sampling::Bool = false
 	uneven_sampling_times::Vector{Float64} = Float64[]
 
 	# Reproducibility
@@ -649,7 +577,6 @@ Base.@kwdef struct EstimationOptions
 	nooutput::Bool = true
 	diagnostics::Bool = false
 	profile_phases::Bool = false  # Print per-phase timing/allocation breakdown
-	heartbeat::Bool = true        # Live flushed [HB] phase markers (suppressed by nooutput)
 	progress::Bool = false        # The same phase markers on their own, for a quiet run
 
 	# Feature Flags
@@ -664,7 +591,6 @@ Base.@kwdef struct EstimationOptions
 	uq_failure_policy::Symbol = :return_failed  # :return_failed | :throw
 	uq_noise_source::Symbol = :learned_gp_homoscedastic
 	gp_derivative_lengthscale_factor::Float64 = 1.0
-	si_placeholder_fail_categories::Vector{Symbol} = Symbol[]
 	auto_handle_transcendentals::Bool = true  # Automatically detect and handle sin/cos/exp in equations
 	auto_rescale::Bool = true  # Power-of-2 rescale states/params/observables/data to O(1) before estimation, un-rescale results after (see core/problem_rescaling.jl). Near-identity (mild powers of 2) on already-O(1) models; rescues ill-scaled ones (e.g. raw hiv 43.7→1.2e-3). Set false to disable.
 	auto_filter_interpolators::Bool = true  # Filter AAA-family interpolators (S2/AAAD/AAADOld) by data-driven σ̂ before the SP loop
@@ -1302,14 +1228,6 @@ function validate_options(opts::EstimationOptions)
 		@error "terminal_fallback must be :none or :direct_opt"
 		valid = false
 	end
-	if !(opts.rank_strategy in (:sat_neg1_err, :sat_err, :err_only, :lognorm_err, :lognorm_neg1_err))
-		@error "rank_strategy must be one of :sat_neg1_err, :sat_err, :err_only, :lognorm_err, :lognorm_neg1_err (got $(opts.rank_strategy))"
-		valid = false
-	end
-	if !(opts.cluster_method in (:identifiable_subspace, :bit_identical))
-		@error "cluster_method must be :identifiable_subspace or :bit_identical (got $(opts.cluster_method))"
-		valid = false
-	end
 	if !(opts.homotopy_tracking_mode in (:parameter, :gamma_straight, :gamma_straight_fallback, :generic_start))
 		@error "homotopy_tracking_mode must be :parameter, :gamma_straight, :gamma_straight_fallback, or :generic_start (got $(opts.homotopy_tracking_mode))"
 		valid = false
@@ -1346,10 +1264,6 @@ function validate_options(opts::EstimationOptions)
 		@error "backsolve_recovery must be :none or :algebraic_resolve"
 		valid = false
 	end
-	if !(opts.t0_state_completion in (:strict, :seed_for_polish))
-		@error "t0_state_completion must be :strict or :seed_for_polish"
-		valid = false
-	end
 
 	# Check data parameters
 	if opts.datasize < 3
@@ -1366,8 +1280,8 @@ function validate_options(opts::EstimationOptions)
 		valid = false
 	end
 
-	if opts.uneven_sampling
-		times = opts.uneven_sampling_times
+	times = opts.uneven_sampling_times
+	if !isempty(times)
 		if length(times) != opts.datasize
 			@error "uneven_sampling_times must have datasize = $(opts.datasize) entries (got $(length(times)))"
 			valid = false
@@ -1412,14 +1326,6 @@ function validate_options(opts::EstimationOptions)
 		valid = false
 	end
 
-	if opts.t0_state_completion != :strict && opts.flow != FlowStandard
-		@info "t0_state_completion is ignored outside FlowStandard"
-	end
-
-	if opts.t0_state_completion == :seed_for_polish && !opts.polish_solutions
-		@warn "t0_state_completion=:seed_for_polish requires polish_solutions=true to be useful"
-	end
-
 	if !isnothing(opts.seed) && opts.gamma_seed < 0
 		@warn "seed is set, but gamma_seed < 0 draws fresh entropy for the homotopy start, so results will not be reproducible"
 	end
@@ -1461,11 +1367,6 @@ function validate_options(opts::EstimationOptions)
 		end
 	end
 
-	invalid_placeholder_categories = [cat for cat in opts.si_placeholder_fail_categories if !(cat in SI_PLACEHOLDER_VALID_CATEGORIES)]
-	if !isempty(invalid_placeholder_categories)
-		@error "Unknown si_placeholder_fail_categories: $(invalid_placeholder_categories)"
-		valid = false
-	end
 
 	return valid
 end
@@ -1492,14 +1393,14 @@ function print_options(io::IO, opts::EstimationOptions; compact = false)
 		("Multi-shot", [:shooting_points, :shooting_warp, :shooting_warp_beta]),
 		("Optimization", [:polish_solutions, :polish_solver_solutions, :polish_solver_jacobian, :polish_solver_chunk_size, :polish_method, :polish_maxiters, :opt_maxiters,
 			:opt_lb, :opt_ub, :opt_ad_backend, :polish_maxtime, :polish_divergence_factor, :polish_stagnation_window, :polish_ode_maxiters]),
-		("Rescue Policy", [:terminal_fallback, :backsolve_recovery, :t0_state_completion]),
-		("Data Sampling", [:datasize, :time_interval, :noise_level, :uneven_sampling,
+		("Rescue Policy", [:terminal_fallback, :backsolve_recovery]),
+		("Data Sampling", [:datasize, :time_interval, :noise_level, :noise_model,
 			:uneven_sampling_times]),
 		("Reproducibility", [:seed]),
 		("Debug Flags", [:nooutput, :diagnostics, :progress, :profile_phases]),
 		("Feature Flags", [:flow, :use_si_template, :save_system,
 			:compute_uncertainty, :uq_failure_policy, :uq_noise_source,
-			:gp_derivative_lengthscale_factor, :si_placeholder_fail_categories,
+			:gp_derivative_lengthscale_factor,
 			:auto_handle_transcendentals]),
 		("System Construction", [:system_construction_policy, :construction_candidate_limit,
 			:construction_beam_width, :construction_compute_mixed_volume]),

@@ -196,26 +196,17 @@ function _record_si_symbolic_placeholder!(stats::Dict{Symbol, Vector{String}}, c
 	return nothing
 end
 
-function should_fail_si_placeholder(category::Symbol, fail_categories)::Bool
-	category = canonicalize_si_placeholder_category(category)
-	return category in normalize_si_placeholder_fail_categories(fail_categories)
-end
-
 function _create_si_symbolic_placeholder!(
 	extended_map::Dict,
 	var,
 	var_name::AbstractString,
 	stats::Dict{Symbol, Vector{String}},
 	category::Symbol;
-	fail_categories = Symbol[],
 	infolevel::Integer = 0,
 	message_level::Symbol = :debug,
 	message::AbstractString = "",
 )
 	category = canonicalize_si_placeholder_category(category)
-	if should_fail_si_placeholder(category, fail_categories)
-		error("SI placeholder category $category is configured to hard-fail for variable $var_name. $message")
-	end
 	sym_var = Symbolics.variable(Symbol(var_name))
 	extended_map[var] = sym_var
 	_record_si_symbolic_placeholder!(stats, category, var_name)
@@ -443,7 +434,6 @@ function resolve_si_ring_variable(
 	DD;
 	role_context = nothing,
 	infolevel::Integer = 0,
-	fail_categories = Symbol[],
 	stats = Dict{Symbol, Vector{String}}(),
 )
 	haskey(base_map, var) && return (
@@ -471,7 +461,6 @@ function resolve_si_ring_variable(
 		var_name,
 		stats,
 		category;
-		fail_categories = fail_categories,
 		infolevel = infolevel,
 		message_level = classification.message_level,
 		message = classification.message,
@@ -490,7 +479,6 @@ function build_extended_si_variable_map(
 	DD;
 	role_context = nothing,
 	infolevel::Integer = 0,
-	fail_categories = Symbol[],
 )
 	extended_map = Dict{Nemo.QQMPolyRingElem, Any}()
 	support_var_stats = Dict{Symbol, Vector{String}}()
@@ -510,7 +498,6 @@ function build_extended_si_variable_map(
 			DD;
 			role_context = role_context,
 			infolevel = infolevel,
-			fail_categories = fail_categories,
 			stats = support_var_stats,
 		)
 		extended_map[var] = resolution.symbol
@@ -764,7 +751,6 @@ function get_si_equation_system(
 	_t_convert_to_si_ode_start = time()
 	si_ode, symbol_map, gens = convert_to_si_ode(ode, measured_quantities)
 	equation_builder_timing[:convert_to_si_ode] = time() - _t_convert_to_si_ode_start
-	placeholder_fail_categories = get(kwargs, :placeholder_fail_categories, Symbol[])
 	# Only the polynomial template changes between the detection and fixed
 	# passes. A parameter-fixed model used by state rescue needs fresh analysis.
 	if !isnothing(structural_analysis)
@@ -873,7 +859,6 @@ function get_si_equation_system(
 			DD;
 			role_context = role_context,
 			infolevel = infolevel,
-			fail_categories = placeholder_fail_categories,
 		)
 		si_variable_role_summary = si_role_summary_from_stats(si_variable_role_stats)
 		if !isempty(si_variable_role_summary.suspicious_categories)
@@ -897,13 +882,13 @@ function get_si_equation_system(
 
 	_t_nemo_to_symbolics_conversion_start = time()
 	for poly in full_poly_system
-		poly_sym = nemo_to_symbolics(poly, nemo2mtk; fail_categories = placeholder_fail_categories)
+		poly_sym = nemo_to_symbolics(poly, nemo2mtk)
 		push!(full_template_equations, poly_sym)
 	end
 
 	for poly in poly_system
 		# Convert the polynomial to Symbolics
-		poly_sym = nemo_to_symbolics(poly, nemo2mtk; fail_categories = placeholder_fail_categories)
+		poly_sym = nemo_to_symbolics(poly, nemo2mtk)
 
 		if infolevel > 0
 			@debug "Converted polynomial: $(typeof(poly)) -> $(typeof(poly_sym))"
@@ -1509,7 +1494,7 @@ end
 
 Convert a Nemo expression to a Symbolics expression using proper term-by-term reconstruction.
 """
-function nemo_to_symbolics(nemo_expr, var_map::Dict; fail_categories = Symbol[])
+function nemo_to_symbolics(nemo_expr, var_map::Dict)
 	# Handle constants
 	if nemo_expr isa Number
 		return nemo_expr
@@ -1524,8 +1509,8 @@ function nemo_to_symbolics(nemo_expr, var_map::Dict; fail_categories = Symbol[])
 
 	# Handle fraction field elements
 	if nemo_expr isa Nemo.Generic.FracFieldElem
-		numer = nemo_to_symbolics(Nemo.numerator(nemo_expr), var_map; fail_categories = fail_categories)
-		denom = nemo_to_symbolics(Nemo.denominator(nemo_expr), var_map; fail_categories = fail_categories)
+		numer = nemo_to_symbolics(Nemo.numerator(nemo_expr), var_map)
+		denom = nemo_to_symbolics(Nemo.denominator(nemo_expr), var_map)
 		return numer / denom
 	end
 
@@ -1594,7 +1579,6 @@ function nemo_to_symbolics(nemo_expr, var_map::Dict; fail_categories = Symbol[])
 							var_name,
 							placeholder_stats,
 							late_category;
-							fail_categories = fail_categories,
 							message_level = :warn,
 							message = late_message,
 						)

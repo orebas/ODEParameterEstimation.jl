@@ -10,6 +10,16 @@ you used one. From 1.0.0 on, releases follow semantic versioning for the
 documented API: the exported names, the names marked `public`, and the options
 that are not marked experimental.
 
+### Simulated data are read from the finished solution
+
+- `sample_problem_data` now solves the model once and reads the samples from
+  the finished solution. It used to save them while solving, and
+  OrdinaryDiffEq can interpolate a value saved inside the last step with the
+  wrong step length when `AutoVern9(Rodas5P())` switches methods on that step
+  ([SciML/OrdinaryDiffEq.jl#4655](https://github.com/SciML/OrdinaryDiffEq.jl/issues/4655)).
+  On Julia 1.13.2 one sample of a test model came out 0.2% off. The other
+  samples are the same up to rounding.
+
 ### Documentation checked against these changes
 
 - `print_options`, and so the way `EstimationOptions` values print, covers

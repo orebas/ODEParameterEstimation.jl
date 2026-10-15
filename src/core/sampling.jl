@@ -89,17 +89,15 @@ function validate_sampled_trajectory!(
 	model::ModelingToolkit.AbstractSystem,
 	measured_data::Vector{ModelingToolkit.Equation},
 	solution_true,
-	requested_points::Int,
+	sampling_times::AbstractVector,
 )
-	returned_points = OrderedDict{String, Int}()
-	for measurement in measured_data
-		symbol = Num(measurement.rhs)
-		returned_points[string(symbol)] = length(solution_true[symbol])
-	end
-
-	if !SciMLBase.successful_retcode(solution_true) || any(values(returned_points) .!= requested_points)
+	# The samples are read from the finished solution, so it has to reach the
+	# last sample time.
+	covered = isempty(solution_true.t) ? 0 : count(<=(last(solution_true.t)), sampling_times)
+	if !SciMLBase.successful_retcode(solution_true) || covered < length(sampling_times)
+		returned_points = OrderedDict{String, Int}(string(Num(m.rhs)) => covered for m in measured_data)
 		model_name = string(ModelingToolkit.getname(model))
-		throw(SamplingFailureError(model_name, solution_true.retcode, requested_points, returned_points))
+		throw(SamplingFailureError(model_name, solution_true.retcode, length(sampling_times), returned_points))
 	end
 
 	return nothing
@@ -143,10 +141,12 @@ function sample_data(model::ModelingToolkit.AbstractSystem,
 			else
 				Dict(ModelingToolkit.parameters(sys) .=> ordered_params)
 			end), time_span)
-	solution_true = ModelingToolkit.solve(problem, solver,
-		saveat = sampling_times;
-		abstol, reltol)
-	validate_sampled_trajectory!(model, measured_data, solution_true, num_points)
+	# Solve once, then read the samples from the finished solution. A value
+	# saved while solving (`saveat`) is interpolated with the integrator's step
+	# length, which can be wrong on a step shortened to end the interval
+	# (SciML/OrdinaryDiffEq.jl#4655).
+	solution_true = ModelingToolkit.solve(problem, solver; abstol, reltol)
+	validate_sampled_trajectory!(model, measured_data, solution_true, sampling_times)
 
 	#if false # Plot state variables
 	#	states = ModelingToolkit.unknowns(model)
@@ -159,8 +159,8 @@ function sample_data(model::ModelingToolkit.AbstractSystem,
 	#	end
 	#end
 
-	data_sample = OrderedDict{Union{String, Num}, Vector{T}}(Num(v.rhs) => solution_true[Num(v.rhs)]
-											  for v in measured_data)
+	data_sample = OrderedDict{Union{String, Num}, Vector{T}}(
+		Num(v.rhs) => solution_true(sampling_times; idxs = Num(v.rhs)).u for v in measured_data)
 	if inject_noise
 		for (key, sample) in data_sample
 			data_sample[key] = sample + randn(num_points) .* stddev_noise .+ mean_noise

@@ -9,6 +9,8 @@ using ModelingToolkit
 using OrderedCollections
 using Random
 
+include("support/model_fixtures.jl")
+
 @testset "Fast Core Contracts" begin
     @testset "Ordered ODE construction" begin
         @independent_variables t
@@ -793,6 +795,26 @@ using Random
         sampled_maglev = ODEParameterEstimation.sample_problem_data(maglev, maglev_opts)
         @test length(sampled_maglev.data_sample["t"]) == 41
         @test all(length(values) == 41 for (key, values) in sampled_maglev.data_sample if key != "t")
+
+        # Samples are read from the finished solution. A value saved while
+        # solving can be interpolated with the wrong step length on a step
+        # shortened to end the interval (SciML/OrdinaryDiffEq.jl#4655). Under
+        # Julia 1.13.2 this model puts the sample at t = 0.45 in such a step.
+        linear = substr_test()
+        sampled_linear = ODEParameterEstimation.sample_problem_data(linear,
+            EstimationOptions(datasize = 21, noise_level = 0.0, nooutput = true))
+        pa, pb, pbeta = values(linear.p_true)
+        x10, x20, x30 = values(linear.ic)
+        ω = sqrt(pa * pb)
+        τ = sampled_linear.data_sample["t"] .- first(sampled_linear.data_sample["t"])
+        exact = [
+            x10 .* cos.(ω .* τ) .- pa * x20 / ω .* sin.(ω .* τ),
+            x20 .* cos.(ω .* τ) .+ pb * x10 / ω .* sin.(ω .* τ),
+            x30 .* exp.(pa^2 * pb^2 * pbeta .* τ),
+        ]
+        for (measurement, expected) in zip(linear.measured_quantities, exact)
+            @test maximum(abs.(sampled_linear.data_sample[Num(measurement.rhs)] .- expected)) < 1e-10
+        end
     end
 
     @testset "Derivative order guard" begin

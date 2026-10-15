@@ -780,7 +780,7 @@ UQLinearizationDiagnostics() = UQLinearizationDiagnostics(
 )
 
 """Typed outcome returned when UQ was requested but cannot be computed honestly."""
-struct UQUnavailable <: AbstractUQOutcome
+struct UncertaintyUnavailable <: AbstractUQOutcome
     model_name::String
     target::Union{Nothing, UQTargetSnapshot}
     reason::Symbol
@@ -789,17 +789,17 @@ struct UQUnavailable <: AbstractUQOutcome
 end
 
 """
-    UQComputationError
+    UncertaintyError
 
-Thrown instead of returning a [`UQUnavailable`](@ref) when the uncertainty
+Thrown instead of returning a [`UncertaintyUnavailable`](@ref) when the uncertainty
 cannot be worked out and the options say `uq_failure_policy = :throw`. Its
-`outcome` field is that `UQUnavailable`.
+`outcome` field is that `UncertaintyUnavailable`.
 """
-struct UQComputationError <: Exception
-    outcome::UQUnavailable
+struct UncertaintyError <: Exception
+    outcome::UncertaintyUnavailable
 end
 
-function Base.showerror(io::IO, err::UQComputationError)
+function Base.showerror(io::IO, err::UncertaintyError)
     print(io, "Uncertainty quantification failed [", err.outcome.reason, "]: ", err.outcome.message)
 end
 
@@ -887,7 +887,7 @@ function uq_reliability(::Nothing)
     )
 end
 
-function uq_reliability(outcome::UQUnavailable)
+function uq_reliability(outcome::UncertaintyUnavailable)
     return UQReliabilityAssessment(
         :unavailable, :not_computed, :not_computed,
         _uq_selection_scope(outcome.target), :not_assessed,
@@ -948,7 +948,7 @@ _uq_json_safe(value) = value
 """JSON-friendly additive sidecar block for a requested UQ outcome."""
 uq_metadata_dict(::Nothing) = nothing
 
-function uq_metadata_dict(outcome::UQUnavailable)
+function uq_metadata_dict(outcome::UncertaintyUnavailable)
     metadata = OrderedDict{String, Any}(
         "outcome" => "unavailable",
         "model_name" => outcome.model_name,

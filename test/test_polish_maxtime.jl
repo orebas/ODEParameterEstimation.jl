@@ -1,11 +1,11 @@
-# Test: polish_maxtime is enforced for residual-mode polish (PolishLSOBoundedLog,
+# Test: polish_maxtime is enforced for residual-mode polish (PolishLeastSquares,
 # PolishFastLMBoundedLog). Pre-fix this was a no-op; post-fix the polish wall-
 # clock is bounded by `maxtime + small slack`.
 #
 # Run: julia --startup-file=no /home/orebas/.julia/dev/ODEParameterEstimation/repro/test_polish_maxtime.jl
 
 using ODEParameterEstimation
-using ODEParameterEstimation: merge_options
+using ODEParameterEstimation: merge_options, PolishFastLMBoundedLog
 using ODEParameterEstimation.Examples
 using ODEParameterEstimation: _build_polish_context, _polish_single_from_context,
     sample_problem_data, merge_options
@@ -74,13 +74,13 @@ end
     # so the wall-clock assertion below measures the steady-state path.
     let
         pep_w, ctx_w = build_context_for_simple(
-            polish_method = PolishLSOBoundedLog,
+            polish_method = PolishLeastSquares,
             maxiters = 1,
             datasize = datasize,
         )
         run_polish(
             ctx_w, bad_seed(pep_w);
-            polish_method = PolishLSOBoundedLog,
+            polish_method = PolishLeastSquares,
             maxiters = 1,
             maxtime = 600.0,  # generous so JIT fits inside
         )
@@ -88,7 +88,7 @@ end
 
     @testset "LSO: maxtime caps wall-clock" begin
         pep, ctx = build_context_for_simple(
-            polish_method = PolishLSOBoundedLog,
+            polish_method = PolishLeastSquares,
             maxiters = 100_000,
             datasize = datasize,
         )
@@ -100,7 +100,7 @@ end
         maxtime_cap = 2.0
         polished, elapsed = run_polish(
             ctx, p_seed;
-            polish_method = PolishLSOBoundedLog,
+            polish_method = PolishLeastSquares,
             maxiters = 100_000,
             maxtime = maxtime_cap,
         )
@@ -151,7 +151,7 @@ end
         # Confirm the change is transparent when maxtime is effectively disabled —
         # the polish should still converge on this clean harmonic_oscillator() problem.
         pep, ctx = build_context_for_simple(
-            polish_method = PolishLSOBoundedLog,
+            polish_method = PolishLeastSquares,
             maxiters = 200,
             datasize = 51,
         )
@@ -159,7 +159,7 @@ end
 
         polished, elapsed = run_polish(
             ctx, p_true_vec;
-            polish_method = PolishLSOBoundedLog,
+            polish_method = PolishLeastSquares,
             maxiters = 200,
             maxtime = Inf,
         )

@@ -16,7 +16,7 @@ using OrderedCollections
 	@test_throws MethodError EstimationOptions(use_monodromy = true)
 	# The single-interpolator options, which had no effect beside the default
 	# `interpolators` list (removed 2026-10-06).
-	@test_throws MethodError EstimationOptions(interpolator = InterpolatorAAAD)
+	@test_throws MethodError EstimationOptions(interpolator = InterpolatorAAA)
 	@test_throws MethodError EstimationOptions(custom_interpolator = identity)
 
 	# Wired fields exist with their behavior-neutral defaults.
@@ -72,11 +72,11 @@ using OrderedCollections
 	@test !isdefined(ODEParameterEstimation, :PolishGaussNewton)
 
 	undersmoothed = EstimationOptions(
-		interpolators = InterpolatorMethod[InterpolatorAGPUQ],
+		interpolators = InterpolatorMethod[InterpolatorGPUncertainty],
 		gp_derivative_lengthscale_factor = 0.75,
 	)
 	method, interpolator = only(ODEParameterEstimation.resolve_interpolator_list(undersmoothed))
-	@test method == InterpolatorAGPUQ
+	@test method == InterpolatorGPUncertainty
 	@test interpolator isa Function
 	xs = collect(range(-0.5, 0.5; length = 15))
 	fit = interpolator(xs, sin.(xs))

@@ -120,23 +120,21 @@ export ObservationData, ObservationSeries, observation_times
 export estimate, analyze_parameter_estimation_problem, EstimationOptions
 
 # Option values
-export SolverHC, SolverRobust, SolverFastNLOpt
+export SolverHC, SolverTrustRegion, SolverLevenbergMarquardt
 export FlowStandard, FlowDirectOpt
-export PolishLSOBoundedLog, PolishFastLMBoundedLog, PolishNewtonTrust, PolishBFGS, PolishLBFGS
-export InterpolatorAGPRobust, InterpolatorAGPRobustRQ, InterpolatorS3AdaptSE, InterpolatorS3AdaptRQ,
-       InterpolatorChebyshevBIC, InterpolatorChebyshevAICc, InterpolatorAAADGPR, InterpolatorAAAD,
-       InterpolatorS2AAAMLE, InterpolatorAGPUQ, InterpolatorCustom
+export PolishLeastSquares, PolishNewtonTrust, PolishBFGS, PolishLBFGS
+export InterpolatorAAA, InterpolatorGP, InterpolatorGPUncertainty, InterpolatorCustom
 
 # Results, uncertainty and errors
 export ParameterEstimationResult
-export UncertaintyReport, UQUnavailable, print_uncertainty_results
+export UncertaintyReport, UncertaintyUnavailable, print_uncertainty_results
 export UnsupportedModelClassError, UnsupportedDerivativeOrderError, SamplingFailureError
 
 # Supported, but written with the module name
 public Examples
 public SystemSolverMethod, EstimationFlow, PolishMethod, InterpolatorMethod
 public OrderedODESystem, ResultProvenance
-public AbstractUQOutcome, UQComputationError, uq_reliability, UQReliabilityAssessment
+public AbstractUQOutcome, UncertaintyError, uq_reliability, UQReliabilityAssessment
 public merge_options, validate_options, print_options
 
 include("precompile_workload.jl")  # the estimation that runs while the package is precompiled

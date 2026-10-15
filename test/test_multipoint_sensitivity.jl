@@ -46,7 +46,7 @@ end
 @testset "multipoint uncertainty report" begin
 	opts_mps = EstimationOptions(
 		datasize = 61, time_interval = [-0.5, 0.5], noise_level = 0.0,
-		nooutput = true, diagnostics = false, interpolators = [InterpolatorAAAD])
+		nooutput = true, diagnostics = false, interpolators = [InterpolatorAAA])
 	pep_mps = ODEParameterEstimation.sample_problem_data(ODEParameterEstimation.Examples.harmonic_oscillator(), opts_mps)
 
 	mpt, setup_mps = _mps_quiet() do

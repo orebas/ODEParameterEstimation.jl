@@ -301,7 +301,7 @@ is in the list keeps polynomial-mode users at zero cost.
 """
 function maybe_filter_interpolators_by_noise(list::AbstractVector, pep, opts)
 	!opts.auto_filter_interpolators && return list
-	noise_sensitive_methods = (InterpolatorS2AAAMLE, InterpolatorAAAD, InterpolatorAAADOld)
+	noise_sensitive_methods = (InterpolatorS2AAAMLE, InterpolatorAAA, InterpolatorAAADOld)
 	has_noise_sensitive = any(entry -> entry[1] in noise_sensitive_methods, list)
 	!has_noise_sensitive && return list
 	σ̂ = estimate_relative_noise(pep)

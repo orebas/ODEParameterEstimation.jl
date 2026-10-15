@@ -33,7 +33,7 @@ Random.seed!(2468)
 		uq_opts = EstimationOptions(
 			datasize = 121, time_interval = [0.0, 1.0], noise_level = 0.0,
 			nooutput = true, diagnostics = false, compute_uncertainty = true,
-			interpolators = InterpolatorMethod[InterpolatorAGPUQ],
+			interpolators = InterpolatorMethod[InterpolatorGPUncertainty],
 			auto_filter_interpolators = false, shooting_points = 1,
 			use_parameter_homotopy = false, use_multipoint = false,
 			synthesize_aggregate_candidates = false, polish_solutions = false,

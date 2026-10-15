@@ -23,7 +23,7 @@ end
     raw_sp = analyze_parameter_estimation_problem(pep_data,
         EstimationOptions(
             datasize = 201, noise_level = 0.0, nooutput = true,
-            interpolators = InterpolatorMethod[InterpolatorAGPUQ],
+            interpolators = InterpolatorMethod[InterpolatorGPUncertainty],
             auto_filter_interpolators = false, shooting_points = 4,
             use_multipoint = false, diagnostics = false,
             synthesize_aggregate_candidates = false,
@@ -37,7 +37,7 @@ end
         EstimationOptions(use_multipoint = true, multipoint_n_points = 2,
             multipoint_max_pairs = 3, shooting_points = 4,
             datasize = 201, noise_level = 0.0, nooutput = true,
-            interpolators = InterpolatorMethod[InterpolatorAGPUQ],
+            interpolators = InterpolatorMethod[InterpolatorGPUncertainty],
             auto_filter_interpolators = false, diagnostics = false,
             synthesize_aggregate_candidates = false,
             branch_completion = false, polish_solutions = false,
@@ -75,7 +75,7 @@ end
         branch_completion = false,
         polish_solutions = false,
         save_system = false,
-        interpolators = InterpolatorMethod[InterpolatorAGPUQ],
+        interpolators = InterpolatorMethod[InterpolatorGPUncertainty],
         auto_filter_interpolators = false,
     )
     fixed_value, _ = ODEParameterEstimation._with_run_context(

@@ -1,5 +1,5 @@
 using ODEParameterEstimation
-using ODEParameterEstimation: AbstractInterpolator, UQComputationError, uq_metadata_dict,
+using ODEParameterEstimation: AbstractInterpolator, UncertaintyError, uq_metadata_dict,
     uq_reliability
 using Test
 using Logging
@@ -45,7 +45,7 @@ using JSON
                 EstimationOptions(compute_uncertainty = true, nooutput = true),
             )
         end
-        @test outcome isa UQUnavailable
+        @test outcome isa UncertaintyUnavailable
         @test outcome.reason == :missing_artifact
         @test outcome.target.selected_rank == 1
         @test outcome.target.identity.estimator_kind == :multipoint_algebraic
@@ -171,7 +171,7 @@ using JSON
                 EstimationOptions(compute_uncertainty = true, nooutput = true),
             )
         end
-        @test unavailable isa UQUnavailable
+        @test unavailable isa UncertaintyUnavailable
         @test uq_metadata_dict(unavailable)["outcome"] == "unavailable"
         @test uq_metadata_dict(unavailable)["target"]["selected_rank"] == 1
         unavailable_reliability = uq_reliability(unavailable)
@@ -179,12 +179,12 @@ using JSON
         @test unavailable_reliability.selection_scope == :conditional_on_selected_estimator
         @test isnothing(uq_metadata_dict(nothing))
 
-        @test_throws UQComputationError ODEParameterEstimation.apply_uq_failure_policy(
+        @test_throws UncertaintyError ODEParameterEstimation.apply_uq_failure_policy(
             unavailable,
             EstimationOptions(compute_uncertainty = true,
                 uq_failure_policy = :throw, nooutput = true),
         )
-        @test startswith(sprint(showerror, UQComputationError(unavailable)), "Uncertainty quantification failed [")
+        @test startswith(sprint(showerror, UncertaintyError(unavailable)), "Uncertainty quantification failed [")
 
         report = UncertaintyReport(
             "json_sidecar", 0.0,

@@ -44,8 +44,9 @@ covered by the internal-backend tests.
 
 `aaad_gpr_pivot` is the sole production adapter: `fit_se` accepts normalized
 observations and `predict_mean` returns a normalized scalar mean. Replace those
-two calls and remove the parent include to excise the module. `GPRapprox`,
-`InterpolatorAAADGPR`, and the default candidate pool remain public contracts.
+two calls and remove the parent include to excise the module. `GPRapprox` and
+`InterpolatorAAADGPR` are internal; the default list of curve fits must keep
+behaving the same.
 AGP/AGPUQ keep their own fitting policies and uncertainty contracts.
 
 Tests contain upstream fixed-parameter fixtures, independent SE derivative

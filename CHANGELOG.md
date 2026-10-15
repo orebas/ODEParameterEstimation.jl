@@ -2,25 +2,48 @@
 
 ## Unreleased
 
-### Fewer exported names — 2026-10-14
+### Fewer exported names, and clearer ones — 2026-10-14
 
-- `using ODEParameterEstimation` now brings in 37 names instead of 190: the
-  problem and data types, `sample_problem_data`, `estimate`,
-  `analyze_parameter_estimation_problem`, `EstimationOptions` and the option
-  values it documents (the three system solvers, the two flows, the five
-  polishing methods, the nine default curve fits, `InterpolatorAGPUQ` and
-  `InterpolatorCustom`), the result, uncertainty and error types, and
-  `print_uncertainty_results`.
+- `using ODEParameterEstimation` now brings in 29 names instead of 190:
+  - setting up: `ParameterEstimationProblem`, `create_ordered_ode_system`,
+    `sample_problem_data`, `ObservationData`, `ObservationSeries`,
+    `observation_times`
+  - estimating: `estimate`, `analyze_parameter_estimation_problem`,
+    `EstimationOptions`
+  - option values: `SolverHC`, `SolverTrustRegion`,
+    `SolverLevenbergMarquardt`, `FlowStandard`, `FlowDirectOpt`,
+    `PolishLeastSquares`, `PolishNewtonTrust`, `PolishBFGS`, `PolishLBFGS`,
+    `InterpolatorAAA`, `InterpolatorGP`, `InterpolatorGPUncertainty`,
+    `InterpolatorCustom`
+  - results and errors: `ParameterEstimationResult`, `UncertaintyReport`,
+    `UncertaintyUnavailable`, `print_uncertainty_results`,
+    `UnsupportedModelClassError`, `UnsupportedDerivativeOrderError`,
+    `SamplingFailureError`
 - Marked `public` but not exported, so written with the module name:
   `Examples`, the option types (`InterpolatorMethod` and the others),
   `OrderedODESystem`, `ResultProvenance`, `AbstractUQOutcome`,
-  `UQComputationError`, `uq_reliability`, `UQReliabilityAssessment`,
+  `UncertaintyError`, `uq_reliability`, `UQReliabilityAssessment`,
   `merge_options`, `validate_options` and `print_options`.
 - Everything else is internal. It can still be reached as
   `ODEParameterEstimation.name` or imported by name, but it may change in any
   release. This covers the individual curve-fit and solver functions, the
   stages of the estimation, the uncertainty internals, the result bookkeeping
-  helpers, the noise helpers and the constants.
+  helpers, the noise helpers, the constants, `PolishFastLMBoundedLog`, and the
+  curve fits other than the four exported. The default list of curve fits is
+  unchanged.
+- Renamed, so that each says what it does:
+
+  | Old | New |
+  |---|---|
+  | `SolverFastNLOpt` | `SolverLevenbergMarquardt` |
+  | `SolverRobust` | `SolverTrustRegion` |
+  | `PolishLSOBoundedLog` | `PolishLeastSquares` |
+  | `InterpolatorAAAD` | `InterpolatorAAA` |
+  | `InterpolatorAGPRobust` | `InterpolatorGP` |
+  | `InterpolatorAGPUQ` | `InterpolatorGPUncertainty` |
+  | `UQUnavailable` | `UncertaintyUnavailable` |
+  | `UQComputationError` | `UncertaintyError` |
+
 - Removed `InterpolatorS3SE`, `InterpolatorS3RQ`, `InterpolatorS3SEpRQ` and
   `InterpolatorS3SExRQ`. They were marked deprecated and did what the
   `InterpolatorS3Adapt` values do.

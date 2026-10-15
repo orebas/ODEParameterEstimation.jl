@@ -2504,7 +2504,7 @@ function direct_optimization_parameter_estimation(PEP::ParameterEstimationProble
 	_run_ctx_begin_uq!(opts.compute_uncertainty)
 	if opts.compute_uncertainty && isnothing(_run_ctx_noise_interpolants(:agp_uq))
 		configured = resolve_interpolator_list(opts)
-		agp_idx = findfirst(pair -> first(pair) == InterpolatorAGPUQ, configured)
+		agp_idx = findfirst(pair -> first(pair) == InterpolatorGPUncertainty, configured)
 		if !isnothing(agp_idx)
 			method, custom = configured[agp_idx]
 			interp_func = get_interpolator_function(

@@ -1,5 +1,6 @@
 using ODEParameterEstimation, Test, LinearAlgebra
-using ODEParameterEstimation: solve_multipoint_overdetermined, solve_with_robust
+using ODEParameterEstimation: solve_multipoint_overdetermined, solve_with_robust,
+    InterpolatorChebyshevAICc
 using ODEParameterEstimation.Symbolics: @variables, Num, substitute
 const RobustODEPE = ODEParameterEstimation
 
@@ -45,7 +46,7 @@ end
 @testset "Estimator reuses one kernel across points and interpolators" begin
 	for parameter_homotopy in (false,true)
 		opts = EstimationOptions(datasize=31,shooting_points=3,
-			interpolators=[InterpolatorAAAD,InterpolatorChebyshevAICc],
+			interpolators=[InterpolatorAAA,InterpolatorChebyshevAICc],
 			use_parameter_homotopy=parameter_homotopy,use_multipoint=false,
 			polish_solver_solutions=true,polish_solutions=false,
 			compute_uncertainty=false,branch_completion=false,terminal_fallback=:none,

@@ -372,7 +372,7 @@ function unrescale_uncertainty_report(
     info::ScaleInfo,
 )
     isnothing(uq) && return nothing
-    uq isa UQUnavailable && return uq
+    uq isa UncertaintyUnavailable && return uq
     uq isa UncertaintyReport || return uq
 
     factors = [

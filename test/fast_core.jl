@@ -1,5 +1,6 @@
 using ODEParameterEstimation
-using ODEParameterEstimation: EstimationFlow, InterpolatorMethod
+using ODEParameterEstimation: EstimationFlow, InterpolatorMethod, InterpolatorS3AdaptSE,
+    InterpolatorChebyshevAICc, PolishFastLMBoundedLog
 using Symbolics
 using Test
 using Logging
@@ -47,7 +48,7 @@ using Random
         merged = ODEParameterEstimation.merge_options(
             base;
             shooting_points = 2,
-            interpolators = [InterpolatorAGPRobust, InterpolatorS3AdaptSE],
+            interpolators = [InterpolatorGP, InterpolatorS3AdaptSE],
             terminal_fallback = :direct_opt,
             backsolve_recovery = :algebraic_resolve,
             t0_state_completion = :strict,
@@ -59,7 +60,7 @@ using Random
 
         resolved = ODEParameterEstimation.resolve_interpolator_list(merged)
         @test length(resolved) == 2
-        @test first.(resolved) == [InterpolatorAGPRobust, InterpolatorS3AdaptSE]
+        @test first.(resolved) == [InterpolatorGP, InterpolatorS3AdaptSE]
 
         custom_interp = (xs, ys) -> ODEParameterEstimation.aaad(xs, ys)
         custom_opts = EstimationOptions(
@@ -72,7 +73,7 @@ using Random
         @test first(resolved_custom)[2] === custom_interp
 
         plural_custom_opts = EstimationOptions(
-            interpolators = [InterpolatorCustom, InterpolatorAAAD, InterpolatorCustom],
+            interpolators = [InterpolatorCustom, InterpolatorAAA, InterpolatorCustom],
             custom_interpolators = Function[custom_interp, custom_interp],
         )
         @test ODEParameterEstimation.validate_options(plural_custom_opts)
@@ -387,7 +388,7 @@ using Random
             nooutput = true,
             diagnostics = false,
             save_system = false,
-            interpolators = [InterpolatorAAAD],
+            interpolators = [InterpolatorAAA],
             polish_solver_solutions = false,
             polish_solutions = false,
         )
@@ -582,7 +583,7 @@ using Random
             construction_compute_mixed_volume = false,
             construction_candidate_limit = 8,
             construction_beam_width = 4,
-            interpolators = [InterpolatorAAAD, InterpolatorChebyshevAICc],
+            interpolators = [InterpolatorAAA, InterpolatorChebyshevAICc],
             polish_solver_solutions = false,
             polish_solutions = false,
             synthesize_aggregate_candidates = false,
@@ -658,14 +659,14 @@ using Random
 
     @testset "Polish method dispatch" begin
         # New residual-mode methods are recognized
-        @test ODEParameterEstimation.is_residual_polish_method(PolishLSOBoundedLog)
+        @test ODEParameterEstimation.is_residual_polish_method(PolishLeastSquares)
         @test ODEParameterEstimation.is_residual_polish_method(PolishFastLMBoundedLog)
         @test !ODEParameterEstimation.is_residual_polish_method(PolishNewtonTrust)
         @test !ODEParameterEstimation.is_residual_polish_method(PolishBFGS)
 
         # `get_polish_optimizer` returns a tagged tuple for residual methods, a plain
         # constructor for scalar methods
-        token_lso = ODEParameterEstimation.get_polish_optimizer(PolishLSOBoundedLog)
+        token_lso = ODEParameterEstimation.get_polish_optimizer(PolishLeastSquares)
         @test token_lso isa Tuple
         @test token_lso[1] === :lso_direct
         # Don't pull `LeastSquaresOptim` into Main scope; check the type name instead.
@@ -818,7 +819,7 @@ using Random
 
 	@testset "UQ policy helper" begin
 		# Estimator-aware contract: `nothing` is reserved for UQ disabled and is
-		# always a pass-through. Requested failures are typed `UQUnavailable`
+		# always a pass-through. Requested failures are typed `UncertaintyUnavailable`
 		# outcomes (covered in test_estimator_aware_uq.jl).
 		passthrough_opts = EstimationOptions(uq_failure_policy = :return_failed)
 		throw_opts = EstimationOptions(uq_failure_policy = :throw)
@@ -922,7 +923,7 @@ using Random
             flow = FlowStandard,
             use_si_template = true,
             use_parameter_homotopy = true,
-            interpolators = [InterpolatorAAAD, InterpolatorAGPRobust],
+            interpolators = [InterpolatorAAA, InterpolatorGP],
             save_system = false,
             polish_solver_solutions = true,
             polish_solutions = false,
@@ -1224,7 +1225,7 @@ using Random
             analysis,
             EstimationOptions(compute_uncertainty = true, nooutput = true),
         )
-        @test uq_result isa ODEParameterEstimation.UQUnavailable
+        @test uq_result isa ODEParameterEstimation.UncertaintyUnavailable
         @test uq_result.reason == :no_selected_result
         @test isnothing(ODEParameterEstimation._compute_uq_result(
             pep, analysis, EstimationOptions(compute_uncertainty = false, nooutput = true)))

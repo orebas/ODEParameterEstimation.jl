@@ -9,8 +9,8 @@ Enum for selecting the polynomial system solver method.
 """
 @enum SystemSolverMethod begin
 	SolverHC           # solve_with_hc - HomotopyContinuation solver (default)
-	SolverFastNLOpt    # solve_with_fast_nlopt - Fast compiled NLOpt
-	SolverRobust       # solve_with_robust - Robust solver with multiple fallbacks
+	SolverLevenbergMarquardt    # solve_with_fast_nlopt - Fast compiled NLOpt
+	SolverTrustRegion       # solve_with_robust - Robust solver with multiple fallbacks
 end
 
 """
@@ -19,11 +19,11 @@ end
 Enum for selecting the data interpolation method.
 """
 @enum InterpolatorMethod begin
-	InterpolatorAAAD           # aaad - Basic AAA rational interpolation
+	InterpolatorAAA           # aaad - Basic AAA rational interpolation
 	InterpolatorAAADGPR        # aaad_gpr_pivot - GPR-based AAA (default)
 	InterpolatorAAADOld        # aaad_old_reliable - Conservative AAA
 	InterpolatorFHD            # Floater-Hormann interpolation
-	InterpolatorAGPRobust      # agp_gpr_robust - Robust GP that handles smooth/noiseless data
+	InterpolatorGP      # agp_gpr_robust - Robust GP that handles smooth/noiseless data
 	InterpolatorAGPRobustRQ    # agp_gpr_robust with Rational Quadratic kernel
 	InterpolatorAGPRobustSEpRQ # agp_gpr_robust with SE + RQ sum kernel
 	InterpolatorAGPRobustSExRQ # agp_gpr_robust with SE * RQ product kernel
@@ -36,7 +36,7 @@ Enum for selecting the data interpolation method.
 	InterpolatorS3BICRQ            # S3 BIC: GP(RQ) → AAA(BIC-selected) → MLE
 	InterpolatorS3BICSEpRQ         # S3 BIC: GP(SE+RQ) → AAA(BIC-selected) → MLE
 	InterpolatorS3BICSExRQ         # S3 BIC: GP(SE×RQ) → AAA(BIC-selected) → MLE
-	InterpolatorAGPUQ          # agp_gpr_uq - GP with full UQ (for calibrated uncertainty)
+	InterpolatorGPUncertainty          # agp_gpr_uq - GP with full UQ (for calibrated uncertainty)
 	InterpolatorChebyshevAICc  # Chebyshev polynomial with AICc degree selection (spectral)
 	InterpolatorChebyshevBIC   # Chebyshev polynomial with BIC degree selection (spectral)
 	InterpolatorCustom         # User-provided custom interpolator
@@ -56,7 +56,7 @@ Note: The scalar methods are Optim.jl optimizers run through Optimization.jl.
 	# (`:auto` policy: log for positive bounds, shifted-log for signed bounds, linear
 	# for unbounded). Switch back to `PolishNewtonTrust` to restore the legacy scalar
 	# polish path; the dispatch is fully reversible at runtime.
-	PolishLSOBoundedLog        # LeastSquaresOptim.LevenbergMarquardt() with bounds
+	PolishLeastSquares        # LeastSquaresOptim.LevenbergMarquardt() with bounds
 	PolishFastLMBoundedLog     # FastLevenbergMarquardt.lmsolve!() with bounds
 end
 
@@ -67,7 +67,7 @@ True when `method` uses the residual-vector polish path (`_polish_single_residua
 rather than the scalar-loss `Optimization.solve` path.
 """
 function is_residual_polish_method(method::PolishMethod)
-	return method === PolishLSOBoundedLog || method === PolishFastLMBoundedLog
+	return method === PolishLeastSquares || method === PolishFastLMBoundedLog
 end
 
 """
@@ -136,9 +136,13 @@ method each, and are grouped by stage.
 # Everyday options
 
 - `interpolators`: the curve fits used to estimate derivatives of the data, as
-  a vector such as `[InterpolatorAAAD]`. Each is run and their candidate
-  solutions are pooled. The default is nine methods: Gaussian processes,
-  rational approximations and Chebyshev series. A shorter list is faster.
+  a vector such as `[InterpolatorAAA]`. Each is run and their candidate
+  solutions are pooled. The default runs nine: Gaussian processes, rational
+  approximations and Chebyshev series. A shorter list is faster.
+  `InterpolatorAAA`, a rational approximation, suits exact or nearly exact
+  data; `InterpolatorGP`, a Gaussian process, suits noisy data;
+  `InterpolatorGPUncertainty` is needed for `compute_uncertainty`; and
+  `InterpolatorCustom` uses a function of your own.
 - `polish_solutions` (default `true`): refine each solution by least squares
   against the data. `false` returns the algebraic estimates as they are.
 - `opt_lb`, `opt_ub` (default `nothing`): lower and upper bounds, as vectors
@@ -195,9 +199,10 @@ These are read only by [`sample_problem_data`](@ref).
 - `auto_filter_interpolators` (default `true`): leave out the rational
   interpolators when the data look noisy, because they amplify noise.
 - `s3_adapt_k` (default `10.0`): noise multiplier for the tolerance of the
-  `InterpolatorS3Adapt` methods. Higher keeps fewer support points.
+  two default curve fits that pass a Gaussian process through a rational
+  approximation. Higher keeps fewer support points.
 - `gp_derivative_lengthscale_factor` (default `1.0`): multiplies the fitted
-  length scale of `InterpolatorAGPUQ`. Values below one smooth less.
+  length scale of `InterpolatorGPUncertainty`. Values below one smooth less.
 - `gp_s3_refinement` (default `false`): deprecated. List the
   `InterpolatorS3Adapt` methods in `interpolators` instead.
 
@@ -207,8 +212,8 @@ These are read only by [`sample_problem_data`](@ref).
   `FlowDirectOpt` fits by local optimization alone.
 - `system_solver` (default `SolverHC`): how the polynomial systems are solved.
   `SolverHC` is homotopy continuation, which finds every solution. The others
-  are local solvers and can miss solutions: `SolverRobust` is a trust-region
-  method started from several points, and `SolverFastNLOpt` is
+  are local solvers and can miss solutions: `SolverTrustRegion` is a trust-region
+  method started from several points, and `SolverLevenbergMarquardt` is
   Levenberg–Marquardt from one point.
 - `use_si_template` (default `true`): build the equations with
   StructuralIdentifiability.jl.
@@ -293,10 +298,10 @@ These are read only by [`sample_problem_data`](@ref).
   (default `1`): how the Jacobian for that is computed, `:forwarddiff`,
   `:symbolic` or `:finitediff`, and ForwardDiff's chunk size, where `0` chooses
   automatically.
-- `polish_method` (default `PolishLSOBoundedLog`): the optimizer for
-  `polish_solutions`. `PolishLSOBoundedLog` and `PolishFastLMBoundedLog` are
-  Levenberg–Marquardt methods. `PolishNewtonTrust`, `PolishBFGS` and
-  `PolishLBFGS` minimize the sum of squares directly.
+- `polish_method` (default `PolishLeastSquares`): the optimizer for
+  `polish_solutions`. `PolishLeastSquares` is Levenberg–Marquardt.
+  `PolishNewtonTrust`, `PolishBFGS` and `PolishLBFGS` minimize the sum of
+  squares directly.
 - `polish_maxiters` (default `100`), `polish_maxtime` (default `3600.0`
   seconds), `polish_max_concurrency` (default `Threads.nthreads()`): limits on
   the iterations and time spent on each solution, and on how many are refined
@@ -345,9 +350,9 @@ These are read only by [`sample_problem_data`](@ref).
 Uncertainty estimation is experimental.
 
 - `compute_uncertainty` (default `false`): also estimate standard errors for
-  the best solution. Needs `InterpolatorAGPUQ` in `interpolators`.
+  the best solution. Needs `InterpolatorGPUncertainty` in `interpolators`.
 - `uq_failure_policy` (default `:return_failed`): when standard errors cannot
-  be computed, `:return_failed` returns a [`UQUnavailable`](@ref) that says
+  be computed, `:return_failed` returns a [`UncertaintyUnavailable`](@ref) that says
   why, and `:throw` raises an error.
 - `uq_noise_source` (default `:learned_gp_homoscedastic`): where the noise
   level comes from: the Gaussian process fit, or with `:smoother_residual_edf`
@@ -360,14 +365,14 @@ Base.@kwdef struct EstimationOptions
 
 	# The curve fits to run. Each is run and their candidates are pooled.
 	interpolators::Vector{InterpolatorMethod} = InterpolatorMethod[
-		InterpolatorAGPRobust,        # SE kernel — robust GP baseline
+		InterpolatorGP,        # SE kernel — robust GP baseline
 		InterpolatorAGPRobustRQ,      # RQ kernel — Rational Quadratic (heavier-tail length-scale mixture)
 		InterpolatorS3AdaptSE,        # GP→AAA(adaptive)→MLE
 		InterpolatorS3AdaptRQ,        # GP→AAA(adaptive)→MLE with RQ kernel
 		InterpolatorChebyshevBIC,     # Spectral, BIC degree selection
 		InterpolatorChebyshevAICc,    # Spectral, AICc degree selection
 		InterpolatorAAADGPR,          # GPR-pivoted AAA — proven for ill-conditioned systems
-		InterpolatorAAAD,             # Pure AAA rational interpolation
+		InterpolatorAAA,             # Pure AAA rational interpolation
 		InterpolatorS2AAAMLE,         # AAA→MLE (no GP step)
 	]
 	custom_interpolators::Vector{Function} = Function[]
@@ -520,7 +525,7 @@ Base.@kwdef struct EstimationOptions
 	# (see temp_plans/2026-05-01_local_polish_default_recommendation.md): bounded
 	# LeastSquaresOptim Levenberg-Marquardt in per-variable transformed coordinates.
 	# Switch to `PolishNewtonTrust` to restore the legacy scalar-loss polish path.
-	polish_method::PolishMethod = PolishLSOBoundedLog
+	polish_method::PolishMethod = PolishLeastSquares
 	polish_maxiters::Int = 100
 	opt_maxiters::Int = 10000
 	opt_lb::Union{Nothing, Vector{Float64}} = nothing
@@ -694,9 +699,9 @@ Convert SystemSolverMethod enum to actual solver function.
 function get_solver_function(method::SystemSolverMethod)
 	if method == SolverHC
 		return solve_with_hc
-	elseif method == SolverFastNLOpt
+	elseif method == SolverLevenbergMarquardt
 		return solve_with_fast_nlopt
-	elseif method == SolverRobust
+	elseif method == SolverTrustRegion
 		return solve_with_robust
 	else
 		error("Unknown solver method: $method")
@@ -721,7 +726,7 @@ function get_interpolator_function(method::InterpolatorMethod, custom::Union{Not
 	if custom !== nothing
 		return custom
 	end
-	if method == InterpolatorAAAD
+	if method == InterpolatorAAA
 		return aaad
 	elseif method == InterpolatorAAADGPR
 		return aaad_gpr_pivot
@@ -729,9 +734,9 @@ function get_interpolator_function(method::InterpolatorMethod, custom::Union{Not
 		return aaad_old_reliable
 	elseif method == InterpolatorFHD
 		return fhdn(5)  # Default to degree 5 FHD
-	elseif method == InterpolatorAGPUQ
+	elseif method == InterpolatorGPUncertainty
 		return agp_gpr_uq
-	elseif method == InterpolatorAGPRobust
+	elseif method == InterpolatorGP
 		return agp_gpr_robust
 	elseif method == InterpolatorAGPRobustRQ
 		return (xs, ys) -> agp_gpr_robust(xs, ys; kernel_type=:rq)
@@ -778,12 +783,12 @@ end
 Convert an InterpolatorMethod enum value to a Symbol for tagging results.
 """
 function interpolator_method_to_symbol(method::InterpolatorMethod)
-	method == InterpolatorAAAD && return :aaad
+	method == InterpolatorAAA && return :aaad
 	method == InterpolatorAAADGPR && return :aaad_gpr
 	method == InterpolatorAAADOld && return :aaad_old
 	method == InterpolatorFHD && return :fhd
-	method == InterpolatorAGPUQ && return :agp_uq
-	method == InterpolatorAGPRobust && return :agp_robust
+	method == InterpolatorGPUncertainty && return :agp_uq
+	method == InterpolatorGP && return :agp_robust
 	method == InterpolatorAGPRobustRQ && return :agp_robust_rq
 	method == InterpolatorAGPRobustSEpRQ && return :agp_robust_se_plus_rq
 	method == InterpolatorAGPRobustSExRQ && return :agp_robust_se_times_rq
@@ -827,7 +832,7 @@ function resolve_interpolator_list(opts::EstimationOptions)
 	if opts.gp_s3_refinement
 		@warn "gp_s3_refinement is deprecated. Add InterpolatorS3AdaptSE etc. to your interpolators list directly." maxlog=1
 		gp_to_s3 = Dict(
-			InterpolatorAGPRobust => InterpolatorS3AdaptSE,
+			InterpolatorGP => InterpolatorS3AdaptSE,
 			InterpolatorAGPRobustRQ => InterpolatorS3AdaptRQ,
 			InterpolatorAGPRobustSEpRQ => InterpolatorS3AdaptSEpRQ,
 			InterpolatorAGPRobustSExRQ => InterpolatorS3AdaptSExRQ,
@@ -843,7 +848,7 @@ function resolve_interpolator_list(opts::EstimationOptions)
 		factor = opts.gp_derivative_lengthscale_factor
 		for i in eachindex(result)
 			method, custom = result[i]
-			if method == InterpolatorAGPUQ && isnothing(custom)
+			if method == InterpolatorGPUncertainty && isnothing(custom)
 				result[i] = (
 					method,
 					(xs, ys) -> agp_gpr_uq(
@@ -871,7 +876,7 @@ for fallback).
 Thresholds (empirically calibrated on `forced_lotka_volterra_0_1em2`,
 2026-05-05):
 - `InterpolatorS2AAAMLE`: drop when σ̂ > 1e-4
-- `InterpolatorAAAD`, `InterpolatorAAADOld`: drop when σ̂ > 1e-5
+- `InterpolatorAAA`, `InterpolatorAAADOld`: drop when σ̂ > 1e-5
 """
 function _apply_noise_filter(list::AbstractVector, σ̂::Float64)
 	THRESHOLD_S2     = 1e-4
@@ -883,7 +888,7 @@ function _apply_noise_filter(list::AbstractVector, σ̂::Float64)
 			@warn "[INTERP-GATE] Skipping S2AAAMLE: σ̂=$σ̂ > threshold $THRESHOLD_S2"
 			continue
 		end
-		if (method == InterpolatorAAAD || method == InterpolatorAAADOld) && σ̂ > THRESHOLD_AAAD
+		if (method == InterpolatorAAA || method == InterpolatorAAADOld) && σ̂ > THRESHOLD_AAAD
 			@warn "[INTERP-GATE] Skipping $method: σ̂=$σ̂ > threshold $THRESHOLD_AAAD"
 			continue
 		end
@@ -898,7 +903,7 @@ end
 Map any GP-based interpolator method to its kernel type, or `nothing` if not GP-based.
 """
 function _gp_kernel_of(method::InterpolatorMethod)::Union{Nothing, Symbol}
-	method == InterpolatorAGPRobust && return :se
+	method == InterpolatorGP && return :se
 	method == InterpolatorAGPRobustRQ && return :rq
 	method == InterpolatorAGPRobustSEpRQ && return :se_plus_rq
 	method == InterpolatorAGPRobustSExRQ && return :se_times_rq
@@ -1067,7 +1072,7 @@ For scalar `Optimization.solve`-based methods (legacy default `PolishNewtonTrust
 plus `PolishBFGS`/`PolishLBFGS`) returns a zero-arg constructor — the call site
 does `optimizer_type()` to instantiate.
 
-For residual-mode methods (`PolishLSOBoundedLog`, `PolishFastLMBoundedLog`) returns
+For residual-mode methods (`PolishLeastSquares`, `PolishFastLMBoundedLog`) returns
 a tagged tuple `(kind::Symbol, factory)` consumed by `_polish_single_residual`.
 The kinds are `:lso_direct` (LeastSquaresOptim) and `:fastlm_direct` (FastLevenbergMarquardt).
 """
@@ -1078,7 +1083,7 @@ function get_polish_optimizer(method::PolishMethod)
 		return BFGS
 	elseif method == PolishLBFGS
 		return LBFGS
-	elseif method == PolishLSOBoundedLog
+	elseif method == PolishLeastSquares
 		return (:lso_direct, () -> LeastSquaresOptim.LevenbergMarquardt())
 	elseif method == PolishFastLMBoundedLog
 		return (:fastlm_direct, () -> nothing)
@@ -1150,7 +1155,7 @@ function _options_from_keywords(keywords)
 		verb = length(unknown) == 1 ? "is not an estimation option" : "are not estimation options"
 		# The single-interpolator options were removed on 2026-10-06.
 		hint = any(in(unknown), (:interpolator, :custom_interpolator)) ?
-			" Interpolators are given as a list, as in `interpolators = [InterpolatorAAAD]`." : ""
+			" Interpolators are given as a list, as in `interpolators = [InterpolatorAAA]`." : ""
 		throw(ArgumentError("$names $verb.$hint `?EstimationOptions` lists the options."))
 	end
 	return EstimationOptions(; keywords...)
@@ -1181,7 +1186,7 @@ function validate_options(opts::EstimationOptions)
 	end
 
 	if isempty(opts.interpolators)
-		@error "interpolators is empty. List at least one, such as [InterpolatorAAAD]."
+		@error "interpolators is empty. List at least one, such as [InterpolatorAAA]."
 		valid = false
 	else
 		required_custom = count(==(InterpolatorCustom), opts.interpolators)
@@ -1433,8 +1438,8 @@ function validate_options(opts::EstimationOptions)
 	end
 	if opts.compute_uncertainty
 		configured = resolve_interpolator_list(opts)
-		if !any(first(pair) == InterpolatorAGPUQ for pair in configured)
-			@warn "compute_uncertainty=true but no exact UQ-capable interpolator is configured. Add InterpolatorAGPUQ explicitly; the estimator pool will not be changed automatically."
+		if !any(first(pair) == InterpolatorGPUncertainty for pair in configured)
+			@warn "compute_uncertainty=true but no exact UQ-capable interpolator is configured. Add InterpolatorGPUncertainty explicitly; the estimator pool will not be changed automatically."
 		end
 	end
 

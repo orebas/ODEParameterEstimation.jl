@@ -8,7 +8,7 @@ using OrdinaryDiffEq
 using Test
 
 const _ESTIMATE_QUICK_OPTS = (;
-	datasize = 31, interpolators = [InterpolatorAAAD], use_parameter_homotopy = false, polish_solutions = false,
+	datasize = 31, interpolators = [InterpolatorAAA], use_parameter_homotopy = false, polish_solutions = false,
 )
 
 @testset "Estimating from measured data" begin
@@ -60,7 +60,7 @@ end
 		true_values = [a => 0.4, b => 0.8, x1 => 1.0, x2 => 0.5])
 	problem = sample_problem_data(problem; datasize = 51, time_interval = [0.0, 5.0], noise_level = 0.02, seed = 11)
 
-	shared = (; seed = 11, interpolators = [InterpolatorAGPRobust])
+	shared = (; seed = 11, interpolators = [InterpolatorGP])
 	refined = first(estimate(problem; shared...))
 	rough = first(estimate(problem; shared..., polish_solutions = false))
 	@test refined.provenance.polish_applied

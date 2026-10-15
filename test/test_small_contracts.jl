@@ -91,7 +91,7 @@ end
 		(datasize = 2,) => "Very small datasize",
 		(flow = FlowDirectOpt,) => "terminal_fallback is ignored",
 		(t0_state_completion = :seed_for_polish, polish_solutions = false) => "requires polish_solutions",
-		(compute_uncertainty = true,) => "InterpolatorAGPUQ",
+		(compute_uncertainty = true,) => "InterpolatorGPUncertainty",
 	]
 	for (options, message) in warnings
 		valid, logs = _checked(; options...)
@@ -125,7 +125,7 @@ end
 	mine(xs, ys) = x -> 0.0
 	@test get_interpolator_function(InterpolatorCustom, mine) === mine
 	# A supplied function takes the place of the built-in one.
-	@test get_interpolator_function(InterpolatorAAAD, mine) === mine
+	@test get_interpolator_function(InterpolatorAAA, mine) === mine
 	for method in instances(SystemSolverMethod)
 		@test get_solver_function(method) isa Function
 	end

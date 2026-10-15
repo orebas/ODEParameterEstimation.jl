@@ -30,7 +30,7 @@ end
 		nooutput = true,
 		diagnostics = false,
 		compute_uncertainty = true,
-		interpolators = InterpolatorMethod[InterpolatorAGPUQ],
+		interpolators = InterpolatorMethod[InterpolatorGPUncertainty],
 		auto_filter_interpolators = false,
 		shooting_points = 1,
 		use_parameter_homotopy = false,

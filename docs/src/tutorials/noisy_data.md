@@ -81,7 +81,7 @@ A run on noisy data can be made faster by using a single Gaussian-process
 interpolator, which here gives the same answer:
 
 ```julia
-estimate(problem; interpolators = [InterpolatorAGPRobust])
+estimate(problem; interpolators = [InterpolatorGP])
 ```
 
 ## How good is the answer

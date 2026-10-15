@@ -43,8 +43,8 @@ for every curve fit and every time point. Two options reduce the count.
 enough:
 
 ```julia
-estimate(problem; interpolators = [InterpolatorAAAD])        # exact or nearly exact data
-estimate(problem; interpolators = [InterpolatorAGPRobust])   # noisy data
+estimate(problem; interpolators = [InterpolatorAAA])        # exact or nearly exact data
+estimate(problem; interpolators = [InterpolatorGP])   # noisy data
 ```
 
 `shooting_points` is the number of time points the equations are solved at. The

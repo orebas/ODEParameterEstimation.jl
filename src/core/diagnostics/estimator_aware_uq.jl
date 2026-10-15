@@ -21,7 +21,7 @@ function _uq_unavailable(
     message::AbstractString;
     warnings::Vector{String} = String[],
 )
-    return UQUnavailable(pep.name, target, reason, String(message), warnings)
+    return UncertaintyUnavailable(pep.name, target, reason, String(message), warnings)
 end
 
 function _uq_residual_edf_variance(
@@ -1356,7 +1356,7 @@ function _uq_branch_completion_report(
     parent_uq = _compute_estimator_aware_uq(
         pep, payload.anchor, parent_target, opts,
     )
-    if parent_uq isa UQUnavailable
+    if parent_uq isa UncertaintyUnavailable
         return _uq_unavailable(
             pep, target, :parent_uq_unavailable,
             "branch anchor UQ failed [$(parent_uq.reason)]: $(parent_uq.message)",

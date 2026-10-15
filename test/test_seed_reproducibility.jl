@@ -10,7 +10,7 @@ using Random
 using Test
 
 const _SEED_OPTS = (;
-	datasize = 31, interpolators = [InterpolatorAAAD], use_parameter_homotopy = false,
+	datasize = 31, interpolators = [InterpolatorAAA], use_parameter_homotopy = false,
 	nooutput = true, diagnostics = false, save_system = false, polish_solutions = false,
 )
 

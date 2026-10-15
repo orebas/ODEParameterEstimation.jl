@@ -26,12 +26,12 @@ nothing # hide
 ```
 
 Two options turn it on. `compute_uncertainty = true` asks for it.
-`InterpolatorAGPUQ` is the curve fit that makes it possible: a Gaussian process
+`InterpolatorGPUncertainty` is the curve fit that makes it possible: a Gaussian process
 that estimates the noise in the data along with the curve. The uncertainty
 comes back as the third value of [`analyze_parameter_estimation_problem`](@ref):
 
 ```@example uq
-options = EstimationOptions(interpolators = [InterpolatorAGPUQ], compute_uncertainty = true, seed = 1)
+options = EstimationOptions(interpolators = [InterpolatorGPUncertainty], compute_uncertainty = true, seed = 1)
 raw, analysis, uncertainty = analyze_parameter_estimation_problem(problem, options)
 
 for (name, value, standard_error) in zip(uncertainty.param_labels, uncertainty.estimate_values, uncertainty.param_std)
@@ -64,7 +64,7 @@ Keep three things in mind:
 
 ## When it cannot be computed
 
-If the uncertainty cannot be worked out, the third value is a `UQUnavailable`
+If the uncertainty cannot be worked out, the third value is a `UncertaintyUnavailable`
 in place of a report, and its `message` says why:
 
 ```julia

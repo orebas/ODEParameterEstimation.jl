@@ -127,7 +127,7 @@ using Test
 		@test_throws "`datasiz` is not an estimation option" estimate(with_data; datasiz = 3)
 		@test_throws "`datasiz` and `sed` are not estimation options" estimate(with_data; datasiz = 3, sed = 1)
 		@test_throws "`datasiz` is not an estimation option" sample_problem_data(with_data; datasiz = 3)
-		@test_throws "as in `interpolators = [InterpolatorAAAD]`" estimate(with_data; interpolator = InterpolatorAAAD)
+		@test_throws "as in `interpolators = [InterpolatorAAA]`" estimate(with_data; interpolator = InterpolatorAAA)
 
 		# A model that is not rational is refused in the terms it was written in.
 		@parameters g

@@ -79,7 +79,7 @@ include("support/model_fixtures.jl")
             flow = FlowStandard,
             use_si_template = true,
             use_parameter_homotopy = false,
-            interpolators = [InterpolatorAAAD],
+            interpolators = [InterpolatorAAA],
             save_system = false,
             polish_solver_solutions = false,
             polish_solutions = false,

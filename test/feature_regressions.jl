@@ -1,7 +1,8 @@
 using ODEParameterEstimation
 using ODEParameterEstimation: InterpolatorAGPRobustSEpRQ, InterpolatorAGPRobustSExRQ,
     InterpolatorMethod, InterpolatorS3AdaptSEpRQ, InterpolatorS3AdaptSExRQ,
-    InterpolatorS3BICSE, compute_sigma_d
+    InterpolatorS3BICSE, compute_sigma_d, InterpolatorAGPRobustRQ, InterpolatorS3AdaptSE,
+    InterpolatorS3AdaptRQ, InterpolatorAAADGPR, InterpolatorS2AAAMLE, PolishFastLMBoundedLog
 using Symbolics
 using Test
 using LinearAlgebra
@@ -96,10 +97,10 @@ function partially_observed_problem()
 end
 
 const MULTI_INTERP_TEMPLATE_LIST = [
-    InterpolatorAAAD,
+    InterpolatorAAA,
     InterpolatorAAADGPR,
     InterpolatorS2AAAMLE,
-    InterpolatorAGPRobust,
+    InterpolatorGP,
     InterpolatorAGPRobustRQ,
     InterpolatorAGPRobustSEpRQ,
     InterpolatorAGPRobustSExRQ,
@@ -116,7 +117,7 @@ const SAVE_SYSTEM_OFF_OPTS = EstimationOptions(
     system_solver = SolverHC,
     flow = FlowStandard,
     use_si_template = true,
-    interpolators = InterpolatorMethod[InterpolatorAAAD],
+    interpolators = InterpolatorMethod[InterpolatorAAA],
     shooting_points = 0,
     nooutput = true,
     diagnostics = false,
@@ -318,7 +319,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         @test analysis[2] < 1e-2  # solutions should be reasonable
     end
 
-    @testset "local system solver $(solver) recovers the parameters" for solver in (SolverRobust, SolverFastNLOpt)
+    @testset "local system solver $(solver) recovers the parameters" for solver in (SolverTrustRegion, SolverLevenbergMarquardt)
         # The whole estimation with the local solver in place of homotopy
         # continuation, on the smallest model (one state, one parameter) and on
         # a two-state one. Unpolished, so the answer is the solver's own; then
@@ -465,7 +466,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         p_size = length(pep.ic) + length(pep.p_true)
         lso_opts = ODEParameterEstimation.merge_options(
             base_opts;
-            polish_method = PolishLSOBoundedLog,
+            polish_method = PolishLeastSquares,
             opt_lb = fill(1e-3, p_size),
             opt_ub = fill(50.0, p_size),
             polish_maxiters = 200,
@@ -482,7 +483,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         p_true = vcat(Float64.(collect(values(pep.ic))), Float64.(collect(values(pep.p_true))))
         polished, retained_polish = ODEParameterEstimation._polish_single_from_context(
             ctx, p_true;
-            polish_method = PolishLSOBoundedLog,
+            polish_method = PolishLeastSquares,
             maxiters = 200,
             lso_delta = lso_opts.polish_lso_delta,
             retain_internal_optimum = true,
@@ -519,7 +520,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         @test ctx_reg.regularization_lambda == 1e-6
         polished_reg, _ = ODEParameterEstimation._polish_single_from_context(
             ctx_reg, p_true;
-            polish_method = PolishLSOBoundedLog,
+            polish_method = PolishLeastSquares,
             maxiters = 200,
         )
         @test polished_reg isa ODEParameterEstimation.ParameterEstimationResult
@@ -862,7 +863,7 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
             datasize = 21, noise_level = 0.0, shooting_points = 1,
             nooutput = true, diagnostics = false, flow = FlowStandard,
             use_si_template = true, use_parameter_homotopy = false,
-            interpolators = InterpolatorMethod[InterpolatorAGPUQ],
+            interpolators = InterpolatorMethod[InterpolatorGPUncertainty],
             auto_filter_interpolators = false, use_multipoint = false,
             synthesize_aggregate_candidates = false, branch_completion = false,
             save_system = false,
@@ -909,16 +910,16 @@ const SMALL_SAMPLE_OPTS = EstimationOptions(
         @test σ̂_high > σ̂_low * 10        # noisy data is detectably noisier
 
         # 2) Filter triggers at high noise (drops S2AAAMLE), passes through low noise
-        list_with_s2 = [(InterpolatorS2AAAMLE, nothing), (InterpolatorAGPRobust, nothing)]
+        list_with_s2 = [(InterpolatorS2AAAMLE, nothing), (InterpolatorGP, nothing)]
         filtered_high = ODEParameterEstimation._apply_noise_filter(list_with_s2, σ̂_high)
         @test length(filtered_high) == 1
-        @test filtered_high[1][1] == InterpolatorAGPRobust
+        @test filtered_high[1][1] == InterpolatorGP
 
         filtered_low = ODEParameterEstimation._apply_noise_filter(list_with_s2, σ̂_low)
         @test length(filtered_low) == 2  # both kept at clean noise
 
         # 3) Wrapper short-circuits when no noise-sensitive method present
-        list_safe = [(InterpolatorAGPRobust, nothing), (InterpolatorAAADGPR, nothing)]
+        list_safe = [(InterpolatorGP, nothing), (InterpolatorAAADGPR, nothing)]
         opts_default = EstimationOptions(datasize = 51, nooutput = true, diagnostics = false, save_system = false)
         result_safe = ODEParameterEstimation.maybe_filter_interpolators_by_noise(list_safe, pep_high, opts_default)
         @test result_safe == list_safe   # no change

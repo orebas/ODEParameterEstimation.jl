@@ -207,7 +207,7 @@ end
 
 Build optional UQ-only state without allowing capture failures to change the
 estimator pool. Interrupts still propagate. A later selected candidate whose
-capture failed receives a typed `UQUnavailable(:missing_artifact)` outcome.
+capture failed receives a typed `UncertaintyUnavailable(:missing_artifact)` outcome.
 """
 function _run_ctx_try_uq_capture(f::F, description::AbstractString) where {F}
 	_run_ctx_capture_uq() || return nothing

@@ -14,22 +14,19 @@ end
         :ParameterEstimationProblem, :create_ordered_ode_system, :sample_problem_data,
         :ObservationData, :ObservationSeries, :observation_times,
         :estimate, :analyze_parameter_estimation_problem, :EstimationOptions,
-        :SolverHC, :SolverRobust, :SolverFastNLOpt,
+        :SolverHC, :SolverTrustRegion, :SolverLevenbergMarquardt,
         :FlowStandard, :FlowDirectOpt,
-        :PolishLSOBoundedLog, :PolishFastLMBoundedLog, :PolishNewtonTrust, :PolishBFGS, :PolishLBFGS,
-        :InterpolatorAGPRobust, :InterpolatorAGPRobustRQ, :InterpolatorS3AdaptSE,
-        :InterpolatorS3AdaptRQ, :InterpolatorChebyshevBIC, :InterpolatorChebyshevAICc,
-        :InterpolatorAAADGPR, :InterpolatorAAAD, :InterpolatorS2AAAMLE, :InterpolatorAGPUQ,
-        :InterpolatorCustom,
+        :PolishLeastSquares, :PolishNewtonTrust, :PolishBFGS, :PolishLBFGS,
+        :InterpolatorAAA, :InterpolatorGP, :InterpolatorGPUncertainty, :InterpolatorCustom,
         :ParameterEstimationResult,
-        :UncertaintyReport, :UQUnavailable, :print_uncertainty_results,
+        :UncertaintyReport, :UncertaintyUnavailable, :print_uncertainty_results,
         :UnsupportedModelClassError, :UnsupportedDerivativeOrderError, :SamplingFailureError,
     ])
     public_only = Set([
         :Examples,
         :SystemSolverMethod, :EstimationFlow, :PolishMethod, :InterpolatorMethod,
         :OrderedODESystem, :ResultProvenance,
-        :AbstractUQOutcome, :UQComputationError, :uq_reliability, :UQReliabilityAssessment,
+        :AbstractUQOutcome, :UncertaintyError, :uq_reliability, :UQReliabilityAssessment,
         :merge_options, :validate_options, :print_options,
     ])
     M = ODEParameterEstimation

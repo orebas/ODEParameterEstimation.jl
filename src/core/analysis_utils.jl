@@ -534,19 +534,19 @@ end
 
 
 function apply_uq_failure_policy(uq_result, opts::EstimationOptions)
-	failed = uq_result isa UQUnavailable ||
+	failed = uq_result isa UncertaintyUnavailable ||
 			 (uq_result isa UncertaintyReport && uq_result.status in (:degenerate, :failed))
 	if failed && opts.uq_failure_policy == :throw
-		outcome = if uq_result isa UQUnavailable
+		outcome = if uq_result isa UncertaintyUnavailable
 			uq_result
 		else
-			UQUnavailable(
+			UncertaintyUnavailable(
 				uq_result.model_name, uq_result.target, :degenerate,
 				"computed covariance was classified as $(uq_result.status)",
 				copy(uq_result.warnings),
 			)
 		end
-		throw(UQComputationError(outcome))
+		throw(UncertaintyError(outcome))
 	end
 	return uq_result
 end
@@ -579,7 +579,7 @@ function _compute_uq_result(
 		if !opts.nooutput
 			println("\nSkipping parameter uncertainty: no finite-error solution available.")
 		end
-		return apply_uq_failure_policy(UQUnavailable(
+		return apply_uq_failure_policy(UncertaintyUnavailable(
 			PEP.name, nothing, :no_selected_result,
 			"analysis returned no finite rank-one estimator", String[],
 		), opts)
@@ -602,7 +602,7 @@ function _compute_uq_result(
 	catch e
 		_rethrow_if_interrupt(e)
 		@warn "Parameter uncertainty computation failed" exception = (e, catch_backtrace())
-		UQUnavailable(
+		UncertaintyUnavailable(
 			PEP.name, target, :numerical_failure,
 			sprint(showerror, e), String["Estimator-aware UQ threw while processing the selected estimator."],
 		)
@@ -610,7 +610,7 @@ function _compute_uq_result(
 	uq_result = apply_uq_failure_policy(uq_result, opts)
 	if !opts.nooutput && uq_result isa UncertaintyReport
 		print_uncertainty_results(uq_result)
-	elseif !opts.nooutput && uq_result isa UQUnavailable
+	elseif !opts.nooutput && uq_result isa UncertaintyUnavailable
 		println("UQ unavailable for rank-one $(identity.estimator_kind): $(uq_result.reason) — $(uq_result.message)")
 	end
 	return uq_result

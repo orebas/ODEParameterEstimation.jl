@@ -40,7 +40,7 @@ const FAST_STANDARD_OPTS = EstimationOptions(
     use_parameter_homotopy = false,
     # An explicit pool is required: the default pool overrides the singular
     # `interpolator` option and may select a synthesized aggregate candidate.
-    interpolators = [InterpolatorAAAD],
+    interpolators = [InterpolatorAAA],
     save_system = false,
     polish_solver_solutions = false,
     polish_solutions = false,

@@ -4,7 +4,7 @@
 A robust polynomial system solver that uses the best algorithms from our benchmarking.
 Supports both solving from scratch and polishing mode.
 
-It is selected with `system_solver = SolverRobust`, and the estimation also uses
+It is selected with `system_solver = SolverTrustRegion`, and the estimation also uses
 it with `polish_only = true` to refine the roots homotopy continuation finds.
 
 # Arguments

@@ -10,7 +10,7 @@ using Test
 include(joinpath(@__DIR__, "support", "observe_run.jl"))
 
 const _QUICK_OPTS = (;
-	datasize = 31, interpolators = [InterpolatorAAAD], use_parameter_homotopy = false, polish_solutions = false,
+	datasize = 31, interpolators = [InterpolatorAAA], use_parameter_homotopy = false, polish_solutions = false,
 )
 
 @testset "Default options are quiet" begin

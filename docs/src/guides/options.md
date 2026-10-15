@@ -2,7 +2,8 @@
 
 `estimate(problem)` uses defaults that are meant to work as they are. This page
 covers the few options worth knowing about. [`EstimationOptions`](@ref) lists
-them all.
+them all, and marks the experimental ones, which may change in a minor
+release.
 
 Options are keywords of [`estimate`](@ref):
 

@@ -154,6 +154,9 @@ estimate(problem, options)
 The options most people reach for come first. The rest adjust one stage of the
 method each, and are grouped by stage.
 
+Options marked *experimental* are for studying the method. They may change or
+be removed in a minor release. The others change only in a major release.
+
 # Everyday options
 
 - `interpolators`: the curve fits used to estimate derivatives of the data, as
@@ -207,12 +210,13 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   polynomial systems to files, under `save_filepath` or else `saved_systems/`.
 - `heartbeat` (default `true`): with `nooutput = false`, include the stage
   lines that `progress` prints.
-- `profile_phases` (default `false`): print the time and memory each stage
-  took.
+- `profile_phases` (default `false`, experimental): print the time and memory
+  each stage took.
 - `hc_show_progress` (default `false`): show HomotopyContinuation's progress
   bar.
-- `dump_raw_candidates_path`, `dump_polished_path` (default `nothing`): write
-  the candidate solutions to these CSV files, before and after refinement.
+- `dump_raw_candidates_path`, `dump_polished_path` (default `nothing`,
+  experimental): write the candidate solutions to these CSV files, before and
+  after refinement.
 
 # Estimating derivatives
 
@@ -221,11 +225,12 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   `interpolators`, in order.
 - `auto_filter_interpolators` (default `true`): leave out the rational
   interpolators when the data look noisy, because they amplify noise.
-- `s3_adapt_k` (default `10.0`): noise multiplier for the tolerance of the
-  two default curve fits that pass a Gaussian process through a rational
-  approximation. Higher keeps fewer support points.
-- `gp_derivative_lengthscale_factor` (default `1.0`): multiplies the fitted
-  length scale of `InterpolatorGPUncertainty`. Values below one smooth less.
+- `s3_adapt_k` (default `10.0`, experimental): noise multiplier for the
+  tolerance of the two default curve fits that pass a Gaussian process through a
+  rational approximation. Higher keeps fewer support points.
+- `gp_derivative_lengthscale_factor` (default `1.0`, experimental): multiplies
+  the fitted length scale of `InterpolatorGPUncertainty`. Values below one
+  smooth less.
 
 # Building and solving the equations
 
@@ -233,9 +238,9 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   `FlowDirectOpt` fits by local optimization alone.
 - `system_solver` (default `SolverHC`): how the polynomial systems are solved.
   `SolverHC` is homotopy continuation, which finds every solution. The others
-  are local solvers and can miss solutions: `SolverTrustRegion` is a trust-region
-  method started from several points, and `SolverLevenbergMarquardt` is
-  Levenberg–Marquardt from one point.
+  are local solvers and can miss solutions: `SolverTrustRegion` is a
+  trust-region method started from several points, and
+  `SolverLevenbergMarquardt` is Levenberg–Marquardt from one point.
 - `use_si_template` (default `true`): build the equations with
   StructuralIdentifiability.jl.
 - `si_probability` (default `0.99`): the probability with which the
@@ -243,71 +248,81 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
 - `si_fix_strategy` (default `:local_basis`): how values are chosen for
   quantities that cannot be determined: `:local_basis` or
   `:identifiable_functions`.
-- `si_placeholder_fail_categories` (default `Symbol[]`): for development. Kinds
-  of unresolved variable in the equations that should raise an error.
-- `system_construction_policy` (default `:noise_frontier`): which equations
-  are used. `:noise_frontier` prefers systems that need lower derivatives of
-  the data and have fewer solutions. `:legacy` is the earlier choice.
+- `si_placeholder_fail_categories` (default `Symbol[]`, experimental): kinds of
+  unresolved variable in the equations that should raise an error.
+- `system_construction_policy` (default `:noise_frontier`, experimental): which
+  equations are used. `:noise_frontier` prefers systems that need lower
+  derivatives of the data and have fewer solutions. `:legacy` is the earlier
+  choice.
 - `construction_candidate_limit` (default `64`), `construction_beam_width`
-  (default `16`), `construction_compute_mixed_volume` (default `true`): limits
-  on the search that `:noise_frontier` does.
-- `shooting_warp` (default `true`), `shooting_warp_beta` (default `3.0`):
-  place more of the `shooting_points` near the start of the data, and how
-  strongly.
-- `use_multipoint` (default `true`), `multipoint_n_points` (default `2`),
-  `multipoint_max_pairs` (default `20`), `multipoint_pair_strategy` (default
-  `:spread`): also solve systems that combine equations from several time
-  points. The strategy is `:spread` or `:boundary_order`.
+  (default `16`), `construction_compute_mixed_volume` (default `true`),
+  experimental: limits on the search that `:noise_frontier` does.
+- `shooting_warp` (default `true`), `shooting_warp_beta` (default `3.0`),
+  experimental: place more of the `shooting_points` near the start of the data,
+  and how strongly.
+- `use_multipoint` (default `true`): also solve systems that combine equations
+  from several time points.
+- `multipoint_n_points` (default `2`), `multipoint_max_pairs` (default `20`),
+  `multipoint_pair_strategy` (default `:spread`), experimental: how many time
+  points each of those systems combines, how many combinations are tried, and
+  how they are chosen, `:spread` or `:boundary_order`.
 - `auto_handle_transcendentals` (default `true`): rewrite `sin(c*t)`,
   `cos(c*t)` and `exp(c*t)` in polynomial form.
 - `auto_rescale` (default `true`): rescale states, parameters and data by
   powers of two to bring them near one, and convert the estimates back.
 - `use_parameter_homotopy` (default `true`): solve at one time point and track
   the solutions to the others, which is faster than solving each afresh.
-- `homotopy_tracking_mode` (default `:generic_start`): how that tracking is
-  done: `:generic_start`, `:gamma_straight`, `:gamma_straight_fallback` or
-  `:parameter`.
-- `gamma_max_seeds` (default `5`), `gamma_seed` (default `0`): the number of
+- `homotopy_tracking_mode` (default `:generic_start`, experimental): how that
+  tracking is done: `:generic_start`, `:gamma_straight`,
+  `:gamma_straight_fallback` or `:parameter`.
+- `gamma_max_seeds` (default `5`), `gamma_seed` (default `0`), experimental:
+  the number of
   random restarts for the tracking, and their seed. `0` uses a fixed seed for
   each problem, a positive value is used as given, and a negative value draws a
   new one every run, which `seed` cannot make repeatable.
-- `use_column_scaling` (default `true`): scale the unknowns of each polynomial
-  system by the size of the data derivatives.
-- `hc_real_tol` (default `1e-9`): how small the imaginary part of a solution
-  must be for it to count as real.
-- `hc_threading` (default `true`), `hc_compile_mode` (default `:all`): passed
-  to HomotopyContinuation: whether to use threads, and whether to compile the
-  systems (`:all`, `:none` or `:mixed`).
+- `use_column_scaling` (default `true`, experimental): scale the unknowns of
+  each polynomial system by the size of the data derivatives.
+- `hc_real_tol` (default `1e-9`, experimental): how small the imaginary part of
+  a solution must be for it to count as real.
+- `hc_threading` (default `true`): let HomotopyContinuation use threads.
+- `hc_compile_mode` (default `:all`, experimental): whether
+  HomotopyContinuation compiles the systems: `:all`, `:none` or `:mixed`.
 
 # Choosing the solutions to return
 
-- `algebraic_multiplicity` (default `nothing`), `compute_algebraic_multiplicity`
-  (default `true`): the number of solutions the equations have. It is worked
-  out automatically unless you set it. At most this many results are returned.
+- `algebraic_multiplicity` (default `nothing`): the number of solutions the
+  equations have. It is worked out automatically unless you set it. At most
+  this many results are returned.
+- `compute_algebraic_multiplicity` (default `true`, experimental): `false`
+  skips working it out.
 - `branch_top_k` (default `20`): the most results returned when that number is
   not known. `0` returns all of them.
-- `rank_strategy` (default `:err_only`): the order of the results. `:err_only`
-  is by fit error. `:sat_neg1_err`, `:sat_err`, `:lognorm_err` and
+- `rank_strategy` (default `:err_only`, experimental): the order of the results.
+  `:err_only` is by fit error. `:sat_neg1_err`, `:sat_err`, `:lognorm_err` and
   `:lognorm_neg1_err` are experimental alternatives.
-- `branch_detection` (default `true`): rank without using the true values.
-  `false` ranks by distance to them, which is only meaningful in a benchmark.
-- `clustering_threshold` (default `1e-5`): the relative distance below which
-  two candidates are the same solution.
+- `branch_detection` (default `true`, experimental): rank without using the true
+  values. `false` ranks by distance to them, which is only meaningful in a
+  benchmark.
+- `clustering_threshold` (default `1e-5`, experimental): the relative distance
+  below which two candidates are the same solution.
 - `cluster_method` (default `:identifiable_subspace`), `rough_cluster_eps`
-  (default `1.0`), `subspace_cluster_eps` (default `0.05`): how near-duplicates
+  (default `1.0`), `subspace_cluster_eps` (default `0.05`), experimental: how
+  near-duplicates
   are merged. `:identifiable_subspace` first separates candidates that are far
   apart, then merges close ones within each group, at these two distances.
   `:bit_identical` merges only at `clustering_threshold`.
-- `branch_cluster_eps` (default `0.001`), `branch_err_factor` (default
-  `100.0`): before refinement, drop candidates whose fit error is more than
+- `branch_cluster_eps` (default `0.001`), `branch_err_factor` (default `100.0`),
+  experimental: before refinement, drop candidates whose fit error is more than
   `branch_err_factor` times the best, and merge the rest at this distance.
-- `branch_diversity_selection` (default `true`), `branch_diversity_eps`
-  (default `0.01`): when several results are returned, prefer ones that differ
-  by at least this relative distance.
-- `branch_completion` (default `true`), `branch_completion_max_anchors`
-  (default `1`), `branch_completion_residual_tol` (default `1e-6`): when the
-  equations have several solutions, take the best one found and solve for the
-  others from it.
+- `branch_diversity_selection` (default `true`), `branch_diversity_eps` (default
+  `0.01`), experimental: when several results are returned, prefer ones that
+  differ by at least this relative distance.
+- `branch_completion` (default `true`): when the equations have several
+  solutions, take the best one found and solve for the others from it.
+- `branch_completion_max_anchors` (default `1`),
+  `branch_completion_residual_tol` (default `1e-6`), experimental: how many of
+  the best solutions to start from, and the residual a new solution must
+  reach.
 - `synthesize_aggregate_candidates` (default `true`): add candidates made by
   combining the others: the median, mean and trimmed mean of each value.
 
@@ -316,9 +331,9 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
 - `polish_solver_solutions` (default `true`): refine each solution of the
   polynomial equations against those equations.
 - `polish_solver_jacobian` (default `:forwarddiff`), `polish_solver_chunk_size`
-  (default `1`): how the Jacobian for that is computed, `:forwarddiff`,
-  `:symbolic` or `:finitediff`, and ForwardDiff's chunk size, where `0` chooses
-  automatically.
+  (default `1`), experimental: how the Jacobian for that is computed,
+  `:forwarddiff`, `:symbolic` or `:finitediff`, and ForwardDiff's chunk size,
+  where `0` chooses automatically.
 - `polish_method` (default `PolishLeastSquares`): the optimizer for
   `polish_solutions`. `PolishLeastSquares` is Levenberg–Marquardt.
   `PolishNewtonTrust`, `PolishBFGS` and `PolishLBFGS` minimize the sum of
@@ -328,27 +343,27 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   the iterations and time spent on each solution, and on how many are refined
   at once.
 - `polish_divergence_factor` (default `10.0`), `polish_stagnation_window`
-  (default `50`): stop when the loss has grown by this factor, or has not
-  improved for this many iterations.
-- `polish_ode_maxiters` (default `5000`): the step limit for the ODE solver
-  during refinement.
-- `polish_coordinate_policy` (default `:auto`): the coordinates refinement
-  works in. `:auto` takes logarithms of quantities whose bounds are positive.
-  The others are `:linear`, `:log_only` and `:shifted_log_only`.
-- `polish_regularization_lambda` (default `0.0`): the strength of an L2 penalty
-  in those coordinates.
+  (default `50`), experimental: stop when the loss has grown by this factor, or
+  has not improved for this many iterations.
+- `polish_ode_maxiters` (default `5000`, experimental): the step limit for the
+  ODE solver during refinement.
+- `polish_coordinate_policy` (default `:auto`, experimental): the coordinates
+  refinement works in. `:auto` takes logarithms of quantities whose bounds are
+  positive. The others are `:linear`, `:log_only` and `:shifted_log_only`.
+- `polish_regularization_lambda` (default `0.0`, experimental): the strength of
+  an L2 penalty in those coordinates.
 - `polish_softwall_lambda` (default `1e-2`), `polish_softwall_epsilon` (default
-  `0.10`): a penalty that keeps values off their bounds: its strength, and the
-  width of the band beside each bound where it acts, as a fraction of the
-  range.
+  `0.10`), experimental: a penalty that keeps values off their bounds: its
+  strength, and the width of the band beside each bound where it acts, as a
+  fraction of the range.
 - `polish_lso_delta` (default `10.0`), `polish_lso_x_tol`, `polish_lso_f_tol`,
-  `polish_lso_g_tol` (default `-1.0`): the trust-region radius and tolerances
-  of the Levenberg–Marquardt methods. A negative tolerance means `abstol` or
+  `polish_lso_g_tol` (default `-1.0`), experimental: the trust-region radius
+  and tolerances of `PolishLeastSquares`. A negative tolerance means `abstol` or
   `reltol`.
 - `opt_maxiters` (default `10000`): the iteration limit for the local
   optimization of `FlowDirectOpt`.
-- `opt_ad_backend` (default `:forward`): how the optimizers get derivatives:
-  `:forward` for ForwardDiff or `:finite` for finite differences.
+- `opt_ad_backend` (default `:forward`, experimental): how the optimizers get
+  derivatives: `:forward` for ForwardDiff or `:finite` for finite differences.
 - `terminal_fallback` (default `:direct_opt`): what to do when the algebraic
   method finds nothing. `:direct_opt` fits by local optimization, within
   `polish_maxiters` and `polish_maxtime`. `:none` returns no results.
@@ -356,25 +371,25 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   solution blows up as it is integrated back to the first time point.
   `:algebraic_resolve` keeps its parameters and solves for the states at that
   time again. `:none` does nothing.
-- `t0_state_completion` (default `:strict`): with `:seed_for_polish`, when
-  that recovery finds no states it supplies starting values for
-  `polish_solutions` instead. With `:strict` it does not.
+- `t0_state_completion` (default `:strict`, experimental): with
+  `:seed_for_polish`, when that recovery finds no states it supplies starting
+  values for `polish_solutions` instead. With `:strict` it does not.
 - `use_sensitivity_seeds` (default `false`), `sensitivity_seed_probe_scale`
   (default `1.0`), `sensitivity_seed_eigenvalue_threshold` (default `0.01`),
   `sensitivity_seed_mahalanobis_threshold` (default `-1.0`),
-  `sensitivity_sigma_d_kappa` (default `2.0`): experimental. Add starting
+  `sensitivity_sigma_d_kappa` (default `2.0`), experimental: add starting
   points for refinement along the directions in which the data constrain a
   solution least.
 
 # Uncertainty
 
-Uncertainty estimation is experimental.
+All of these are experimental.
 
 - `compute_uncertainty` (default `false`): also estimate standard errors for
   the best solution. Needs `InterpolatorGPUncertainty` in `interpolators`.
-- `uq_failure_policy` (default `:return_failed`): when standard errors cannot
-  be computed, `:return_failed` returns an [`UncertaintyUnavailable`](@ref) that says
-  why, and `:throw` raises an error.
+- `uq_failure_policy` (default `:return_failed`): when standard errors cannot be
+  computed, `:return_failed` returns an [`UncertaintyUnavailable`](@ref) that
+  says why, and `:throw` raises an error.
 - `uq_noise_source` (default `:learned_gp_homoscedastic`): where the noise
   level comes from: the Gaussian process fit, or with `:smoother_residual_edf`
   the residuals of that fit.

@@ -13,6 +13,11 @@
   model. It used 1e-14, the default of both, whatever they were set to.
 - The docstring of `analyze_parameter_estimation_problem` says which fields of
   its `analysis` value are supported.
+- `?EstimationOptions` marks the options that are experimental: the tuning
+  of equation construction, homotopy tracking, clustering, ranking and
+  refinement, the sensitivity seeds, and everything to do with uncertainty.
+  These may change or be removed in a minor release; the others change only
+  in a major release.
 
 ### Fewer exported names, and clearer ones — 2026-10-14
 

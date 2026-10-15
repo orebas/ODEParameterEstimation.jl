@@ -16,7 +16,7 @@ end
         :estimate, :analyze_parameter_estimation_problem, :EstimationOptions,
         :SolverHC, :SolverTrustRegion, :SolverLevenbergMarquardt,
         :FlowStandard, :FlowDirectOpt,
-        :PolishLeastSquares, :PolishNewtonTrust, :PolishBFGS, :PolishLBFGS,
+        :PolishLeastSquares, :PolishBFGS, :PolishLBFGS,
         :InterpolatorAAA, :InterpolatorGP, :InterpolatorGPUncertainty, :InterpolatorCustom,
         :ParameterEstimationResult,
         :UncertaintyReport, :UncertaintyUnavailable, :print_uncertainty_results,

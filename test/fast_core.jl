@@ -1,6 +1,6 @@
 using ODEParameterEstimation
 using ODEParameterEstimation: EstimationFlow, InterpolatorMethod, InterpolatorS3AdaptSE,
-    InterpolatorChebyshevAICc, PolishFastLMBoundedLog
+    InterpolatorChebyshevAICc, PolishFastLMBoundedLog, PolishNewtonTrust
 using Symbolics
 using Test
 using Logging

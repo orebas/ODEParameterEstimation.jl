@@ -66,8 +66,8 @@ The optimizer that refines each solution against the data, chosen with the
 `polish_method` option.
 
 - `PolishLeastSquares` (default): Levenberg–Marquardt on the residuals.
-- `PolishNewtonTrust`, `PolishBFGS`, `PolishLBFGS`: minimize the sum of
-  squares directly, with the Optim.jl method of that name.
+- `PolishBFGS`, `PolishLBFGS`: minimize the sum of squares directly, with the
+  Optim.jl method of that name.
 """
 @enum PolishMethod begin
 	PolishNewtonTrust      # NewtonTrustRegion from Optim.jl (legacy default)
@@ -318,8 +318,7 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   where `0` chooses automatically.
 - `polish_method` (default `PolishLeastSquares`): the optimizer for
   `polish_solutions`. `PolishLeastSquares` is Levenberg–Marquardt.
-  `PolishNewtonTrust`, `PolishBFGS` and `PolishLBFGS` minimize the sum of
-  squares directly.
+  `PolishBFGS` and `PolishLBFGS` minimize the sum of squares directly.
 - `polish_maxiters` (default `100`), `polish_maxtime` (default `3600.0`
   seconds), `polish_max_concurrency` (default `Threads.nthreads()`): limits on
   the iterations and time spent on each solution, and on how many are refined

@@ -122,7 +122,7 @@ export estimate, analyze_parameter_estimation_problem, EstimationOptions
 # Option values
 export SolverHC, SolverTrustRegion, SolverLevenbergMarquardt
 export FlowStandard, FlowDirectOpt
-export PolishLeastSquares, PolishNewtonTrust, PolishBFGS, PolishLBFGS
+export PolishLeastSquares, PolishBFGS, PolishLBFGS
 export InterpolatorAAA, InterpolatorGP, InterpolatorGPUncertainty, InterpolatorCustom
 
 # Results, uncertainty and errors

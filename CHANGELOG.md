@@ -44,7 +44,7 @@
 
 ### Fewer exported names, and clearer ones — 2026-10-14
 
-- `using ODEParameterEstimation` now brings in 29 names instead of 190:
+- `using ODEParameterEstimation` now brings in 28 names instead of 190:
   - setting up: `ParameterEstimationProblem`, `create_ordered_ode_system`,
     `sample_problem_data`, `ObservationData`, `ObservationSeries`,
     `observation_times`
@@ -52,9 +52,8 @@
     `EstimationOptions`
   - option values: `SolverHC`, `SolverTrustRegion`,
     `SolverLevenbergMarquardt`, `FlowStandard`, `FlowDirectOpt`,
-    `PolishLeastSquares`, `PolishNewtonTrust`, `PolishBFGS`, `PolishLBFGS`,
-    `InterpolatorAAA`, `InterpolatorGP`, `InterpolatorGPUncertainty`,
-    `InterpolatorCustom`
+    `PolishLeastSquares`, `PolishBFGS`, `PolishLBFGS`, `InterpolatorAAA`,
+    `InterpolatorGP`, `InterpolatorGPUncertainty`, `InterpolatorCustom`
   - results and errors: `ParameterEstimationResult`, `UncertaintyReport`,
     `UncertaintyUnavailable`, `print_uncertainty_results`,
     `UnsupportedModelClassError`, `UnsupportedDerivativeOrderError`,
@@ -68,8 +67,9 @@
   `ODEParameterEstimation.name` or imported by name, but it may change in any
   release. This covers the individual curve-fit and solver functions, the
   stages of the estimation, the uncertainty internals, the result bookkeeping
-  helpers, the noise helpers, the constants, `PolishFastLMBoundedLog`, and the
-  curve fits other than the four exported. The default list of curve fits is
+  helpers, the noise helpers, the constants, `PolishFastLMBoundedLog`,
+  `PolishNewtonTrust` (the old default for refinement), and the curve fits
+  other than the four exported. The default list of curve fits is
   unchanged.
 - Renamed, so that each says what it does:
 

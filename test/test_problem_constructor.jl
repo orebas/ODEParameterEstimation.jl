@@ -159,10 +159,12 @@ end
 	@variables x(t) y(t)
 	@named decay = System([D(x) ~ -k * x], t)
 	problem = ParameterEstimationProblem(decay, [y ~ x]; true_values = [k => 0.7, x => 2.0])
-	times = [0.0, 0.1, 0.5, 2.0]
+	# Outside the default time interval, and not starting at zero: the initial
+	# conditions are the values at the first sample.
+	times = [0.5, 0.6, 1.0, 2.5]
 	sampled = sample_problem_data(problem; datasize = 4, uneven_sampling_times = times)
 	@test sampled.data_sample["t"] == times
-	@test sampled.data_sample[Num(x)] ≈ 2.0 .* exp.(-0.7 .* times) rtol = 1e-8
+	@test sampled.data_sample[Num(x)] ≈ 2.0 .* exp.(-0.7 .* (times .- 0.5)) rtol = 1e-8
 end
 
 @testset "State names need not be ASCII" begin

@@ -188,8 +188,8 @@ These are read by [`sample_problem_data`](@ref), which also uses `abstol`,
   `:relative`, each value is multiplied by `1 + noise_level * randn()`. `:none`
   adds no noise.
 - `uneven_sampling_times` (default empty, experimental): if not empty, sample
-  at these times, of which there must be `datasize`, instead of on an even
-  grid.
+  at these times, of which there must be `datasize`, instead of evenly over
+  `time_interval`. The initial conditions are the values at the first of them.
 - `ode_solver` (default `AutoVern9(Rodas5P())`): the ODE solver for the
   simulation.
 

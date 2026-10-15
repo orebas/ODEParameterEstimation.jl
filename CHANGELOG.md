@@ -16,6 +16,10 @@
   before; `progress = true` prints them on their own.
 - Removed `uneven_sampling`. A non-empty `uneven_sampling_times` now selects
   uneven sampling by itself.
+- Fixed: with `uneven_sampling_times`, the model was simulated only over
+  `time_interval`, so later sample times failed, and the initial conditions
+  were applied at the start of `time_interval`. It is now simulated from the
+  first sample time to the last, with the initial conditions at the first.
 
 ### A plain `Dict` of data is accepted again — 2026-10-15
 

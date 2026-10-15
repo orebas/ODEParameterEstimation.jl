@@ -122,8 +122,11 @@ function sample_data(model::ModelingToolkit.AbstractSystem,
 			error("Uneven sampling times must be of length num_points")
 		end
 		sampling_times = uneven_sampling_times
+		# The initial conditions hold at the first sample, as the estimator reads them.
+		time_span = [first(sampling_times), last(sampling_times)]
 	else
 		sampling_times = range(time_interval[1], time_interval[2], length = num_points)
+		time_span = time_interval
 	end
 	# Get parameters in the correct order from the model
 	ordered_params = [p_true[p] for p in ModelingToolkit.parameters(model)]
@@ -139,7 +142,7 @@ function sample_data(model::ModelingToolkit.AbstractSystem,
 				Dict()
 			else
 				Dict(ModelingToolkit.parameters(sys) .=> ordered_params)
-			end), time_interval)
+			end), time_span)
 	solution_true = ModelingToolkit.solve(problem, solver,
 		saveat = sampling_times;
 		abstol, reltol)
@@ -184,7 +187,8 @@ The options that matter here are:
 - `time_interval`: `[start, stop]`; the points are evenly spaced over it. An
   example model from `ODEParameterEstimation.Examples` has an interval of its
   own, which the keyword form uses when you give none.
-- `uneven_sampling_times`: use these time points instead, if not empty.
+- `uneven_sampling_times`: if not empty, use these time points instead of
+  `time_interval`. The initial conditions are the values at the first of them.
 - `noise_level` and `noise_model`: add Gaussian noise. `:additive` uses a
   standard deviation of `noise_level` times the mean absolute value of each
   series; `:relative` scales each value by `1 + noise_level * randn()`;

@@ -68,7 +68,7 @@ jobs:
         run: julia --startup-file=no test/registered.jl "$ODEPE_TEST_GROUP" "${{ matrix.dependencies == 'modern' && 'modern' || 'default' }}"
       - name: Preserve resolved dependency versions
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: environment-${{ matrix.version }}-${{ matrix.dependencies }}-${{ matrix.group }}
           path: ${{ runner.temp }}/odepe-validation

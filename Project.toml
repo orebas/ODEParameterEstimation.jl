@@ -39,7 +39,7 @@ Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 TaylorDiff = "b36ab563-344f-407b-a36a-4f200bebf99c"
 
 [compat]
-AbstractAlgebra = "0.48.6, 0.50.2"
+AbstractAlgebra = "0.48.6, 0.50.2, 0.51"
 AbstractGPs = "0.5.24"
 BaryRational = "1.1.1"
 Dates = "1"

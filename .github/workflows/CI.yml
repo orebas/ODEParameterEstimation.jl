@@ -61,7 +61,7 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - name: Test registered dependencies
         env:
           ODEPE_VALIDATION_DIR: ${{ runner.temp }}/odepe-validation

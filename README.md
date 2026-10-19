@@ -109,6 +109,14 @@ If you use this package in your work, please cite the papers it is based on:
 
 BibTeX entries are in [`CITATION.bib`](CITATION.bib).
 
+## ParameterEstimation.jl
+
+[ParameterEstimation.jl](https://github.com/iliailmer/ParameterEstimation.jl)
+is the original implementation of the same method, and this package started
+from it. It has fewer dependencies, runs on Julia 1.10, and suits exact data.
+This package adds curve fits that smooth noisy data and refines each answer
+against the data. New users are recommended to start here.
+
 ## Contributing
 
 Bug reports and pull requests are welcome. The manual's
@@ -117,5 +125,6 @@ says how to run the tests and build the documentation.
 
 ## License
 
-[GPL-3.0](LICENSE). The package includes code adapted from GaussianProcesses.jl
-and SIAN-Julia, which keep their MIT notices beside the source.
+[GPL-3.0](LICENSE). The package includes code adapted from ParameterEstimation.jl
+(also GPL-3.0), GaussianProcesses.jl and SIAN-Julia. The last two keep their MIT
+notices beside the source.

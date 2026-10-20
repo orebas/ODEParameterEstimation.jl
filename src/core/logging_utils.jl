@@ -5,12 +5,24 @@
 # run moves on to the next fallback.
 
 """
+    _is_interrupt(err) -> Bool
+
+True if `err` is an `InterruptException` or wraps one. A Ctrl-C that lands in a
+task (HomotopyContinuation tracks paths in tasks) reaches the caller as a
+`TaskFailedException`, often inside a `CompositeException`.
+"""
+_is_interrupt(err) = err isa InterruptException ||
+	(err isa TaskFailedException && _is_interrupt(err.task.exception)) ||
+	(err isa CompositeException && any(_is_interrupt, err.exceptions))
+
+"""
     _rethrow_if_interrupt(err)
 
-Rethrow `err` if it is an `InterruptException` (cancellation must propagate);
-otherwise do nothing. Use as the first statement of broad `catch` blocks.
+Rethrow `err` if it is an `InterruptException` or wraps one (cancellation must
+propagate); otherwise do nothing. Use as the first statement of broad `catch`
+blocks.
 """
-@inline _rethrow_if_interrupt(err) = err isa InterruptException ? rethrow(err) : nothing
+@inline _rethrow_if_interrupt(err) = _is_interrupt(err) ? rethrow(err) : nothing
 
 # ── Phase heartbeats ──────────────────────────────────────────────────────────
 # Live, flushed, timestamped phase markers so a silent log still localizes the

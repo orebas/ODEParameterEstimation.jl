@@ -19,6 +19,27 @@ using Test
 		error("unreachable: _rethrow_if_interrupt must rethrow InterruptException")
 	end
 
+	# A Ctrl-C that lands in a task reaches the caller wrapped, as a
+	# TaskFailedException, often inside a CompositeException (HomotopyContinuation
+	# tracks paths in tasks). It must propagate all the same.
+	interrupted_task = Threads.@spawn throw(InterruptException())
+	wrapped = try
+		wait(interrupted_task)
+		nothing
+	catch e
+		e
+	end
+	@test wrapped isa TaskFailedException
+	@test ODEParameterEstimation._is_interrupt(wrapped)
+	@test ODEParameterEstimation._is_interrupt(CompositeException([wrapped]))
+	@test !ODEParameterEstimation._is_interrupt(CompositeException([ArgumentError("x")]))
+	@test_throws TaskFailedException try
+		wait(interrupted_task)
+	catch e
+		ODEParameterEstimation._rethrow_if_interrupt(e)
+		error("unreachable: _rethrow_if_interrupt must rethrow a wrapped InterruptException")
+	end
+
 	# End-to-end contract: a cancellation raised deep inside the default flow
 	# (here: from the interpolator, via InterpolatorCustom) escapes
 	# analyze_parameter_estimation_problem instead of degrading into an
@@ -36,4 +57,9 @@ using Test
 	pep = ODEParameterEstimation.Examples.hidden_scale()
 	sampled = ODEParameterEstimation.sample_problem_data(pep, opts)
 	@test_throws InterruptException ODEParameterEstimation.analyze_parameter_estimation_problem(sampled, opts)
+
+	# The same, with the cancellation arriving from a task.
+	opts_task = ODEParameterEstimation.merge_options(opts;
+		custom_interpolators = Function[(args...) -> wait(Threads.@spawn throw(InterruptException()))])
+	@test_throws TaskFailedException ODEParameterEstimation.analyze_parameter_estimation_problem(sampled, opts_task)
 end

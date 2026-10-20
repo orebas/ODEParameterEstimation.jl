@@ -24,6 +24,9 @@ that are not marked experimental.
 - The other checks that use random points tie each value to a variable's name
   in the same way: the check of each two-point and single-point system at the
   data, and the choice of which undetermined parameter is fixed to 1.
+- Ctrl-C now stops an estimate when it arrives while HomotopyContinuation
+  tracks paths in tasks. It came wrapped in a `TaskFailedException`, which the
+  check for an interrupt did not look inside.
 
 ### Simulated data are read from the finished solution
 

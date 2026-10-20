@@ -218,7 +218,7 @@ function _rank_aware_topdown_strip(equations::Vector, variables::Vector,
     # must be deterministic; the noise-frontier twin already seeds identically.
     probe_rng = MersenneTwister(0x9f4d0329)
     for _ in 1:n_rank_probes
-        rand_point = randn(probe_rng, n_var) .* 10.0
+        rand_point = _probe_point(probe_rng, variables, 10.0)
         J_probe = ForwardDiff.jacobian(f_combined, rand_point)
         r = rank(J_probe; atol = rank_atol)
         if r > best_full_rank

@@ -300,9 +300,11 @@ function _rank_based_fix_candidates(candidate_vars, symbolic_identifiable_funcs,
 	# Seeded: this Jacobian's pivoted-QR column order
 	# decides WHICH unidentifiable parameter gets fixed to 1.0 — a structural
 	# decision that must not vary run-to-run with the global RNG.
+	# The values go to the variables in name order: Symbolics lists them in an
+	# order that follows hash values, which change between Julia versions.
 	fix_probe_rng = MersenneTwister(0x9f4d0329)
 	val_dict = Dict{Num, Float64}()
-	for v in all_vars
+	for v in sort(collect(all_vars); by = string)
 		val_dict[v] = 0.5 + rand(fix_probe_rng)
 	end
 	J_num = Array{Float64}(undef, length(funcs_filtered), length(param_syms))

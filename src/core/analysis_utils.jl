@@ -916,6 +916,23 @@ function _analyze_parameter_estimation_problem_impl(PEP::ParameterEstimationProb
 end
 
 
+"""
+	_probe_point(rng, variables, scale) -> Vector{Float64}
+
+Random values for `variables` (`scale` times standard normal draws), each tied to
+the variable's name rather than to its place in the list: the values are drawn
+for the names in sorted order. A rank or pivot decision taken at this point is
+the same whatever order the variables come in. That matters because Symbolics
+returns variables in an order that follows hash values, and those change
+between Julia versions.
+"""
+function _probe_point(rng, variables, scale::Real)
+	values = randn(rng, length(variables)) .* scale
+	point = similar(values)
+	point[sortperm(string.(variables))] = values
+	return point
+end
+
 # _compile_system_function: a general symbolic->callable compiler (Symbolics.build_function
 # wrapper). It lives here because this file is included before all of its callers
 # (multipoint_template.jl, noise_frontier_construction.jl and the diagnostics).

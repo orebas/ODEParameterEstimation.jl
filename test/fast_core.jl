@@ -524,6 +524,29 @@ include("support/model_fixtures.jl")
         @test mp.selected.is_square
         @test any(endswith(string(v), "_pt2") for v in vcat(mp.selected.solve_vars, mp.selected.data_vars))
 
+        # The pool's unknowns are sorted by name: the random rank probes are
+        # assigned by position, and Symbolics' own order follows hash values
+        # that change between Julia versions.
+        mp_pool = ODEParameterEstimation._noise_build_pool(pep, setup, si_template; n_points = 2)
+        @test issorted(string.(mp_pool.instantiated_vars))
+
+        # Rank probes tie each value to a variable's name, not its place in the list.
+        probe_names_a, probe_names_b = [:k2, :k1, :x0], [:x0, :k2, :k1]
+        probe_a = ODEParameterEstimation._probe_point(MersenneTwister(7), probe_names_a, 3.0)
+        probe_b = ODEParameterEstimation._probe_point(MersenneTwister(7), probe_names_b, 3.0)
+        @test Dict(zip(probe_names_a, probe_a)) == Dict(zip(probe_names_b, probe_b))
+
+        # So validating a candidate at data values gives the same rank and singular
+        # values whatever order its unknowns are listed in.
+        mp_values = [1.0 + 0.1 * i for i in eachindex(mp.selected.data_vars)]
+        validation_fwd = ODEParameterEstimation.validate_noise_frontier_instantiation(
+            mp.selected.equations, mp.selected.solve_vars, mp.selected.data_vars, mp_values)
+        validation_rev = ODEParameterEstimation.validate_noise_frontier_instantiation(
+            mp.selected.equations, reverse(mp.selected.solve_vars), mp.selected.data_vars, mp_values)
+        @test validation_fwd.rank == validation_rev.rank
+        @test validation_fwd.sigma_min ≈ validation_rev.sigma_min
+        @test validation_fwd.sigma_max ≈ validation_rev.sigma_max
+
         mpt = ODEParameterEstimation.build_noise_frontier_multipoint_template(
             pep,
             setup,

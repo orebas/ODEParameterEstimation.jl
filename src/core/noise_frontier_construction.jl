@@ -267,7 +267,10 @@ function _noise_rank_pool_from_symbolic_equations(
 	for eq in rank_source_eqs
 		union!(combined_inst_vars_set, Symbolics.get_variables(eq))
 	end
-	combined_inst_vars_all = collect(combined_inst_vars_set)
+	# Sorted by name: `get_variables` follows SymbolicUtils' hash order, which
+	# changes between Julia versions, and both the stand-in data values below and
+	# the random rank probes are assigned by position in this list.
+	combined_inst_vars_all = sort!(collect(combined_inst_vars_set); by = string)
 	rank_vars = Any[]
 	data_subst = Dict{Any, Float64}()
 	for (i, v) in enumerate(combined_inst_vars_all)
@@ -554,7 +557,7 @@ function _noise_rank_matrix(equations, variables; rank_atol::Float64 = 1e-8, n_r
 	finite_probe_count = 0
 	rng = MersenneTwister(0x9f4d0329)
 	for _ in 1:max(1, n_rank_probes)
-		x = randn(rng, n_var) .* 3.0
+		x = _probe_point(rng, variables, 3.0)
 		_jacobian_t0 = time()
 		J = try
 			# Generated systems are used for only a few rank probes. Large dual
@@ -909,6 +912,12 @@ function _noise_prepare_validation_cache(
 	rank_atol::Float64 = 1e-8,
 	n_rank_probes::Int = 3,
 )
+	# The compiled Jacobian takes the unknowns sorted by name, so the random
+	# rank probes in _noise_rank_from_compiled_jacobian, which go by position,
+	# land on the same unknowns whatever order the caller lists them in. The
+	# rank does not depend on the column order. The data keep the caller's
+	# order, which is the order of the values they are evaluated at.
+	solve_vars = sort(collect(solve_vars); by = string)
 	key = _noise_validation_cache_key(equations, solve_vars, data_vars, rank_atol, n_rank_probes)
 	lock(_NOISE_VALIDATION_CACHE_LOCK)
 	try
@@ -1562,12 +1571,13 @@ function _noise_select_pool(pep::ParameterEstimationProblem, pool;
 		pool = materialize_polynomials(pool)
 
 		seeds = Vector{Vector{Int}}()
-		orders = Dict{Symbol, Vector{Int}}(
-			:support_greedy => sort(allowed; by = i -> (pool.metadata[i].support_score, pool.metadata[i].max_observed_order, i)),
+		# A tuple, so the seeds always come in the same order.
+		orders = (
 			:index_greedy => sort(allowed),
+			:support_greedy => sort(allowed; by = i -> (pool.metadata[i].support_score, pool.metadata[i].max_observed_order, i)),
 			:reverse_support_greedy => sort(allowed; by = i -> (-pool.metadata[i].support_score, pool.metadata[i].max_observed_order, i)),
 		)
-		for (strategy, order) in orders
+		for (_, order) in orders
 			basis = _noise_greedy_basis(J, order, target_rank; rank_atol = rank_atol)
 			isempty(basis) || push!(seeds, basis)
 		end

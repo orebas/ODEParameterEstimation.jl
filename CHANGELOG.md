@@ -10,6 +10,21 @@ you used one. From 1.0.0 on, releases follow semantic versioning for the
 documented API: the exported names, the names marked `public`, and the options
 that are not marked experimental.
 
+### Two-point systems are chosen the same way on every Julia version
+
+- The step that builds two-point systems (equations at two time points that
+  share the parameters) lists its unknowns sorted by name. It used the order
+  Symbolics returns them in, which follows hash values that changed in Julia
+  1.13.2, and its rank checks assign their random points by position in that
+  list, so the system it chose depended on the Julia version. On Julia 1.13.2
+  `biohydrogenation` got a two-point system with 255 roots, whose solves took
+  hours; it now gets one with 31 roots, at derivative order 3, on every
+  version. On 1.13.1 the same accident skipped the step for this model, so
+  its estimate now takes longer there.
+- The other checks that use random points tie each value to a variable's name
+  in the same way: the check of each two-point and single-point system at the
+  data, and the choice of which undetermined parameter is fixed to 1.
+
 ### Simulated data are read from the finished solution
 
 - `sample_problem_data` now solves the model once and reads the samples from

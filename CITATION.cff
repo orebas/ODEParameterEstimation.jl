@@ -21,6 +21,7 @@ authors:
   - family-names: Ovchinnikov
     given-names: Alexey
     orcid: "https://orcid.org/0000-0001-8192-910X"
+doi: 10.5281/zenodo.23568046
 version: 1.0.0
 license: GPL-3.0-only
 repository-code: "https://github.com/orebas/ODEParameterEstimation.jl"

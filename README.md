@@ -3,6 +3,7 @@
 [![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://orebas.github.io/ODEParameterEstimation.jl/dev/)
 [![Build Status](https://github.com/orebas/ODEParameterEstimation.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/orebas/ODEParameterEstimation.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/orebas/ODEParameterEstimation.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/orebas/ODEParameterEstimation.jl)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23568046.svg)](https://doi.org/10.5281/zenodo.23568046)
 
 ODEParameterEstimation.jl fits the parameters and initial conditions of an ODE
 model to time-series data.

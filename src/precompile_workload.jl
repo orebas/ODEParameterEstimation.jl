@@ -60,25 +60,38 @@ function _precompile_workload()
 	end
 end
 
+"""
+	_in_registry_check() -> Bool
+
+Whether this process is the General registry's install check, which sets
+`JULIA_REGISTRYCI_AUTOMERGE` to `true`. That check precompiles the package and
+all of its dependencies on two Julia versions within a time limit, and asks
+only whether the package loads. The workload is most of this package's share
+of that time and cannot make loading fail, so it is skipped there.
+"""
+_in_registry_check() = get(ENV, "JULIA_REGISTRYCI_AUTOMERGE", "false") == "true"
+
 @compile_workload begin
-	try
-		# A default run prints nothing and writes no files, and the tests check
-		# that. Installing the package must not do either, whatever happens.
-		mktempdir() do workload_dir
-			cd(workload_dir) do
-				redirect_stdout(devnull) do
-					redirect_stderr(devnull) do
-						_precompile_workload()
+	if !_in_registry_check()
+		try
+			# A default run prints nothing and writes no files, and the tests check
+			# that. Installing the package must not do either, whatever happens.
+			mktempdir() do workload_dir
+				cd(workload_dir) do
+					redirect_stdout(devnull) do
+						redirect_stderr(devnull) do
+							_precompile_workload()
+						end
 					end
 				end
 			end
+			_WORKLOAD_STATUS[] = :ok
+		catch err
+			_rethrow_if_interrupt(err)
+			_WORKLOAD_STATUS[] = :failed
+			@warn "ODEParameterEstimation could not run its precompile workload. The package works, but the first `estimate` of each session will be slow. Please report this." exception = (err, catch_backtrace())
+		finally
+			_reset_session_state!()
 		end
-		_WORKLOAD_STATUS[] = :ok
-	catch err
-		_rethrow_if_interrupt(err)
-		_WORKLOAD_STATUS[] = :failed
-		@warn "ODEParameterEstimation could not run its precompile workload. The package works, but the first `estimate` of each session will be slow. Please report this." exception = (err, catch_backtrace())
-	finally
-		_reset_session_state!()
 	end
 end

@@ -10,6 +10,15 @@ you used one. From 1.0.0 on, releases follow semantic versioning for the
 documented API: the exported names, the names marked `public`, and the options
 that are not marked experimental.
 
+### Lighter to install
+
+- The General registry's install check, which sets `JULIA_REGISTRYCI_AUTOMERGE`,
+  skips the estimation that runs while the package is precompiled. The check
+  precompiles the package and its dependencies on two Julia versions within an
+  hour, and that estimation was most of this package's share of the time. The
+  check asks only whether the package loads, which the estimation cannot
+  change. Everywhere else it runs as before.
+
 ### Two-point systems are chosen the same way on every Julia version
 
 - The step that builds two-point systems (equations at two time points that

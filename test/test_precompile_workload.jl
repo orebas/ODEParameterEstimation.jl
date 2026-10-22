@@ -54,6 +54,17 @@ end
 	@test read(command, String) in ("ok true true 0", "skipped true true 0")
 end
 
+@testset "The registry's install check skips the workload" begin
+	withenv("JULIA_REGISTRYCI_AUTOMERGE" => "true") do
+		@test _ODEPE._in_registry_check()
+	end
+	for value in (nothing, "false", "")
+		withenv("JULIA_REGISTRYCI_AUTOMERGE" => value) do
+			@test !_ODEPE._in_registry_check()
+		end
+	end
+end
+
 @testset "The final polish works in a freshly loaded package" begin
 	# The polish differentiates an ODE solve whose solver differentiates too.
 	# ForwardDiff orders the two layers by a number fixed when each is first

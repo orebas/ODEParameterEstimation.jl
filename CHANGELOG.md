@@ -12,6 +12,12 @@ that are not marked experimental.
 
 ### Lighter to install
 
+- The package depends on OrdinaryDiffEqVerner and OrdinaryDiffEqRosenbrock,
+  the two solver packages its default solver `AutoVern9(Rodas5P())` comes
+  from, in place of all of OrdinaryDiffEq. An install has six fewer packages
+  to compile, and four fewer ModelingToolkit extensions, which were compiled
+  only because those packages were there. Results are unchanged. To pass
+  another solver in the options, load its package yourself, as before.
 - The General registry's install check, which sets `JULIA_REGISTRYCI_AUTOMERGE`,
   skips the estimation that runs while the package is precompiled. The check
   precompiles the package and its dependencies on two Julia versions within an

@@ -166,7 +166,7 @@ function _uq_state_values_at_time(
         merge(Dict(completed_states .=> ic_values), Dict(completed_params .=> completed_param_values)),
         (t0, t_shoot),
     )
-    sol = OrdinaryDiffEq.solve(prob, AutoVern9(Rodas5P()); abstol = 1e-12, reltol = 1e-12)
+    sol = SciMLBase.solve(prob, AutoVern9(Rodas5P()); abstol = 1e-12, reltol = 1e-12)
     SciMLBase.successful_retcode(sol) ||
         error("Forward solve to shooting point failed with retcode $(sol.retcode)")
     return Float64[Float64(real(sol(t_shoot)[i])) for i in eachindex(completed_states)]
@@ -225,7 +225,7 @@ function _uq_variational_backsolve_jacobian(
     end
 
     prob = ODEProblem(variational_rhs!, u_ext0, (t_shoot, t0), nothing)
-    sol = OrdinaryDiffEq.solve(
+    sol = SciMLBase.solve(
         prob, AutoVern9(Rodas5P());
         abstol = 1e-12, reltol = 1e-12, save_everystep = false,
     )

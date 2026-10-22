@@ -3,7 +3,6 @@ using OrderedCollections
 using Logging
 using LinearAlgebra
 using NonlinearSolve
-using OrdinaryDiffEq
 using Statistics
 
 # Use functions from the current module

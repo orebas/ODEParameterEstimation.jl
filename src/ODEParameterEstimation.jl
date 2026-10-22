@@ -31,7 +31,8 @@ using Optimization, OptimizationOptimJL
 using LeastSquaresOptim
 using FastLevenbergMarquardt
 using OrderedCollections
-using OrdinaryDiffEq
+using OrdinaryDiffEqRosenbrock: Rodas5P
+using OrdinaryDiffEqVerner: AutoVern9, Vern9
 using PrecompileTools
 using Printf
 using Random

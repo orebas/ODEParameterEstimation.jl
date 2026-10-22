@@ -21,12 +21,11 @@ built from polynomials and ratios of polynomials.
 
 ## Installation
 
-Julia 1.12 or later is required. The package is not in the General registry
-yet, so install it from GitHub:
+Julia 1.12 or later is required.
 
 ```julia
 using Pkg
-Pkg.add(url = "https://github.com/orebas/ODEParameterEstimation.jl")
+Pkg.add("ODEParameterEstimation")
 Pkg.add("ModelingToolkit")
 ```
 

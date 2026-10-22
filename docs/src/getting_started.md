@@ -5,12 +5,12 @@ is Julia installing and compiling packages.
 
 ## Installing
 
-You need Julia 1.12 or later. The package is not in the General registry yet,
-so add it from GitHub, along with ModelingToolkit, which models are written in:
+You need Julia 1.12 or later. Add the package along with ModelingToolkit, which
+models are written in:
 
 ```julia
 using Pkg
-Pkg.add(url = "https://github.com/orebas/ODEParameterEstimation.jl")
+Pkg.add("ODEParameterEstimation")
 Pkg.add("ModelingToolkit")
 ```
 

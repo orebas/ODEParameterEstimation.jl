@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0
+## 1.0.0 (2026-10-22)
 
 The first registered release. It needs Julia 1.12 or later.
 
